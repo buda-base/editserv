@@ -14,7 +14,8 @@ public class PatchService implements BUDAEditService {
     public static HashMap<String, QueuedPatch> processed = new HashMap<>();
 
     public PatchService(HttpServletRequest req) {
-        super();
+        String slug = req.getHeader("Slug");
+        String pragma = req.getHeader("Pragma");
     }
 
     @Override

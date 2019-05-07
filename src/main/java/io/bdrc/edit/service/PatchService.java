@@ -1,21 +1,31 @@
 package io.bdrc.edit.service;
 
-import java.util.HashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import javax.servlet.http.HttpServletRequest;
 
+import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.QueuedPatch;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class PatchService implements BUDAEditService {
 
-    public static LinkedBlockingQueue<QueuedPatch> waitingQueue = new LinkedBlockingQueue<QueuedPatch>();
-    public static HashMap<String, QueuedPatch> processed = new HashMap<>();
-
     public PatchService(HttpServletRequest req) {
+
         String slug = req.getHeader("Slug");
         String pragma = req.getHeader("Pragma");
+        String payload = req.getParameter("payload");
+        QueuedPatch qp = new QueuedPatch(slug, pragma, payload);
+        qp.setStatus(EditConstants.PATCH_SVC_QUEUED);
+        BUDATransactionManager.WAITING_QUEUE.add(qp);
+    }
+
+    public void removePatch(QueuedPatch qp) {
+        qp.setStatus(EditConstants.PATCH_SVC_PROCESSING);
+        BUDATransactionManager.PROCESSED.put(qp.getId(), qp);
+    }
+
+    public QueuedPatch getPatch(String id) {
+        return BUDATransactionManager.PROCESSED.get(id);
     }
 
     @Override

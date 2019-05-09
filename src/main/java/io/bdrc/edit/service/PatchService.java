@@ -2,30 +2,32 @@ package io.bdrc.edit.service;
 
 import javax.servlet.http.HttpServletRequest;
 
-import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.txn.BUDATransactionManager;
-import io.bdrc.edit.txn.QueuedPatch;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class PatchService implements BUDAEditService {
 
+    String slug;
+    String pragma;
+    String payload;
+    String id;
+
     public PatchService(HttpServletRequest req) {
-
-        String slug = req.getHeader("Slug");
-        String pragma = req.getHeader("Pragma");
-        String payload = req.getParameter("payload");
-        QueuedPatch qp = new QueuedPatch(slug, pragma, payload);
-        qp.setStatus(EditConstants.PATCH_SVC_QUEUED);
-        BUDATransactionManager.WAITING_QUEUE.add(qp);
+        this.slug = req.getHeader("Slug");
+        this.pragma = req.getHeader("Pragma");
+        this.payload = req.getParameter("payload");
+        this.id = slug + "_" + Long.toString(System.currentTimeMillis());
     }
 
-    public void removePatch(QueuedPatch qp) {
-        qp.setStatus(EditConstants.PATCH_SVC_PROCESSING);
-        BUDATransactionManager.PROCESSED.put(qp.getId(), qp);
+    public String getSlug() {
+        return slug;
     }
 
-    public QueuedPatch getPatch(String id) {
-        return BUDATransactionManager.PROCESSED.get(id);
+    public String getPragma() {
+        return pragma;
+    }
+
+    public String getPayload() {
+        return payload;
     }
 
     @Override
@@ -48,18 +50,6 @@ public class PatchService implements BUDAEditService {
 
     @Override
     public void setStatus(int st) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public int getType() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public void setType(int tp) {
         // TODO Auto-generated method stub
 
     }

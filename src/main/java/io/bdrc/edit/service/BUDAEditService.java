@@ -4,15 +4,6 @@ import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public interface BUDAEditService {
 
-    /** The create edit type */
-    public final String EDIT_CREATE = "Edit_Create";
-
-    /** The update edit type */
-    public final String EDIT_UPDATE = "Edit_Update";
-
-    /** The delete edit type */
-    public final String EDIT_DELETE = "Edit_Delete";
-
     /**
      * Rollback to previous state, before service execution/failure
      */
@@ -32,16 +23,6 @@ public interface BUDAEditService {
      * Set the status of the service object.
      */
     public void setStatus(int st);
-
-    /**
-     * Obtain the status of the service object.
-     */
-    public int getType();
-
-    /**
-     * Set the status of the service object.
-     */
-    public void setType(int tp);
 
     /**
      * Obtain the id of the service object.

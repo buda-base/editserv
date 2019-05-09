@@ -16,7 +16,7 @@ public class BUDATransaction {
     public BUDATransaction(String id, String user) {
         this.tid = id;
         this.user = user;
-
+        this.servicesMap = new TreeMap<>();
     }
 
     /**

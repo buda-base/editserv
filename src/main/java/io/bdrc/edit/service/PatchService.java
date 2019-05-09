@@ -14,7 +14,7 @@ public class PatchService implements BUDAEditService {
     public PatchService(HttpServletRequest req) {
         this.slug = req.getHeader("Slug");
         this.pragma = req.getHeader("Pragma");
-        this.payload = req.getParameter("payload");
+        this.payload = req.getParameter("Payload");
         this.id = slug + "_" + Long.toString(System.currentTimeMillis());
     }
 
@@ -65,4 +65,10 @@ public class PatchService implements BUDAEditService {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "PatchService [slug=" + slug + ", pragma=" + pragma + ", payload=" + payload + ", id=" + id + "]";
+    }
+
 }

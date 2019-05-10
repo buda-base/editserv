@@ -9,12 +9,12 @@ public class BUDATransaction {
 
     int status;
     int currentSvc = -1;
-    String tid;
+    String id;
     String user;
     TreeMap<Integer, BUDAEditService> servicesMap;
 
     public BUDATransaction(String id, String user) {
-        this.tid = id;
+        this.id = id;
         this.user = user;
         this.servicesMap = new TreeMap<>();
     }
@@ -45,8 +45,8 @@ public class BUDATransaction {
         return currentSvc;
     }
 
-    public String getTid() {
-        return tid;
+    public String getId() {
+        return id;
     }
 
     public String getUser() {

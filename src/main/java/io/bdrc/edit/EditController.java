@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -57,6 +58,12 @@ public class EditController {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Location", "queuejob/" + ps.getId());
         return new ResponseEntity<>("ok", responseHeaders, HttpStatus.ACCEPTED);
+    }
+
+    @RequestMapping(value = "/queuejob/{id}", method = RequestMethod.GET)
+    public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {
+        String status = BUDATransactionManager.getTxnStatus(id);
+        return new ResponseEntity<>(status, HttpStatus.OK);
     }
 
 }

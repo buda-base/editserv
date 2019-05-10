@@ -11,6 +11,7 @@ public class Types {
     public static final int STATUS_QUEUED = 17;
     public static final int STATUS_SUCCESS = 18;
     public static final int STATUS_FAILED = 19;
+    public static final int STATUS_UNKNOWN = 20;
 
     static {
 
@@ -27,6 +28,7 @@ public class Types {
         TXN_STATUS.put(STATUS_QUEUED, "STATUS_QUEUED");
         TXN_STATUS.put(STATUS_SUCCESS, "STATUS_SUCCESS");
         TXN_STATUS.put(STATUS_FAILED, "STATUS_FAILED");
+        TXN_STATUS.put(STATUS_UNKNOWN, "STATUS_UNKNOWN");
     }
 
     public static String getTxnStatus(int st) {

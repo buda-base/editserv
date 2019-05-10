@@ -1,6 +1,6 @@
 package io.bdrc.edit.txn.exceptions;
 
-public class PatchServiceException extends Exception {
+public class PatchServiceException extends ServiceException {
 
     /**
      * 

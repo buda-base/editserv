@@ -1,0 +1,11 @@
+TX .
+#@prefix bdr: <http://purl.bdrc.io/resource/> .
+#@prefix bdo: <http://purl.bdrc.io/ontology/core/> .
+#@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+#@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+#A bdr:P1523 rdf:type bdo:Person  .
+#D  bdr:P1525 rdfs:Label "Px125"@en  .
+D <http://buda1.bdrc.io:13180/fuseki/bdrcrw/bdr> <http://buda1.bdrc.io:13180/fuseki/bdrcrw/rdfs> "Px125"@en
+#A bda:P1x23 adm:status bda:StatusProvisional  .
+#A bda:P1x23 adm:hasLegal bda:LD_BDRC002  .
+TC .

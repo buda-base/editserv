@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.txn.BUDATransactionManager;
 
 @SpringBootApplication
 @Configuration
@@ -19,15 +20,17 @@ import io.bdrc.auth.rdf.RdfAuthModel;
 
 public class EditApplication extends SpringBootServletInitializer {
 
-	public static void main(String[] args) throws Exception {
-		EditConfig.init();
-		RdfAuthModel.init();
-		SpringApplication.run(EditApplication.class, args);
-	}
+    public static void main(String[] args) throws Exception {
+        EditConfig.init();
+        RdfAuthModel.init();
+        SpringApplication.run(EditApplication.class, args);
+        Thread t = new Thread(BUDATransactionManager.getInstance());
+        t.start();
+    }
 
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(EditApplication.class);
-	}
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(EditApplication.class);
+    }
 
 }

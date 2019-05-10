@@ -2,7 +2,10 @@ package io.bdrc.edit.txn;
 
 import java.util.TreeMap;
 
+import javax.transaction.Status;
+
 import io.bdrc.edit.service.BUDAEditService;
+import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
 public class BUDATransaction {
@@ -31,6 +34,29 @@ public class BUDATransaction {
         }
         servicesMap.put(order, serv);
         return true;
+    }
+
+    /**
+     * Complete the transaction represented by this Transaction object or forward
+     * the exception to the TransactionManager
+     * 
+     * @throws ServiceException
+     */
+    public void commit() throws Exception {
+        setStatus(Status.STATUS_COMMITTED);
+        for (int svc : servicesMap.keySet()) {
+            try {
+                // log.logMsg("Running service ", servicesMap.get(svc).getName() + " SVC =" +
+                // svc);
+                servicesMap.get(svc).run();
+                currentSvc = svc;
+                // log.logMsg("Finished Running service ", servicesMap.get(svc).getName());
+            } catch (Exception e) {
+                setStatus(Status.STATUS_MARKED_ROLLBACK);
+                // log.logMsg("[ERROR] in BUDA Transaction Commit ", e.getMessage());
+                throw e;
+            }
+        }
     }
 
     public int getStatus() {

@@ -30,10 +30,10 @@ public class BasicTest {
     public void sendRequest() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost("http://localhost:8080/graph");
-        post.setHeader("Slug", "P1523");
+        post.setHeader("Slug", "P1524");
         post.setHeader("Pragma", "Final");
         List<NameValuePair> params = new ArrayList<NameValuePair>();
-        List<String> doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("basic.patch"), StandardCharsets.UTF_8);
+        List<String> doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("testPS.patch"), StandardCharsets.UTF_8);
         String s = "";
         for (String l : doc) {
             s = s + System.lineSeparator() + l;

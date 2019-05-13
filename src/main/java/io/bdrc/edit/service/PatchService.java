@@ -5,18 +5,22 @@ import java.io.InputStream;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.jena.query.DatasetAccessor;
-import org.apache.jena.query.DatasetAccessorFactory;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
@@ -33,6 +37,15 @@ public class PatchService implements BUDAEditService {
         this.slug = req.getHeader("Slug");
         this.pragma = req.getHeader("Pragma");
         this.payload = req.getParameter("Payload");
+        String time = Long.toString(System.currentTimeMillis());
+        this.id = slug + "_" + time;
+        this.name = "PATCH_SVC_" + time;
+    }
+
+    public PatchService(String slug, String pragma, String payload) {
+        this.slug = slug;
+        this.pragma = pragma;
+        this.payload = payload;
         String time = Long.toString(System.currentTimeMillis());
         this.id = slug + "_" + time;
         this.name = "PATCH_SVC_" + time;
@@ -60,30 +73,46 @@ public class PatchService implements BUDAEditService {
     public void run() throws ServiceException {
         // Fetching the graph to be patched
         try {
-            String graph = "bdg:" + slug;
-            DatasetAccessor access = DatasetAccessorFactory.createHTTP(EditConfig.getProperty("fusekiData"));
-            Model m = access.getModel(graph);
-            DatasetGraph gh = DatasetGraphFactory.create(m.getGraph());
-            System.out.println(gh.getDefaultGraph().size());
-            System.out.println("Model size =" + m.getGraph().size());
-            // Applying changes
-            RDFChangesApply apply = new RDFChangesApply(gh);
+
+            System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
             InputStream patch = new ByteArrayInputStream(payload.getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
-            rdf.apply(apply);
-            System.out.println("Model size =" + m.getGraph().size());
-            // Putting the graph back into fuseki dataset
+
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-            fusConn.begin(ReadWrite.WRITE);
-            fusConn.put(graph, m);
-            fusConn.commit();
-            fusConn.end();
+            String graph = EditConstants.BDG + slug;
+            System.out.println("GRAPH uri>>" + graph);
+            Dataset ds = DatasetFactory.create();
+            DatasetGraph dsg = ds.asDatasetGraph();
+            Node graphUri = NodeFactory.createURI(graph);
+            System.out.println("NODE >>" + graphUri);
+            Graph gp = fusConn.fetch(graph).getGraph();
+            System.out.println("GRAPH >>" + gp.size());
+            dsg.addGraph(graphUri, gp);
+
+            // Applying changes
+            RDFChangesApply apply = new RDFChangesApply(dsg);
+            rdf.apply(apply);
+
+            // Putting the graph back into fuseki dataset
+            Model m = ModelFactory.createModelForGraph(dsg.getGraph(graphUri));
+            // fusConn.begin(ReadWrite.WRITE);
+            // fusConn.put(graph, m);
+            // fusConn.commit();
+            // fusConn.end();
+            putModel(fusConn, graph, m);
             fusConn.close();
             patch.close();
         } catch (Exception e) {
             throw new PatchServiceException(e);
         }
+    }
+
+    private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
+        fusConn.begin(ReadWrite.WRITE);
+        fusConn.put(graph, m);
+        fusConn.commit();
+        fusConn.end();
     }
 
     @Override

@@ -29,7 +29,8 @@ public class EditPatchHeaders {
     }
 
     public String getPatchId() {
-        return ph.get(KEY_ID).toString();
+        String tmp = ph.get(KEY_ID).toString();
+        return tmp.substring(tmp.indexOf(":") + 1);
     }
 
 }

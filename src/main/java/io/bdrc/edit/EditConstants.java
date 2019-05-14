@@ -7,6 +7,10 @@ public class EditConstants {
     public static final int PATCH_SVC_ACCEPTED = 2;
     public static final int PATCH_SCV_REJECTED = 3;
 
+    public static final String PTC_FINAL = "final";
+    public static final String PTC_STASH = "stash";
+    public static final String PTC_EXT = ".ptc";
+
     public static final String BDO = "http://purl.bdrc.io/ontology/core/";
     public static final String BDR = "http://purl.bdrc.io/resource/";
     public static final String ADM = "http://purl.bdrc.io/ontology/admin/";

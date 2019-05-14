@@ -1,0 +1,9 @@
+H  id     <uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5d6> .
+H  graph  "http://purl.bdrc.io/graph/P1524,http://purl.bdrc.io/graph/P1525" .
+
+TX .
+A <http://purl.bdrc.io/resource/P1524> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1583> <http://purl.bdrc.io/graph/P1524> .
+#D <http://purl.bdrc.io/resource/P1524> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1583> <http://purl.bdrc.io/graph/P1524>   .
+A <http://purl.bdrc.io/resource/P1525> <http://purl.bdrc.io/ontology/core/personStudentOf> <http://purl.bdrc.io/resource/P1583> <http://purl.bdrc.io/graph/P1529> .
+#D <http://purl.bdrc.io/resource/P1525> <http://purl.bdrc.io/ontology/core/personStudentOf> <http://purl.bdrc.io/resource/P1583> <http://purl.bdrc.io/graph/P1525>   .
+TC .

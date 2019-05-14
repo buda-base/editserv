@@ -26,7 +26,7 @@ public class PatchServiceTest {
         for (String l : doc) {
             s = s + System.lineSeparator() + l;
         }
-        PatchService ps = new PatchService("P1524", "Final", s);
+        PatchService ps = new PatchService("Final", s);
         ps.run();
     }
 

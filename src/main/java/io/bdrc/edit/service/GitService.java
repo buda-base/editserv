@@ -22,6 +22,7 @@ public class GitService implements BUDAEditService {
 
     int status;
     String id;
+    String userId;
     String resType;
     PatchService data;
 
@@ -32,6 +33,7 @@ public class GitService implements BUDAEditService {
         this.id = "GIT_" + id;
         this.resType = resType;
         this.data = data;
+        this.userId = data.getUserId();
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -165,6 +167,12 @@ public class GitService implements BUDAEditService {
     @Override
     public String getName() {
         return "GIT Service";
+    }
+
+    @Override
+    public String getUserId() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

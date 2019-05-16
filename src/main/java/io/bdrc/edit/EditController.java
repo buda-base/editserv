@@ -21,6 +21,7 @@ import io.bdrc.edit.service.GitService;
 import io.bdrc.edit.service.PatchService;
 import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
+import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
 @Controller
@@ -43,11 +44,11 @@ public class EditController {
      * @throws ServiceSequenceException
      */
     @RequestMapping(value = "/graph", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, method = RequestMethod.POST)
-    public ResponseEntity<String> acceptPatch(HttpServletRequest req, HttpServletResponse response) throws IOException, ServiceSequenceException {
-        String user = getUser(req);
-        PatchService ps = new PatchService(req);
+    public ResponseEntity<String> acceptPatch(HttpServletRequest req, HttpServletResponse response) throws IOException, ServiceException, ServiceSequenceException {
+        String userId = getUser(req);
+        PatchService ps = new PatchService(req, userId);
         System.out.println("Patch Service >>" + ps);
-        BUDATransaction btx = new BUDATransaction(ps.getId(), user);
+        BUDATransaction btx = new BUDATransaction(ps.getId(), userId);
         btx.setStatus(Status.STATUS_PREPARING);
         // btx.enlistResource(new ValidationService(ps.getId(),
         // Types.SIMPLE_VALIDATION_SVC, map.getFirst("type"), ps), 0);

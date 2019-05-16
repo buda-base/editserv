@@ -1,10 +1,16 @@
 package io.bdrc.edit.service;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -21,38 +27,73 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class PatchService implements BUDAEditService {
 
-    String slug;
     String pragma;
     String payload;
+    String userId;
     String id;
     String name;
     int status;
+    EditPatchHeaders ph;
 
-    public PatchService(HttpServletRequest req) {
-        this.slug = req.getHeader("Slug");
+    public PatchService(HttpServletRequest req, String userId) throws PatchServiceException {
         this.pragma = req.getHeader("Pragma");
         this.payload = req.getParameter("Payload");
+        this.userId = userId;
         String time = Long.toString(System.currentTimeMillis());
-        this.id = slug + "_" + time;
+        this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
+        this.id = ph.getPatchId();
         this.name = "PATCH_SVC_" + time;
+        savePatch();
     }
 
-    public PatchService(String slug, String pragma, String payload) {
-        this.slug = slug;
+    public PatchService(String pragma, String payload, String userId) throws PatchServiceException {
         this.pragma = pragma;
         this.payload = payload;
+        this.userId = userId;
         String time = Long.toString(System.currentTimeMillis());
-        this.id = slug + "_" + time;
+        this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
+        this.id = ph.getPatchId();
         this.name = "PATCH_SVC_" + time;
+        savePatch();
     }
 
-    public String getSlug() {
-        return slug;
+    private void savePatch() throws PatchServiceException {
+        try {
+            File f = new File(EditConfig.getProperty("patchesDir") + userId);
+            if (!f.exists()) {
+                f.mkdir();
+            }
+            String filename = "";
+            if (pragma.equals(EditConstants.PTC_FINAL)) {
+                filename = EditConfig.getProperty("patchesDir") + userId + "/" + id + EditConstants.PTC_EXT;
+            }
+            if (pragma.equals(EditConstants.PTC_STASH)) {
+                filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + id + EditConstants.PTC_EXT;
+            }
+            System.out.println("FILENAME >> " + filename);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+            writer.write(payload);
+            writer.close();
+        } catch (Exception e) {
+            throw new PatchServiceException(e);
+        }
+    }
+
+    public static void deletePatch(String patchId, String userId, boolean stashed) throws IOException {
+        String filename = "";
+        if (!stashed) {
+
+            filename = EditConfig.getProperty("patchesDir") + userId + "/" + patchId + EditConstants.PTC_EXT;
+        } else {
+            filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + patchId + EditConstants.PTC_EXT;
+        }
+        new File(filename).delete();
     }
 
     public String getPragma() {
@@ -71,36 +112,46 @@ public class PatchService implements BUDAEditService {
 
     @Override
     public void run() throws ServiceException {
-        // Fetching the graph to be patched
-        try {
 
+        try {
             System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
             InputStream patch = new ByteArrayInputStream(payload.getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
 
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-            String graph = EditConstants.BDG + slug;
-            System.out.println("GRAPH uri>>" + graph);
             Dataset ds = DatasetFactory.create();
             DatasetGraph dsg = ds.asDatasetGraph();
-            Node graphUri = NodeFactory.createURI(graph);
-            System.out.println("NODE >>" + graphUri);
-            Graph gp = fusConn.fetch(graph).getGraph();
-            System.out.println("GRAPH >>" + gp.size());
-            dsg.addGraph(graphUri, gp);
+            // Listing the graphs to be patched
+            List<String> graphs = ph.getGraphUris();
+            if (graphs.size() == 0) {
+                throw new PatchServiceException("No graph information available for patchId:" + ph.getPatchId());
+            }
+            // Fetching the graphs, building the dataset to be patched
+            for (String st : graphs) {
+                Node graphUri = NodeFactory.createURI(st);
+                try {
+                    Graph gp = fusConn.fetch(st).getGraph();
+                    dsg.addGraph(graphUri, gp);
+                } catch (HttpException ex) {
+                    throw new PatchServiceException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
+                }
+            }
 
             // Applying changes
             RDFChangesApply apply = new RDFChangesApply(dsg);
             rdf.apply(apply);
 
-            // Putting the graph back into fuseki dataset
-            Model m = ModelFactory.createModelForGraph(dsg.getGraph(graphUri));
-            // fusConn.begin(ReadWrite.WRITE);
-            // fusConn.put(graph, m);
-            // fusConn.commit();
-            // fusConn.end();
-            putModel(fusConn, graph, m);
+            // Putting the graphs back into main fuseki dataset
+            for (String st : graphs) {
+                Node graphUri = NodeFactory.createURI(st);
+                try {
+                    Model m = ModelFactory.createModelForGraph(dsg.getGraph(graphUri));
+                    putModel(fusConn, st, m);
+                } catch (HttpException ex) {
+                    throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
+                }
+            }
             fusConn.close();
             patch.close();
         } catch (Exception e) {
@@ -115,6 +166,10 @@ public class PatchService implements BUDAEditService {
         fusConn.end();
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
     @Override
     public int getStatus() {
         return status;
@@ -126,18 +181,19 @@ public class PatchService implements BUDAEditService {
     }
 
     @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
 
     @Override
     public String toString() {
-        return "PatchService [slug=" + slug + ", pragma=" + pragma + ", payload=" + payload + ", id=" + id + "]";
+        return "PatchService [ pragma=" + pragma + ", payload=" + payload + ", id=" + id + "]";
+    }
+
+    @Override
+    public String getId() {
+        // TODO Auto-generated method stub
+        return id;
     }
 
 }

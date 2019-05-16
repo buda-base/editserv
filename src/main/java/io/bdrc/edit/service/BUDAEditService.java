@@ -34,4 +34,9 @@ public interface BUDAEditService {
      */
     public String getName();
 
+    /**
+     * Obtain the id of the user of this service.
+     */
+    public String getUserId();
+
 }

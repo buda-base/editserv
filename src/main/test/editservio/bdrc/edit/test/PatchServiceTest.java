@@ -20,14 +20,23 @@ public class PatchServiceTest {
     }
 
     @Test
-    public void testHeader() throws IOException, ServiceException {
+    public void testSimpleAndMultiple() throws IOException, ServiceException {
         List<String> doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("testPS.patch"), StandardCharsets.UTF_8);
         String s = "";
         for (String l : doc) {
             s = s + System.lineSeparator() + l;
         }
-        PatchService ps = new PatchService("P1524", "Final", s);
+        PatchService ps = new PatchService("final", s, "testUser");
         ps.run();
+        PatchService.deletePatch(ps.getId(), ps.getUserId(), false);
+        doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("multiUpdate.patch"), StandardCharsets.UTF_8);
+        s = "";
+        for (String l : doc) {
+            s = s + System.lineSeparator() + l;
+        }
+        ps = new PatchService("final", s, "testUser");
+        ps.run();
+        PatchService.deletePatch(ps.getId(), ps.getUserId(), false);
     }
 
 }

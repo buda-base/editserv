@@ -11,9 +11,9 @@ In this case the user wants to make some changes to an existing resource:
 
 - once the resource is received then the EC populates the editing UI, making ready for the user to review and edit the resource - edits may involve adding information, deleting or updating existing information
 
-- upon the first edit action by the user, EC creates a new `RDFPatch` to record the user's changes. This includes creating an `H id <patchID> .` for the patch, an `H graph <...> .` (or some other encoding), and `H message "..." .` that describes the work to be done in the patch (EC solicits this from the user.)
+- upon the first edit action by the user, EC creates a new `RDFPatch` to record the user's changes. This includes creating an `H id <patchID> .` for the patch, an `H graph <http://purl.bdrc.io/graph/theID> .` (or some other encoding), and `H message "..." .` that describes the work to be done in the patch (EC solicits this from the user.)
 
-- the user makes edits involving adding, deleting or updating existing information, and the EC records each action as a sequence of RDFPatch `A` and `D` steps. Each `A` or `D` consists of a quad of a `subject property object graph`. In this case the `graph` is that for the resource being edited, `http://purl.bdrc.io/graph/theID`.
+- the user makes edits involving adding, deleting or updating existing information, and the EC records each action as a sequence of RDFPatch `A` and `D` steps. Each `A` or `D` consists of a quad of `subject property object graph`. In this case the `graph` is that for the resource being edited, `http://purl.bdrc.io/graph/theID`.
 
 - once the user is finished with their updates and signals to EC that the update is completed then EC performs a
 
@@ -22,7 +22,7 @@ In this case the user wants to make some changes to an existing resource:
         header includes a shortname for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
 ```
-- ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply ES responds w/ 
+- ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply, ES responds w/ 
 
     - `201`(created) or 
     - `202`(accepted) - to be decided. 
@@ -44,11 +44,11 @@ In this case the user wants to make some changes to an existing resource:
 This completes this use case.
 
 ### Create one new resource
-The wants to add a new Work, Person, etc, with no references to any existing resources.
+The user wants to add a new Work, Person, etc, with no references to any existing resources.
 
-- The user requests EC to setup up the editing UI for creating a new resource of a specified type. EC must create a new resource ID, `theID` - the current idea is that EC will generate a UUID and prefixed with the usual `W`, `P`, etc depending on the type.
+- The user requests EC to setup up the editing UI for creating a new resource of a specified type. EC must create a new resource ID, `theID` - the current idea is that EC will generate a UUID and prefix it with the usual `W`, `P`, etc depending on the type.
 
-- upon the first edit action by the user, EC creates a new `RDFPatch` as above, except that `H create <. . . > .` is used instead of `H graph ... .`.
+- upon the first edit action by the user, EC creates a new `RDFPatch` as above, except that `H create <http://purl.bdrc.io/graph/theID> .` is used instead of `H graph ... .`.
 
 - the user makes edits involving adding, deleting or updating existing information, and the EC records each action in the patch. Each edit uses the same graph term as above, `http://purl.bdrc.io/graph/theID`.
 
@@ -60,7 +60,7 @@ The wants to add a new Work, Person, etc, with no references to any existing res
         the patch payload
 ```
 
-- ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch after checking that the supplied resource ID, `theID`, is not in use with responses as above. ES will also need to add `adm:GetInfo` for the new resource.
+- ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch after checking that the supplied resource ID, `theID`, is not in use with responses as above. ES will also need to add `adm:GitInfo` for the new resource.
 
 ### Create a resource referring to an existing resource
 
@@ -178,7 +178,7 @@ We've already suggested that:
         user id and authorization info
 ```
 
-will lead to ES responding with a list of _in progress_ patch logs.
+will lead to ES responding with a list of _in progress_ patch logs for the user.
 
 There are several other similar queries that we need to consider.
 

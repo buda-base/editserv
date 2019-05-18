@@ -127,7 +127,7 @@ Later the user wants to resume their task represented so far by the stashed patc
 
 Not mentioned until now is that the requests from EC to ES contain authorization and user ID information in the requests. This permits ES to validate user permissions and so on and allows to group patch logs by user ID.
 
-Once the user is provided w/ a list of stashed patches or via some bookmark mechanism, etc then EC will request the patch log, `PatchLogID` from ES:
+Once the user is provided w/ a list of stashed patches or via some bookmark mechanism, etc then EC will request the patch log, `PatchLogID`, from ES:
 
 ```
     GET http://purl.bdrc.io/sandbox/patchLogID
@@ -164,6 +164,67 @@ or the user signals to apply the patch log:
         the patch payload
 ```
 to which ES applies and responds as previously discussed.
+
+#### how does stash/resume work with adm:status?
+It's worth considering the `adm:Status` values: `bda:StatusEditing`, `bda:StatusProvisional`, `bda:StatusReleased`. How might these fit in? A user may want to indicate that they are `bda:StatusEditing` several resources and that _the published versions on the public library site will be the previous `bda:StatusReleased` versions, if any_. Permissions will allow staff and such to see these resources in search results where public users will not. This will aide the editing users to be able to review the effects of edits visible in the public library context w/o making the resources visible to the public.
+
+The `bda:StatusProvisional` may indicate that the editor of the resource has finished editing and is ready to have the resource(s) reviewed for release on the public library site. Then resources would be changed to `bda:StatusReleased`.
+
+This could be implemented by marking the status according to the desired state and then always doing apply and discarding the stash step. So requests to ES will always appear as:
+
+```
+    POST http://purl.bdrc.io/sandbox/patchId
+        header includes the patch log id and user info
+        the patch payload
+```
+
+no need for `?stash` and `?apply` or `PUT`. All patch logs will contain a single patch and are `final` (in the java sense). This simplifies ES. There's work to be done (in any event) on the public library side with this; because now there will need to be a way to indicate to the library, lds-pdi, and queries, what resource status are permitted in the response to a library request. This could be via an HTTP header field that we define: `Accept_Status: bda:StatusEditing` (which can imply provisional and released - assuming these three status values to be ordered).
+
+Library searches have to filter on status values that are accepted or not anyway. 
+
+How to implement a released version and an editing/provisional version (at any time a resource has at most two versions: released and/or editing/provisional)? The released version of a resource will look like:
+
+```
+    bdg:theID {
+        bdr:theID  a  :SomeEntityType ;
+            skos:prefLabel "resource 001"@en ;
+        .
+        bda:theID  a  adm:AdminData ;
+            adm:adminAbout  bdr:theID ;
+            adm:adminForGraph  bdg:theID ;
+            adm:gitInfo     bda:GT123e4567-e89b-12d3-a456-426655440000 ;
+            adm:status      bda:StatusReleased ;
+        .
+        bda:GT123e4567-e89b-12d3-a456-426655440000  a  adm:GitInfo ;
+            adm:gitRepo     bda:GR0003 ;
+            adm:gitRevision "c794a4e0ea4634214725ccf6f3f3b74a0f8cf76a" ;
+            adm:gitPath     "42/theID" ;
+        .
+    }
+```
+Now there's a quandary about how to represent the editing/provisional version in the public dataset at the same time as the released version, otherwise we have two datasets?
+
+```
+    bdg:theID_Editing {
+        bdr:theID a :SomeEntityType ;
+        ...
+    }
+```
+Won't work since we use the union graph for library queries and triples in the graphs will become merged and there will be no distinction. Thus, it doesn't seem to me that the _two versions_ idea can be usefully implemented.
+
+On the current, tbrc.org, site if a user edits a resource and sets the status to editing/provisional then they can view in tbrc.org by a show request. These resources are never returned in search results and if the user _checkouts_ a resource and marks it as editing/provisional then that resource is no longer visible in public library search results until the resource is published as released. In practice the librarians usual do mark a released resource as editing/provisional. Rather, they just leave it marked released and publish to the master resource db.
+
+This behavior is easy to implement since the generic apply by ES is implemented in Fuseki by:
+
+```java
+    fuConn.put("bdg:theID", model) ;
+```
+where `model` is the ES result of applying the patch w.r.t. one of the graphs named in the patch. THis drops the previous version of the resource, if any, and adds the new version to the public dataset.
+
+An observation from this discussion is that stash/resume is useful in creating/editing resources according to the above use cases and the `adm:status` is relevant to managing resources in various states in a sense _above_ the level of patching. Also, the `Accept_Status: bda:StatusEditing` is an improvement over tbrc.org which provides no way for a library search to return editing/provisional results. The one thing that doesn't appear practical is having two versions in the same dataset working with library search.
+
+#### gitRevision chicken and egg:
+Having `adm:gitRevision` in Fuseki implying that we have a problem since the `adm:GitInfo` is in the `adm:AdminData` which is in the graph in the git repo but can the `adm:gitRevision` be known before committing, pushing etc? Assuming so the maybe updating git first and then Fuseki follows?
 
 ### Other user resumes
 

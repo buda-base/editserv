@@ -19,7 +19,7 @@ In this case the user wants to make some changes to an existing resource:
 
 ```
     POST http://purl.bdrc.io/sandbox/patchID?apply
-        header includes a shortname for the RDFPatchLog that will be created
+        header includes a shortname for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
 ```
 - ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply ES responds w/ 
@@ -31,7 +31,7 @@ In this case the user wants to make some changes to an existing resource:
 
 	On failure ES responds with one of:
 
-    - `400`(bad request), 
+    - `400`(bad request) - syntax error and so on, 
     - `403`(forbidden - not authorized), 
     - `408`(request timeout - waiting for the complete request)
     - `409`(conflict) - patch is in conflict with the current state of the resource (an intervening update occurred perhaps). This error would also be returned in the event that the `patchID` has already been used (shouldn't occur)
@@ -46,17 +46,17 @@ This completes this use case.
 ### Create one new resource
 The wants to add a new Work, Person, etc, with no references to any existing resources.
 
-- The user requests EC to setup up the editing UI for creating a new resource of a specified type. EC must create a new resource ID, `theID` - the current idea is that EC will generate a UUID prepended with the usual `W`, `P`, etc depending on the type.
+- The user requests EC to setup up the editing UI for creating a new resource of a specified type. EC must create a new resource ID, `theID` - the current idea is that EC will generate a UUID and prefixed with the usual `W`, `P`, etc depending on the type.
 
 - upon the first edit action by the user, EC creates a new `RDFPatch` as above, except that `H create <. . . > .` is used instead of `H graph ... .`.
 
 - the user makes edits involving adding, deleting or updating existing information, and the EC records each action in the patch. Each edit uses the same graph term as above, `http://purl.bdrc.io/graph/theID`.
 
-- once the user is finished with their updates and signals to EC that the update is completed then, asa above, EC performs a
+- once the user is finished with their updates and signals to EC that the update is completed then, as [above](#edit-one-existing-resource), EC performs:
 
 ```
     POST http://purl.bdrc.io/sandbox/patchID?apply
-        header includes a shortname for the RDFPatchLog that will be created
+        header includes a short name for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
 ```
 
@@ -64,7 +64,7 @@ The wants to add a new Work, Person, etc, with no references to any existing res
 
 ### Create a resource referring to an existing resource
 
-The user may want to create a new Work by an already existing Person and make a reference to the Person as a _Main Author_, `R0ER0019`. This use case proceeds as w/ [create one...](#create_one_new_resource) with the addition that EC must provide a method for the user to identify the Person resource that is to be referred to. This may be done w/ a _live search_ of Persons that allows the user to pick out the appropriate Person resource.
+The user may want to create a new Work by an already existing Person and make a reference to the Person as a _Main Author_, `R0ER0019`. This use case proceeds as w/ [create one...](#create-one-new-resource) with the addition that EC must provide a method for the user to identify the Person resource that is to be referred to. This may be done w/ a _live search_ of Persons that allows the user to pick out the appropriate Person resource.
 
 In this use case, there is no need for EC to get the Person resource since the user doesn't have any updates to make to the Person resource.
 
@@ -72,7 +72,7 @@ As a general comment, EC will need to mint a UUID for the `:AgentAsCreator` reso
 
 ### Create a resource and view a referred to resource
 
-This case proceeds as [above](#create_a_resource_referring_to_an_existing_resource) except that here EC will be signalled by the user that the referred to resource needs to be retrieved and a new window or tab made available to allow the user to review the referred to resource; otherwise, musch the same.
+This case proceeds as [above](#create-a-resource-referring-to-an-existing-resource) except that here EC will be signalled by the user that the referred to resource needs to be retrieved and a new window or tab made available to allow the user to review the referred to resource; otherwise, much the same.
 
 ### Create a resource and update a referred to resource
 
@@ -103,7 +103,7 @@ EC will submit the patch as in previous cases:
 
 ```
     POST http://purl.bdrc.io/sandbox/patchID?apply
-        header includes a shortname for the RDFPatchLog that will be created
+        header includes a shortname for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
 ```
 
@@ -113,7 +113,7 @@ The user proceeds to create, refer, and update some set of resources as in previ
 
 ```
     POST http://purl.bdrc.io/sandbox/patchID?stash
-        header includes a shortname for the RDFPatchLog that will be created
+        header includes a shortname for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
 ```
 when ES receives the request a new patch log is created and saved in a sandbox or staging area for future reference.

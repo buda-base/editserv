@@ -9,20 +9,20 @@ In this case the user wants to make some changes to an existing resource:
 
 - EC then makes a `GET http://purl.bdrc.io/graph/theID` request for a json-ld serialization of the resource. **This may/should involve getting a lock on resource**, `theID`, in ES - maybe in-memory. No need in Fuseki since ES is the only agent with write access to the Fuseki dataset. Via a lock, a single-writer/multiple-reader policy can be implemented, and this mitigates conflicts if EC:
 
-```
+  ```
     POST http://purl.bdrc.io/sandbox?lock=theID
         header includes user id and authorization info
         the patch payload
-```
-with responses:
+  ```
+  with responses:
 
-- `202`(accepted)
+  - `202`(accepted)
 
-and
+  and
 
-- `409`(conflict)
+  - `409`(conflict)
 
-so that if a `409` is received then EC denies the user edit access - the UI display of `theID` remains in read/view mode. In practice the library staff rarely runs into a situation where they want to edit a resource _checked out_ by another. When it does happen it requires administrator access to release the lock. It usually happens when the user deletes a locked resource from their workspace without releasing the lock via a request to the app server. This is protected against but sometimes a workspace becomes corrupted or deleted and unless the user remembers all of the resources they have checked out then there are locked resources. 
+  so that if a `409` is received then EC denies the user edit access - the UI display of `theID` remains in read/view mode. In practice the library staff rarely runs into a situation where they want to edit a resource _checked out_ by another. When it does happen it requires administrator access to release the lock. It usually happens when the user deletes a locked resource from their workspace without releasing the lock via a request to the app server. This is protected against but sometimes a workspace becomes corrupted or deleted and unless the user remembers all of the resources they have checked out then there are locked resources. 
 
 - once the resource is received then the EC populates the editing UI, making ready for the user to review and edit the resource - edits may involve adding information, deleting or updating existing information
 
@@ -32,11 +32,11 @@ so that if a `409` is received then EC denies the user edit access - the UI disp
 
 - once the user is finished with their updates and signals to EC that the update is completed then EC performs a
 
-```
+  ```
     POST http://purl.bdrc.io/sandbox/patchID?apply
         header includes a shortname for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
-```
+  ```
 - ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply, ES responds w/ 
 
     - `201`(created) or 
@@ -69,11 +69,11 @@ The user wants to add a new Work, Person, etc, with no references to any existin
 
 - once the user is finished with their updates and signals to EC that the update is completed then, as [above](#edit-one-existing-resource), EC performs:
 
-```
+  ```
     POST http://purl.bdrc.io/sandbox/patchID?apply
         header includes a short name for the RDFPatchLog that will be created; user id and authorization info
         the patch payload
-```
+  ```
 
 - ES creates an RDFPatchLog containing the patch and saves it in a patch log store, applies the patch after checking that the supplied resource ID, `theID`, is not in use with responses as above. ES will also need to add `adm:GitInfo` for the new resource.
 
@@ -156,18 +156,18 @@ This patch log will contain a single patch at this point and EC will _run_ the p
 
 - when the user starts editing in this state, EC creates a new patch linked back to the previous patch:
 
-```
+  ```
     H id <patchID_2> .
     H prev <patchID> .
-```
+  ```
 
 - the user proceeds to perform editing operations and when finished either signals that they want to stash the work up to this point, which EC implements via:
 
-```
+  ```
     PUT http://purl.bdrc.io/sandbox/patchID_2?stash
         header includes the patch log id and user info
         the patch payload
-```
+  ```
 
 EC will include the patch log id information in the `PUT` headers in a form to be defined as the API is fleshed out. `PUT` is used to signal that `patchID_2` is an update to the patchLogID mentioned in the http header.
 

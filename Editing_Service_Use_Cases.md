@@ -7,7 +7,22 @@ In this case the user wants to make some changes to an existing resource:
 
 - EC gets the resource ID of the resource to be edited from a search that the user then selects from or perhaps the user "knows" the ID and just types it in or maybe the EC provides some bookmark feature.
 
-- EC then makes a `GET http://purl.bdrc.io/graph/theID` request for a json-ld serialization of the resource.
+- EC then makes a `GET http://purl.bdrc.io/graph/theID` request for a json-ld serialization of the resource. **This may/should involve getting a lock on resource**, `theID`, in ES - maybe in-memory. No need in Fuseki since ES is the only agent with write access to the Fuseki dataset. Via a lock, a single-writer/multiple-reader policy can be implemented, and this mitigates conflicts if EC:
+
+```
+    POST http://purl.bdrc.io/sandbox?lock=theID
+        header includes user id and authorization info
+        the patch payload
+```
+with responses:
+
+- `202`(accepted)
+
+and
+
+- `409`(conflict)
+
+so that if a `409` is received then EC denies the user edit access - the UI display of `theID` remains in read/view mode. In practice the library staff rarely runs into a situation where they want to edit a resource _checked out_ by another. When it does happen it requires administrator access to release the lock. It usually happens when the user deletes a locked resource from their workspace without releasing the lock via a request to the app server. This is protected against but sometimes a workspace becomes corrupted or deleted and unless the user remembers all of the resources they have checked out then there are locked resources. 
 
 - once the resource is received then the EC populates the editing UI, making ready for the user to review and edit the resource - edits may involve adding information, deleting or updating existing information
 
@@ -32,8 +47,8 @@ In this case the user wants to make some changes to an existing resource:
 	On failure ES responds with one of:
 
     - `400`(bad request) - syntax error and so on, 
-    - `403`(forbidden - not authorized), 
-    - `408`(request timeout - waiting for the complete request)
+    - `403`(forbidden) - not authorized, 
+    - `408`(request timeout) - timedout waiting for the complete request
     - `409`(conflict) - patch is in conflict with the current state of the resource (an intervening update occurred perhaps). This error would also be returned in the event that the `patchID` has already been used (shouldn't occur)
     - `410`(gone) - the resource being updated by the patch is no longer available
     - `500`(internal server error) - unexpected internal failure
@@ -76,7 +91,7 @@ This case proceeds as [above](#create-a-resource-referring-to-an-existing-resour
 
 ### Create a resource and update a referred to resource
 
-This proceeds as just discussed except that the user signals EC that they are updating the referred to resource by taking a UI action that adds, deletes, or updates information about the referred to resource via the tab or window displaying the referred to resource.
+This proceeds as just discussed except that the user signals EC that they are updating the referred to resource by taking a UI action that adds, deletes, or updates information about the referred to resource via the tab or window displaying the referred to resource (**request a lock at this point**).
 
 In this instance EC will add `H graph <http://purl.bdrc.io/graph/referredID> .` to the patch and the various edit actions w.r.t. the _referred to_ resource will include this graph id, like:
 

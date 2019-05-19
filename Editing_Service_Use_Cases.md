@@ -227,7 +227,7 @@ Now there's a quandary about how to represent the editing/provisional version in
 ```
 Won't work since we use the union graph for library queries and triples in the graphs will become merged and there will be no distinction. Thus, it doesn't seem to me that the _two versions_ idea can be usefully implemented.
 
-On the current, tbrc.org, site if a user edits a resource and sets the status to editing/provisional then they can view in tbrc.org by a show request. These resources are never returned in search results and if the user _checkouts_ a resource and marks it as editing/provisional then that resource is no longer visible in public library search results until the resource is published as released. In practice the librarians usual do mark a released resource as editing/provisional. Rather, they just leave it marked released and publish to the master resource db.
+On the current, tbrc.org, site if a user edits a resource and sets the status to editing/provisional then they can view in tbrc.org by a show request. These resources are never returned in search results and if the user _checkouts_ a resource and marks it as editing/provisional then that resource is no longer visible in public library search results until the resource is published as released. In practice the librarians usually do **not** mark a released resource as editing/provisional. Rather, they just leave it marked released and publish to the master resource db.
 
 This behavior is easy to implement since the generic apply by ES is implemented in Fuseki by:
 

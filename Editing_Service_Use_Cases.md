@@ -7,12 +7,16 @@ In this case the user wants to make some changes to an existing resource:
 
 - EC gets the resource ID of the resource to be edited from a search that the user then selects from or perhaps the user "knows" the ID and just types it in or maybe the EC provides some bookmark feature.
 
-- EC then makes a `GET http://purl.bdrc.io/graph/theID` request for a json-ld serialization of the resource. **This may/should involve getting a lock on resource**, `theID`, in ES - maybe in-memory. No need in Fuseki since ES is the only agent with write access to the Fuseki dataset. Via a lock, a single-writer/multiple-reader policy can be implemented, and this mitigates conflicts if EC:
+- EC then makes a `GET http://purl.bdrc.io/graph/theID` request for a json-ld serialization of the resource. 
+- once the resource is received then the EC populates the editing UI, making ready for the user to review and edit the resource - edits may involve adding information, deleting or updating existing information
+
+- upon the first edit action by the user, EC creates a new `RDFPatch` to record the user's changes. This includes creating an `H id <patchID> .` for the patch, an `H graph <http://purl.bdrc.io/graph/theID> .` (or some other encoding), and `H message "..." .` that describes the work to be done in the patch (EC solicits this from the user.)
+
+  **This may/should involve getting a lock on resource**, `theID`, in ES - maybe in-memory. No need in Fuseki since ES is the only agent with write access to the Fuseki dataset. Via a lock, a single-writer/multiple-reader policy can be implemented, and this mitigates conflicts if EC:
 
   ```
     POST http://purl.bdrc.io/sandbox?lock=theID
         header includes user id and authorization info
-        the patch payload
   ```
   with responses:
 
@@ -23,10 +27,6 @@ In this case the user wants to make some changes to an existing resource:
   - `409`(conflict)
 
   so that if a `409` is received then EC denies the user edit access - the UI display of `theID` remains in read/view mode. In practice the library staff rarely runs into a situation where they want to edit a resource _checked out_ by another. When it does happen it requires administrator access to release the lock. It usually happens when the user deletes a locked resource from their workspace without releasing the lock via a request to the app server. This is protected against but sometimes a workspace becomes corrupted or deleted and unless the user remembers all of the resources they have checked out then there are locked resources. 
-
-- once the resource is received then the EC populates the editing UI, making ready for the user to review and edit the resource - edits may involve adding information, deleting or updating existing information
-
-- upon the first edit action by the user, EC creates a new `RDFPatch` to record the user's changes. This includes creating an `H id <patchID> .` for the patch, an `H graph <http://purl.bdrc.io/graph/theID> .` (or some other encoding), and `H message "..." .` that describes the work to be done in the patch (EC solicits this from the user.)
 
 - the user makes edits involving adding, deleting or updating existing information, and the EC records each action as a sequence of RDFPatch `A` and `D` steps. Each `A` or `D` consists of a quad of `subject property object graph`. In this case the `graph` is that for the resource being edited, `http://purl.bdrc.io/graph/theID`.
 

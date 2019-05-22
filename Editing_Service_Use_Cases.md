@@ -1,4 +1,4 @@
-## Editing Services Use Cases
+## Editing Service Use Cases
 
 This document is part of defining the editing API between the Editing Client (_EC_) and the Editing Service (_ES_). We work through some uses cases starting simple and then getting more elaborate. There are several other APIs that are applicable to interactions with the ES or other services including an:
 
@@ -60,7 +60,7 @@ In this case the user wants to make some changes to an existing resource:
         header includes the task ShortName; user id and authorization info
         the task/session/patch payload
   ```
-- ES receives the task and saves it in a local store, runs the task - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply, ES responds w/ 
+- ES receives the task and then ES saves the task data in a storage area local to ES, and then ES runs the task - which consists of updating the dataset on Fuseki and the appropriate local git repo and perhaps pushes to the public repo. Upon a successful apply, ES responds w/ 
 
     - `202`(accepted)
     
@@ -208,10 +208,19 @@ This task contains edits up to this point and EC will _play_ the task by
   ```
   to which ES applies and responds as previously discussed.
 
+  It is also possible for the user to request ES to _drop_ a previously saved task:
+
+  ```
+    PUT http://purl.bdrc.io/tasks/taskID?drop
+        header includes the task and user info
+        the task payload
+  ```
+  In this case, ES marks the `taskID` as `dropped` and releases any locks held by the task on behalf of the user. Dropping a task is requested when the user has checked out some resources (hence locking these resources) and after reviewing/editing (some of)them deciding to not make any changes, and then simply signals EC to request the task to be dropped.
+
 #### how does the task oriented API work with adm:status?
 It's worth considering the `adm:Status` values: `bda:StatusEditing`, `bda:StatusProvisional`, `bda:StatusReleased`. How might these fit in? A user may want to indicate that they are `bda:StatusEditing` several resources. 
 
-Permissions may allow staff and such to see these resources in search results where public users will not. This will aide the editing users to be able to review the effects of edits visible in the public library context w/o making the resources visible to the public.
+Permissions may allow staff and such to see these resources in search results where public users will not. This will aid the editing users to be able to review the effects of edits visible in the public library context w/o making the resources visible to the public.
 
 The `bda:StatusProvisional` may indicate that the editor of the resource has finished editing and is ready to have the resource(s) reviewed for release on the public library site. Then resources are changed to `bda:StatusReleased`.
 

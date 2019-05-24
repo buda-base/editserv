@@ -31,9 +31,8 @@ import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class PatchService implements BUDAEditService {
+public class TaskService implements BUDAEditService {
 
-    String pragma;
     String payload;
     String userId;
     String id;
@@ -41,39 +40,35 @@ public class PatchService implements BUDAEditService {
     int status;
     EditPatchHeaders ph;
 
-    public PatchService(HttpServletRequest req, String userId) throws PatchServiceException {
-        this.pragma = req.getHeader("Pragma");
+    public TaskService(HttpServletRequest req, String userId) throws PatchServiceException {
         this.payload = req.getParameter("Payload");
         this.userId = userId;
         String time = Long.toString(System.currentTimeMillis());
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
         this.id = ph.getPatchId();
         this.name = "PATCH_SVC_" + time;
-        savePatch();
     }
 
-    public PatchService(String pragma, String payload, String userId) throws PatchServiceException {
-        this.pragma = pragma;
+    public TaskService(String payload, String userId) throws PatchServiceException {
         this.payload = payload;
         this.userId = userId;
         String time = Long.toString(System.currentTimeMillis());
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
         this.id = ph.getPatchId();
         this.name = "PATCH_SVC_" + time;
-        savePatch();
     }
 
-    private void savePatch() throws PatchServiceException {
+    public void savePatch(String action) throws PatchServiceException {
         try {
             File f = new File(EditConfig.getProperty("patchesDir") + userId);
             if (!f.exists()) {
                 f.mkdir();
             }
             String filename = "";
-            if (pragma.equals(EditConstants.PTC_FINAL)) {
+            if (action.equals(EditConstants.PTC_FINAL)) {
                 filename = EditConfig.getProperty("patchesDir") + userId + "/" + id + EditConstants.PTC_EXT;
             }
-            if (pragma.equals(EditConstants.PTC_STASH)) {
+            if (action.equals(EditConstants.PTC_STASH)) {
                 filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + id + EditConstants.PTC_EXT;
             }
             System.out.println("FILENAME >> " + filename);
@@ -88,7 +83,6 @@ public class PatchService implements BUDAEditService {
     public static void deletePatch(String patchId, String userId, boolean stashed) throws IOException {
         String filename = "";
         if (!stashed) {
-
             filename = EditConfig.getProperty("patchesDir") + userId + "/" + patchId + EditConstants.PTC_EXT;
         } else {
             filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + patchId + EditConstants.PTC_EXT;
@@ -96,8 +90,19 @@ public class PatchService implements BUDAEditService {
         new File(filename).delete();
     }
 
-    public String getPragma() {
-        return pragma;
+    public static File getPatch(String patchId, String userId, boolean stashed) {
+        String filename = "";
+        if (!stashed) {
+            filename = EditConfig.getProperty("patchesDir") + userId + "/" + patchId + EditConstants.PTC_EXT;
+        } else {
+            filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + patchId + EditConstants.PTC_EXT;
+        }
+        File f = new File(filename);
+        if (!f.exists()) {
+            return null;
+        } else {
+            return f;
+        }
     }
 
     public String getPayload() {
@@ -112,7 +117,6 @@ public class PatchService implements BUDAEditService {
 
     @Override
     public void run() throws ServiceException {
-
         try {
             System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
             InputStream patch = new ByteArrayInputStream(payload.getBytes());
@@ -137,6 +141,13 @@ public class PatchService implements BUDAEditService {
                     throw new PatchServiceException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
                 }
             }
+            // Listing the graphs to create
+            List<String> create = ph.getCreateUris();
+            // add empty named graphs to the dataset
+            for (String c : create) {
+                Node graphUri = NodeFactory.createURI(c);
+                dsg.addGraph(graphUri, Graph.emptyGraph);
+            }
 
             // Applying changes
             RDFChangesApply apply = new RDFChangesApply(dsg);
@@ -152,6 +163,16 @@ public class PatchService implements BUDAEditService {
                     throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
                 }
             }
+            // Adding created and populated graphs to the main fuseki dataset
+            for (String c : create) {
+                Node graphUri = NodeFactory.createURI(c);
+                Graph g = dsg.getGraph(graphUri);
+                Graph git = addGitInfo(g);
+                Model m = ModelFactory.createModelForGraph(g);
+                putModel(fusConn, c, m);
+                putGitModel(fusConn, git);
+
+            }
             fusConn.close();
             patch.close();
         } catch (Exception e) {
@@ -164,6 +185,20 @@ public class PatchService implements BUDAEditService {
         fusConn.put(graph, m);
         fusConn.commit();
         fusConn.end();
+    }
+
+    private void putGitModel(RDFConnectionFuseki fusConn, Graph g) throws Exception {
+        /*
+         * fusConn.begin(ReadWrite.WRITE); fusConn.put(graph, m); fusConn.commit();
+         * fusConn.end();
+         */
+    }
+
+    private Graph addGitInfo(Graph g) {
+        Graph gr = null;
+        // do whatever is necessary to create git info
+        // add gitInfo triples to gitInfo graph
+        return gr;
     }
 
     public String getUserId() {
@@ -187,7 +222,7 @@ public class PatchService implements BUDAEditService {
 
     @Override
     public String toString() {
-        return "PatchService [ pragma=" + pragma + ", payload=" + payload + ", id=" + id + "]";
+        return "PatchService [ payload=" + payload + ", id=" + id + "]";
     }
 
     @Override

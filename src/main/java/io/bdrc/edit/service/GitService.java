@@ -24,12 +24,12 @@ public class GitService implements BUDAEditService {
     String id;
     String userId;
     String resType;
-    PatchService data;
+    TaskService data;
 
     static Repository localRepo;
     static String remoteURL;
 
-    public GitService(String id, String resType, PatchService data) {
+    public GitService(String id, String resType, TaskService data) {
         this.id = "GIT_" + id;
         this.resType = resType;
         this.data = data;

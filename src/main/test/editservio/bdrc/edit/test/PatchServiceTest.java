@@ -9,7 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.service.PatchService;
+import io.bdrc.edit.service.TaskService;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class PatchServiceTest {
@@ -26,17 +26,17 @@ public class PatchServiceTest {
         for (String l : doc) {
             s = s + System.lineSeparator() + l;
         }
-        PatchService ps = new PatchService("final", s, "testUser");
+        TaskService ps = new TaskService(s, "testUser");
         ps.run();
-        PatchService.deletePatch(ps.getId(), ps.getUserId(), false);
+        TaskService.deletePatch(ps.getId(), ps.getUserId(), false);
         doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("multiUpdate.patch"), StandardCharsets.UTF_8);
         s = "";
         for (String l : doc) {
             s = s + System.lineSeparator() + l;
         }
-        ps = new PatchService("final", s, "testUser");
+        ps = new TaskService(s, "testUser");
         ps.run();
-        PatchService.deletePatch(ps.getId(), ps.getUserId(), false);
+        TaskService.deletePatch(ps.getId(), ps.getUserId(), false);
     }
 
 }

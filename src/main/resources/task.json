@@ -1,0 +1,20 @@
+  {
+    "id": "<uuid:0686c69d-8f89-4496-acb5-744f0157a8db>",
+    "shortName": "Namthar Collection",
+    "message":"about the task",
+    "user":"marc", 
+    "patch":"here is the latest version of the content of the patch ",    
+    
+    "sessions": [
+      {
+        "date": 125415221452,
+        "gitVersion": "commitId1"
+      },
+      {
+        "date": 125415221899,
+        "gitVersion": "commitId2"
+      }
+    ]
+  } 
+
+

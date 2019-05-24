@@ -107,7 +107,13 @@
         <groupId>org.seaborne.rdf-delta</groupId>
         <artifactId>rdf-patch</artifactId>
         <version>0.7.0</version>
-    </dependency>    
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.seaborne.rdf-delta/rdf-delta-server-local -->
+	<dependency>
+	    <groupId>org.seaborne.rdf-delta</groupId>
+	    <artifactId>rdf-delta-server-local</artifactId>
+	    <version>0.7.0</version>
+	</dependency>    
   </dependencies>
   <build>
     <finalName>editserv</finalName>

@@ -10,6 +10,7 @@ import org.seaborne.patch.PatchHeader;
 public class EditPatchHeaders {
 
     public static final String KEY_GRAPH = "graph";
+    public static final String KEY_CREATE = "create";
     public static final String KEY_ID = "id";
 
     private PatchHeader ph;
@@ -22,6 +23,15 @@ public class EditPatchHeaders {
     public List<String> getGraphUris() {
         List<String> gph = new ArrayList<>();
         Node graphs = ph.get(KEY_GRAPH);
+        if (graphs != null) {
+            gph = Arrays.asList(graphs.getLiteral().toString().split(","));
+        }
+        return gph;
+    }
+
+    public List<String> getCreateUris() {
+        List<String> gph = new ArrayList<>();
+        Node graphs = ph.get(KEY_CREATE);
         if (graphs != null) {
             gph = Arrays.asList(graphs.getLiteral().toString().split(","));
         }

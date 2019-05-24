@@ -1,0 +1,53 @@
+openapi: 3.0.0
+info:
+  title: BUDA Editing API
+  version: 0.0.1
+servers:
+- url: https://edit.bdrc.io/
+paths:
+  /tasks:
+    get:
+      description: get the list of the tasks associated to the user
+      responses:
+        '200':
+          description: list of tasks
+          content:
+            application/json:
+              schema:
+                description: task information
+                required:
+                  - id
+                  - description
+                  - userId
+                properties:
+                  id:
+                    description: this unique identifier allows management of the task
+                    type: string
+                    example: 2531329f-fb09-4ef7-887e-84e648214436
+                  description:
+                    description: description of the task
+                    type: string
+                    example: This is a task by someone
+                  userId:
+                    description: identifier of the user
+                    type: string
+                    format: url
+                    example: http://purl.bdrc.io/user/U0001
+    post:
+      description: create a new task
+      parameters:
+        - in: header
+          name: Slug
+          schema:
+            type: string
+            format: uuid
+          required: false
+      responses:
+        '200':
+          description: task successfully created
+          headers:
+            Location:
+              schema:
+                type: string
+                format: url
+              description: URL of the newly created task

@@ -102,19 +102,20 @@ public class Task {
     }
 
     public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException, NoFilepatternException, GitAPIException {
-
         EditConfig.init();
         // Using constructor
         Task t = new Task("saveMsg", "message", "id", "shortName", "payload", "user");
         System.out.println(t);
         // using mapper and create method
         ObjectMapper mapper = new ObjectMapper();
+        // mapper.writeValue(System.out, t);
         String test = "  {\n" + "    \"id\": \"XXXXXX\",\n" + "    \"shortName\": \"Namthar Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
                 + "    \"patch\":\"here is the latest version of the content of the patch again\" \n" + "    \n" + "  } ";
         Task tk = Task.create(test);
         System.out.println(tk);
         System.out.println("PATCH text >" + tk.getPatch());
         GitTaskService.saveTask(tk);
+        System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
     }
 
 }

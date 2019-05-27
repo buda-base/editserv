@@ -1,13 +1,16 @@
 package io.bdrc.edit.patch;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoFilepatternException;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.bdrc.edit.EditConfig;
 
 public class Task {
 
@@ -16,21 +19,29 @@ public class Task {
     public String shortName;
     public String patch;
     public String user;
-    public List<Session> sessions;
+    public String saveMsg;
 
     private Task() {
         super();
         // TODO Auto-generated constructor stub
     }
 
-    public Task(String message, String id, String shortName, String patch, String user, List<Session> sessions) {
+    public Task(String saveMsg, String message, String id, String shortName, String patch, String user) {
         super();
         this.message = message;
         this.id = id;
         this.shortName = shortName;
         this.patch = patch;
-        this.sessions = sessions;
         this.user = user;
+        this.saveMsg = saveMsg;
+    }
+
+    public String getSaveMsg() {
+        return saveMsg;
+    }
+
+    public void setSaveMsg(String saveMsg) {
+        this.saveMsg = saveMsg;
     }
 
     public static Task create(String json) throws JsonParseException, JsonMappingException, IOException {
@@ -52,14 +63,6 @@ public class Task {
 
     public void setPatch(String patch) {
         this.patch = patch;
-    }
-
-    public List<Session> getSessions() {
-        return sessions;
-    }
-
-    public void setSessions(List<Session> sessions) {
-        this.sessions = sessions;
     }
 
     public String getMessage() {
@@ -88,26 +91,30 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task [message=" + message + ", id=" + id + ", shortName=" + shortName + ", patch=" + patch + ", user=" + user + ", sessions=" + sessions + "]";
+        return "Task [message=" + message + ", id=" + id + ", shortName=" + shortName + ", patch=" + patch + ", user=" + user + ", saveMsg=" + saveMsg + "]";
     }
 
-    public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
-        // Using constructor
-        Session s = new Session(1111111, "vferd");
-        Session s1 = new Session(5555551, "vcftgeza");
-        ArrayList<Session> sessions = new ArrayList<>();
-        sessions.add(s);
-        sessions.add(s1);
-        Task t = new Task("message", "id", "shortName", "payload", "user", sessions);
+    public String getPatchString(Session s) {
+        // TO BE IMPLEMENTED
+        // gets the content of patch from git repo given the session gitVersion
+        return id;
 
+    }
+
+    public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException, NoFilepatternException, GitAPIException {
+
+        EditConfig.init();
+        // Using constructor
+        Task t = new Task("saveMsg", "message", "id", "shortName", "payload", "user");
+        System.out.println(t);
         // using mapper and create method
         ObjectMapper mapper = new ObjectMapper();
-        String test = "{\n" + "    \"id\": \"<uuid:0686c69d-8f89-4496-acb5-744f0157a8db>\",\n" + "    \"shortName\": \"Namthar Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
-                + "    \"patch\":\"the newest patch version\",    \n" + "    \n" + "    \"sessions\": [\n" + "      {\n" + "        \"date\": 125415221452,\n" + "        \"gitVersion\": \"commitId1\"\n" + "      },\n" + "      {\n"
-                + "        \"date\": 125415221899,\n" + "        \"gitVersion\": \"commitId2\"\n" + "      }\n" + "    ]\n" + "  } ";
+        String test = "  {\n" + "    \"id\": \"XXXXXX\",\n" + "    \"shortName\": \"Namthar Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
+                + "    \"patch\":\"here is the latest version of the content of the patch again\" \n" + "    \n" + "  } ";
         Task tk = Task.create(test);
         System.out.println(tk);
-        mapper.writeValue(System.out, t);
+        System.out.println("PATCH text >" + tk.getPatch());
+        GitTaskService.saveTask(tk);
     }
 
 }

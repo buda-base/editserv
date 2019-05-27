@@ -1,16 +1,19 @@
 package io.bdrc.edit.patch;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Session implements Serializable {
 
-    public long date;
+    public Date date;
     public String gitVersion;
+    public String taskVersion;
 
-    public Session(long date, String gitVersion) {
+    public Session(Date date, String gitVersion, String taskVersion) {
         super();
         this.date = date;
         this.gitVersion = gitVersion;
+        this.taskVersion = taskVersion;
     }
 
     private Session() {
@@ -18,11 +21,19 @@ public class Session implements Serializable {
         // TODO Auto-generated constructor stub
     }
 
-    public long getDate() {
+    public String getTaskVersion() {
+        return taskVersion;
+    }
+
+    public void setTaskVersion(String taskVersion) {
+        this.taskVersion = taskVersion;
+    }
+
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(long date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
@@ -36,7 +47,7 @@ public class Session implements Serializable {
 
     @Override
     public String toString() {
-        return "Session [date=" + date + ", gitVersion=" + gitVersion + "]";
+        return "Session [date=" + date + ", gitVersion=" + gitVersion + ", taskVersion=" + taskVersion + "]";
     }
 
 }

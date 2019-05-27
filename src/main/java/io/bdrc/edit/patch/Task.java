@@ -110,12 +110,13 @@ public class Task {
         ObjectMapper mapper = new ObjectMapper();
         // mapper.writeValue(System.out, t);
         String test = "  {\n" + "    \"id\": \"XXXXXX\",\n" + "    \"shortName\": \"Namthar Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
-                + "    \"patch\":\"here is the latest version of the content of the patch again\" \n" + "    \n" + "  } ";
+                + "    \"patch\":\"here is the latest version of the content of the patch 3\" \n" + "    \n" + "  } ";
         Task tk = Task.create(test);
         System.out.println(tk);
         System.out.println("PATCH text >" + tk.getPatch());
         GitTaskService.saveTask(tk);
         System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
+        System.out.println("SESSIONS >" + GitTaskService.getAllSessions("XXXXXX", "marc"));
     }
 
 }

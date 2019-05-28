@@ -1,21 +1,23 @@
 package io.bdrc.edit;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import io.bdrc.auth.Access;
-import io.bdrc.auth.model.User;
-import io.bdrc.edit.service.TaskService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.bdrc.edit.patch.GitTaskService;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
@@ -25,28 +27,60 @@ import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 public class EditController {
 
     public String getUser(HttpServletRequest req) {
-        User prof = ((Access) req.getAttribute("access")).getUser();
-        if (prof != null) {
-            return prof.getName();
-        } else {
-            return "TestUser";
-        }
+        // User prof = ((Access) req.getAttribute("access")).getUser();
+        // if (prof != null) {
+        // return prof.getName();
+        // } else {
+        return "marc";
+        // return null;
+        // }
     }
 
     /**
-     * Store a user ongoing task
+     * Returns a task for a given user
      * 
-     * @throws IOException
-     * @throws ServiceSequenceException
      */
-    @RequestMapping(value = "/tasks/{taskId}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, method = RequestMethod.PUT)
-    public ResponseEntity<String> putTask(HttpServletRequest req, HttpServletResponse response) throws IOException, ServiceException, ServiceSequenceException {
+    @RequestMapping(value = "/tasks/{taskId}", produces = "application/json", method = RequestMethod.GET)
+    public ResponseEntity<String> getTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
+        String res = null;
+        try {
+            String userId = getUser(req);
+            if (userId == null) {
+                throw new ServiceException("Cannot get the tasks : user is null");
+            }
+            res = GitTaskService.getTaskAsJson(taskId, userId);
+        } catch (ServiceException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    /**
+     * Returns a task for a given user
+     * 
+     * @throws ServiceException
+     * 
+     */
+    @RequestMapping(value = "/tasks", produces = "application/json", method = RequestMethod.GET)
+    public ResponseEntity<String> getAllOngoingTask(HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
-        TaskService ps = new TaskService(req, userId);
-        // For testing only
-        ps.savePatch(EditConstants.PTC_FINAL);
-        System.out.println("Patch Service >>" + ps);
-        return new ResponseEntity<>(ps.getId(), HttpStatus.OK);
+        String res = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ArrayList<String> tsk = GitTaskService.getAllOngoingTaskId(userId);
+            HashMap<String, String> tasks = new HashMap<>();
+            ArrayList<JsonNode> test = new ArrayList<>();
+            for (String s : tsk) {
+                tasks.put(s, GitTaskService.getTaskAsJson(s, userId));
+                test.add(mapper.readTree(GitTaskService.getTaskAsJson(s, userId)));
+            }
+            res = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(test);
+        } catch (IOException | ServiceException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
     /**
@@ -78,6 +112,10 @@ public class EditController {
     public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {
         String status = BUDATransactionManager.getTxnStatus(id);
         return new ResponseEntity<>(status, HttpStatus.OK);
+    }
+
+    public String getJsonErrorString(Exception e) {
+        return "{ \"exception\": \"" + e.getClass().getCanonicalName() + "\",\n" + "    \"error\": \"" + e.getMessage() + "\"}";
     }
 
 }

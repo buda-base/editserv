@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class GitTaskService {
 
@@ -87,7 +88,7 @@ public class GitTaskService {
         return Task.create(contentBuilder.toString());
     }
 
-    public static ArrayList<String> getAllOngoingTaskId(String user) throws JsonParseException, JsonMappingException, IOException {
+    public static ArrayList<String> getAllOngoingTaskId(String user) throws IOException {
         Stream<Path> walk = Files.walk(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/"));
         List<String> result = walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
         ArrayList<String> files = new ArrayList<>();
@@ -99,8 +100,11 @@ public class GitTaskService {
         return files;
     }
 
-    public static String getTaskAsJson(String taskId, String user) throws JsonParseException, JsonMappingException, IOException {
+    public static String getTaskAsJson(String taskId, String user) throws ServiceException {
         StringBuilder contentBuilder = new StringBuilder();
+        if (!new File(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch").exists()) {
+            throw new ServiceException("The task '" + taskId + "' was not found for user '" + user);
+        }
         try (Stream<String> stream = Files.lines(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch"), StandardCharsets.UTF_8)) {
             stream.forEach(s -> contentBuilder.append(s).append("\n"));
         } catch (IOException e) {

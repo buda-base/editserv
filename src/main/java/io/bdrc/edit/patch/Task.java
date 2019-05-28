@@ -1,6 +1,7 @@
 package io.bdrc.edit.patch;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
@@ -94,10 +95,9 @@ public class Task {
         return "Task [message=" + message + ", id=" + id + ", shortName=" + shortName + ", patch=" + patch + ", user=" + user + ", saveMsg=" + saveMsg + "]";
     }
 
-    public String getPatchString(Session s) {
-        // TO BE IMPLEMENTED
-        // gets the content of patch from git repo given the session gitVersion
-        return id;
+    public static String getPatchString(Session s) throws JsonParseException, JsonMappingException, IOException {
+        Task t = Task.create(s.getTaskVersion());
+        return t.getPatch();
 
     }
 
@@ -109,14 +109,19 @@ public class Task {
         // using mapper and create method
         ObjectMapper mapper = new ObjectMapper();
         // mapper.writeValue(System.out, t);
-        String test = "  {\n" + "    \"id\": \"XXXXXX\",\n" + "    \"shortName\": \"Namthar Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
-                + "    \"patch\":\"here is the latest version of the content of the patch 3\" \n" + "    \n" + "  } ";
+        String test = "  {\n" + "    \"id\": \"YYYYYY\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
+                + "    \"patch\":\"here is the latest version of the content of the patch YYY\" \n" + "    \n" + "  } ";
         Task tk = Task.create(test);
         System.out.println(tk);
         System.out.println("PATCH text >" + tk.getPatch());
         GitTaskService.saveTask(tk);
         System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
-        System.out.println("SESSIONS >" + GitTaskService.getAllSessions("XXXXXX", "marc"));
+        List<Session> sess = GitTaskService.getAllSessions("XXXXXX", "marc");
+        System.out.println("SESSIONS >" + sess);
+        for (Session s : sess) {
+            System.out.println(Task.getPatchString(s));
+        }
+        System.out.println("FILES >" + GitTaskService.getAllOngoingTaskId("marc"));
     }
 
 }

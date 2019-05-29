@@ -124,7 +124,7 @@ paths:
     post:
       description: apply an existing task
       requestBody:
-        description: Optional description in *Markdown*
+        description: the final version of a task
         required: true
         content:
           application/json:
@@ -148,7 +148,7 @@ paths:
                   description: reminder message if wanted
                   type: string
                 patch:
-                  description: the patch being buit corresponding to the task
+                  description: the patch to be applied,corresponding to the task
                   type: string
                 saveMsg:
                   description: similar to a commit message
@@ -156,7 +156,7 @@ paths:
                   example: finished first volume titles
       responses:
         '200':
-          description: task successfully created
+          description: task successfully submitted and queued
           headers:
             Location:
               schema:

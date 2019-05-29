@@ -97,33 +97,63 @@ paths:
             application/json:
               schema:
                 description: task information
-                required:
-                  - id
-                  - description
-                  - userId
                 properties:
                   id:
-                    description: this unique identifier allows management of the task
+                    description: the unique identifier of the task
                     type: string
                     example: 2531329f-fb09-4ef7-887e-84e648214436
-                  description:
-                    description: description of the task
-                    type: string
-                    example: This is a task by someone
-                  userId:
+                  user:
                     description: identifier of the user
                     type: string
                     format: url
                     example: http://purl.bdrc.io/user/U0001
+                  shortName:
+                    description: a short name for the task
+                    type: string
+                    example: mdzöd bdun chinese titles
+                  message:
+                    description: reminder message if wanted
+                    type: string
+                  patch:
+                    description: the patch being buit corresponding to the task
+                    type: string
+                  saveMsg:
+                    description: similar to a commit message
+                    type: string
+                    example: finished first volume titles
     post:
-      description: create a new task
-      parameters:
-        - in: header
-          name: Slug
-          schema:
-            type: string
-            format: uuid
-          required: false
+      description: apply an existing task
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              description: task information
+              properties:
+                id:
+                  description: the unique identifier allows management of the task
+                  type: string
+                  example: 2531329f-fb09-4ef7-887e-84e648214436
+                user:
+                  description: identifier of the user
+                  type: string
+                  format: url
+                  example: http://purl.bdrc.io/user/U0001
+                shortName:
+                  description: a short name for the task
+                  type: string
+                  example: mdzöd bdun chinese titles
+                message:
+                  description: reminder message if wanted
+                  type: string
+                patch:
+                  description: the patch being buit corresponding to the task
+                  type: string
+                saveMsg:
+                  description: similar to a commit message
+                  type: string
+                  example: finished first volume titles
       responses:
         '200':
           description: task successfully created
@@ -132,4 +162,4 @@ paths:
               schema:
                 type: string
                 format: url
-              description: URL of the newly created task
+              description: URL of the queued Job created for this task

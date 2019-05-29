@@ -12,6 +12,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.BeforeClass;
@@ -27,22 +29,18 @@ public class BasicTest {
     }
 
     @Test
-    public void sendRequest() throws ClientProtocolException, IOException {
+    public void sendPutTaskIdRequest() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPost post = new HttpPost("http://localhost:8080/graph");
-        post.setHeader("Slug", "P1524");
-        post.setHeader("Pragma", "Final");
-        List<NameValuePair> params = new ArrayList<NameValuePair>();
-        List<String> doc = IOUtils.readLines(BasicTest.class.getClassLoader().getResourceAsStream("testPS.patch"), StandardCharsets.UTF_8);
-        String s = "";
-        for (String l : doc) {
-            s = s + System.lineSeparator() + l;
-        }
-        params.add(new BasicNameValuePair("Payload", s));
-        post.setEntity(new UrlEncodedFormEntity(params));
-        HttpResponse response = client.execute(post);
+        HttpPut put = new HttpPut("http://localhost:8080/tasks");
+        String json = "  {\n" + "    \"id\": \"AAAAAA\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
+                + "    \"patch\":\"here is the latest version of the content of the patch AAAA\" \n" + "    \n" + "  } ";
+        StringEntity entity = new StringEntity(json);
+        put.setEntity(entity);
+        put.setHeader("Accept", "application/json");
+        put.setHeader("Content-type", "application/json");
+        HttpResponse response = client.execute(put);
         System.out.println(response);
-        assert (response.getStatusLine().getStatusCode() == 202);
+        assert (response.getStatusLine().getStatusCode() == 204);
     }
 
     public static void main(String[] args) throws ClientProtocolException, IOException {

@@ -7,10 +7,13 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -18,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.patch.GitTaskService;
+import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
@@ -57,7 +61,7 @@ public class EditController {
     }
 
     /**
-     * Returns a task for a given user
+     * Returns all tasks of a given user
      * 
      * @throws ServiceException
      * 
@@ -81,6 +85,34 @@ public class EditController {
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    /**
+     * Store a user ongoing task
+     * 
+     * @throws IOException
+     * @throws ServiceSequenceException
+     */
+
+    @RequestMapping(value = "/tasks", consumes = "application/json", produces = "application/json", method = RequestMethod.PUT)
+    public ResponseEntity<String> putTask(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) {
+        String userId = getUser(req);
+        Task t = null;
+        try {
+            if (userId == null) {
+                throw new ServiceException("Cannot save the task : user is null");
+            }
+            t = Task.create(jsonTask);
+            GitTaskService.saveTask(t);
+
+            // res = GitTaskService.getTaskAsJson(taskId, userId);
+        } catch (ServiceException | IOException | GitAPIException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
+        }
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Location", "tasks/" + t.getId());
+        return new ResponseEntity<>(responseHeaders, HttpStatus.NO_CONTENT);
     }
 
     /**

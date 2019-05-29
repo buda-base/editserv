@@ -15,7 +15,7 @@ paths:
             type: string
             description: The task ID
             example: 2531329f-fb09-4ef7-887e-84e648214436
-      description: get the list of the tasks associated to the user
+      description: get the requested task given its id
       responses:
         '200':
           description: a task
@@ -24,19 +24,22 @@ paths:
               schema:
                 description: task information (to be defined)
                 required:
-                  - id
-                  - description
+                  - patch
+                  - name
                   - userId
                   - taskId
                 properties:
-                  id:
+                  taskId:
                     description: this unique identifier allows management of the task
                     type: string
                     example: 2531329f-fb09-4ef7-887e-84e648214436
-                  description:
-                    description: description of the task
+                  name:
+                    description: short description of the task
                     type: string
                     example: This is a task by someone
+                  patch:
+                    description: the current patch associated with this task
+                    type: string
                   userId:
                     description: identifier of the user
                     type: string

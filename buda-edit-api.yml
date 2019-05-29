@@ -46,6 +46,48 @@ paths:
                     format: url
                     example: http://purl.bdrc.io/user/U0001
   /tasks:
+    put:    
+      description: save or add an ongoing task of the current user for later edit
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              description: task information
+              properties:
+                id:
+                  description: the unique identifier allows management of the task
+                  type: string
+                  example: 2531329f-fb09-4ef7-887e-84e648214436
+                user:
+                  description: identifier of the user
+                  type: string
+                  format: url
+                  example: http://purl.bdrc.io/user/U0001
+                shortName:
+                  description: a short name for the task
+                  type: string
+                  example: mdzöd bdun chinese titles
+                message:
+                  description: reminder message if wanted
+                  type: string
+                patch:
+                  description: the patch being buit corresponding to the task
+                  type: string
+                saveMsg:
+                  description: similar to a commit message
+                  type: string
+                  example: finished first volume titles
+      responses:
+        '204':
+          description: NO Content 
+          headers:
+            Location:
+              schema:
+                type: string
+                format: url
+              description: URL of the newly added (or updated) task
     get:
       description: get the list of the tasks associated to the user
       responses:

@@ -12,6 +12,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -135,6 +137,14 @@ public class EditController {
 
     public String getJsonErrorString(Exception e) {
         return "{ \"exception\": \"" + e.getClass().getCanonicalName() + "\",\n" + "    \"error\": \"" + e.getMessage() + "\"}";
+    }
+
+    // JSP STUFFS START HERE
+
+    @GetMapping(value = "/home")
+    public String home(Model model, HttpServletRequest req, HttpServletResponse response) {
+        model.addAttribute("name", getUser(req));
+        return "hello";
     }
 
 }

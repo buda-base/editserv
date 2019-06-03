@@ -6,6 +6,19 @@ servers:
 - url: https://edit.bdrc.io/
 paths:
   /tasks/{taskId}:
+    delete:
+      parameters:
+        - in: path
+          name: taskId   # Note the name is the same as in the path
+          required: true
+          schema:
+            type: string
+            description: The task ID
+            example: 2531329f-fb09-4ef7-887e-84e648214436
+      description: delete the task given its id
+      responses:
+        '204':
+          description: NO Content
     get:
       parameters:
         - in: path

@@ -60,6 +60,18 @@ public class EditController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/tasks/{taskId}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> deleteTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
+        String userId = getUser(req);
+        try {
+            GitTaskService.deleteTask(userId, taskId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     /**
      * Returns all tasks of a given user
      * 
@@ -114,31 +126,6 @@ public class EditController {
         responseHeaders.set("Location", "tasks/" + t.getId());
         return new ResponseEntity<>(responseHeaders, HttpStatus.NO_CONTENT);
     }
-
-    /**
-     * Store a user ongoing task
-     * 
-     * @throws IOException
-     * @throws ServiceSequenceException
-     */
-    /*
-     * @RequestMapping(value = "/tasks/{taskId}", consumes =
-     * MediaType.APPLICATION_FORM_URLENCODED_VALUE, method = RequestMethod.PUT)
-     * public ResponseEntity<String> acceptTask(HttpServletRequest req,
-     * HttpServletResponse response) throws IOException, ServiceException,
-     * ServiceSequenceException { String userId = getUser(req); TaskService ps = new
-     * TaskService(req, userId); // For testing only
-     * ps.savePatch(EditConstants.PTC_FINAL); System.out.println("Patch Service >>"
-     * + ps); BUDATransaction btx = new BUDATransaction(ps.getId(), userId);
-     * btx.setStatus(Status.STATUS_PREPARING); // btx.enlistResource(new
-     * ValidationService(ps.getId(), // Types.SIMPLE_VALIDATION_SVC,
-     * map.getFirst("type"), ps), 0); btx.enlistResource(new GitService(ps.getId(),
-     * "test", ps), 1); btx.enlistResource(ps, 0);
-     * btx.setStatus(Types.STATUS_QUEUED); BUDATransactionManager.queueTxn(btx);
-     * HttpHeaders responseHeaders = new HttpHeaders();
-     * responseHeaders.set("Location", "queuejob/" + ps.getId()); return new
-     * ResponseEntity<>("ok", responseHeaders, HttpStatus.ACCEPTED); }
-     */
 
     @RequestMapping(value = "/queuejob/{id}", method = RequestMethod.GET)
     public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {

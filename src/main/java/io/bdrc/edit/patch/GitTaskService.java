@@ -65,7 +65,7 @@ public class GitTaskService {
     public static void saveTask(Task tsk) throws NoFilepatternException, GitAPIException, IOException {
         String user = tsk.getUser();
         Git git = new Git(taskRepo);
-        boolean exist = new File(EditConfig.getProperty("gitTaskRepo") + user + "/" + tsk.getId()).exists();
+        boolean exist = new File(EditConfig.getProperty("gitTaskRepo") + user + "/" + tsk.getId() + ".patch").exists();
         if (!exist) {
             new File(EditConfig.getProperty("gitTaskRepo") + user + "/").mkdir();
         }
@@ -75,6 +75,18 @@ public class GitTaskService {
         output.close();
         git.add().addFilepattern(user + "/" + tsk.getId() + ".patch").call();
         git.commit().setMessage(tsk.getId() + ":" + tsk.getSaveMsg()).call();
+        git.close();
+    }
+
+    public static void deleteTask(String user, String taskId) throws NoFilepatternException, GitAPIException, IOException {
+        Git git = new Git(taskRepo);
+        boolean exist = new File(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch").exists();
+        if (!exist) {
+            git.close();
+            throw new NoFilepatternException("No such resource could be found: " + taskId);
+        }
+        git.rm().addFilepattern(user + "/" + taskId + ".patch").call();
+        git.commit().setMessage("Removed " + taskId).call();
         git.close();
     }
 

@@ -1,13 +1,16 @@
 package io.bdrc.edit;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.patch.GitTaskService;
+import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ServiceException;
@@ -58,13 +62,21 @@ public class EditController {
     @RequestMapping(value = "/tasks/{taskId}", produces = "application/json", method = RequestMethod.GET)
     public ResponseEntity<String> getTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
         String res = null;
+        ObjectMapper mapper = new ObjectMapper();
+        HashMap<String, Object> map = new HashMap<>();
         try {
             String userId = getUser(req);
             if (userId == null) {
                 throw new ServiceException("Cannot get the tasks : user is null");
             }
-            res = GitTaskService.getTaskAsJson(taskId, userId);
-        } catch (ServiceException e) {
+            Task task = GitTaskService.getTask(taskId, userId);
+            map.put("task", task);
+            List<Session> list = GitTaskService.getAllSessions(taskId, userId);
+            map.put("sessions", list);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            mapper.writeValue(os, map);
+            res = os.toString();
+        } catch (ServiceException | IOException | RevisionSyntaxException | GitAPIException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }

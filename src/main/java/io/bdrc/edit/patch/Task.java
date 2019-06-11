@@ -1,6 +1,7 @@
 package io.bdrc.edit.patch;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
@@ -109,17 +110,17 @@ public class Task {
         ObjectMapper mapper = new ObjectMapper();
         // mapper.writeValue(System.out, t);
         String test = "  {\n" + "    \"id\": \"YYYYYY\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
-                + "    \"patch\":\"here is the latest version of the content of the patch YYY\" \n" + "    \n" + "  } ";
+                + "    \"patch\":\"here is one more version of the content of the patch YYY\" \n" + "    \n" + "  } ";
         Task tk = Task.create(test);
         System.out.println(tk);
         System.out.println("PATCH text >" + tk.getPatch());
         GitTaskService.saveTask(tk);
         System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
-        // List<Session> sess = GitTaskService.getAllSessions("XXXXXX", "marc");
-        // System.out.println("SESSIONS >" + sess);
-        // for (Session s : sess) {
-        // System.out.println(Task.getPatchString(s));
-        // }
+        List<Session> sess = GitTaskService.getAllSessions("YYYYYY", "marc");
+        System.out.println("SESSIONS >" + sess);
+        for (Session s : sess) {
+            System.out.println(Task.getPatchString(s));
+        }
         System.out.println("FILES >" + GitTaskService.getAllOngoingTask("marc"));
         System.out.println("JSON >" + GitTaskService.getTaskAsJson("XXXXXX", "marc"));
     }

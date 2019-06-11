@@ -164,6 +164,8 @@ public class GitTaskService {
             sessions.add(s);
         }
         git.close();
+        // ObjectMapper mapper = new ObjectMapper();
+        // mapper.writeValue(System.out, sessions);
         return sessions;
     }
 }

@@ -1,7 +1,6 @@
 package io.bdrc.edit.patch;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
@@ -116,12 +115,12 @@ public class Task {
         System.out.println("PATCH text >" + tk.getPatch());
         GitTaskService.saveTask(tk);
         System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
-        List<Session> sess = GitTaskService.getAllSessions("XXXXXX", "marc");
-        System.out.println("SESSIONS >" + sess);
-        for (Session s : sess) {
-            System.out.println(Task.getPatchString(s));
-        }
-        System.out.println("FILES >" + GitTaskService.getAllOngoingTaskId("marc"));
+        // List<Session> sess = GitTaskService.getAllSessions("XXXXXX", "marc");
+        // System.out.println("SESSIONS >" + sess);
+        // for (Session s : sess) {
+        // System.out.println(Task.getPatchString(s));
+        // }
+        System.out.println("FILES >" + GitTaskService.getAllOngoingTask("marc"));
         System.out.println("JSON >" + GitTaskService.getTaskAsJson("XXXXXX", "marc"));
     }
 

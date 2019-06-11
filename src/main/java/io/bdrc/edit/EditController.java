@@ -12,8 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +38,17 @@ public class EditController {
         return "marc";
         // return null;
         // }
+    }
+
+    /**
+     * Returns all tasks of a given user
+     * 
+     * @throws ServiceException
+     * 
+     */
+    @RequestMapping(value = "/ping", produces = "text/html", method = RequestMethod.GET)
+    public ResponseEntity<String> ping(HttpServletRequest req, HttpServletResponse response) {
+        return new ResponseEntity<>(req.getRemoteAddr(), HttpStatus.OK);
     }
 
     /**
@@ -137,14 +146,6 @@ public class EditController {
 
     public String getJsonErrorString(Exception e) {
         return "{ \"exception\": \"" + e.getClass().getCanonicalName() + "\",\n" + "    \"error\": \"" + e.getMessage() + "\"}";
-    }
-
-    // JSP STUFFS START HERE
-
-    @GetMapping(value = "/home")
-    public String home(Model model, HttpServletRequest req, HttpServletResponse response) {
-        model.addAttribute("name", getUser(req));
-        return "hello";
     }
 
 }

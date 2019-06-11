@@ -103,6 +103,7 @@ public class GitTaskService {
     public static ArrayList<String> getAllOngoingTaskId(String user) throws IOException {
         Stream<Path> walk = Files.walk(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/"));
         List<String> result = walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
+
         ArrayList<String> files = new ArrayList<>();
         for (String s : result) {
             String tmp = s.substring(s.lastIndexOf('/') + 1);
@@ -110,6 +111,20 @@ public class GitTaskService {
         }
         walk.close();
         return files;
+    }
+
+    public static ArrayList<Task> getAllOngoingTask(String user) throws IOException {
+        Stream<Path> walk = Files.walk(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/"));
+        List<String> result = walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
+        ArrayList<Task> tasks = new ArrayList<>();
+        for (String s : result) {
+            String tmp = s.substring(s.lastIndexOf('/') + 1);
+            if (!tmp.trim().startsWith(".")) {
+                tasks.add(getTask(tmp.substring(0, tmp.lastIndexOf('.')), user));
+            }
+        }
+        walk.close();
+        return tasks;
     }
 
     public static String getTaskAsJson(String taskId, String user) throws ServiceException {

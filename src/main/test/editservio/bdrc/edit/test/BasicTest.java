@@ -24,7 +24,7 @@ public class BasicTest {
     public void sendPutTaskIdRequest() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPut put = new HttpPut("http://localhost:8080/tasks");
-        String json = "  {\n" + "    \"id\": \"AAAAAA\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
+        String json = "  {\n" + "    \"id\": \"AAAAAA\",\n" + "    \"saveMsg\": \"Test save message\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
                 + "    \"patch\":\"here is the latest version of the content of the patch AAAA\" \n" + "    \n" + "  } ";
         StringEntity entity = new StringEntity(json);
         put.setEntity(entity);

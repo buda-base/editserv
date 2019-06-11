@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import io.bdrc.auth.AuthProps;
+import io.bdrc.auth.rdf.RdfAuthModel;
 
 public class EditConfig {
 
@@ -31,6 +32,7 @@ public class EditConfig {
             is.close();
             if ("true".equals(prop.getProperty("useAuth"))) {
                 AuthProps.init(prop);
+                RdfAuthModel.init();
             }
             HttpURLConnection connection = (HttpURLConnection) new URL(prop.getProperty("prefixesUrl")).openConnection();
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));

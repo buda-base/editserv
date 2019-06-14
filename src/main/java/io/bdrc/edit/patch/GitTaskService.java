@@ -159,13 +159,11 @@ public class GitTaskService {
                     }
                     canonicalTreeParser.next(1);
                 }
+                Session s = new Session(new Date(rvc.getCommitTime() * 1000L), rvc.getId().toString(), new String(bytes));
+                sessions.add(s);
             }
-            Session s = new Session(new Date(rvc.getCommitTime() * 1000L), rvc.getId().toString(), new String(bytes));
-            sessions.add(s);
         }
         git.close();
-        // ObjectMapper mapper = new ObjectMapper();
-        // mapper.writeValue(System.out, sessions);
         return sessions;
     }
 }

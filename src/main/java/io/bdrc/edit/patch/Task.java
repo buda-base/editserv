@@ -114,15 +114,15 @@ public class Task {
         Task tk = Task.create(test);
         System.out.println(tk);
         System.out.println("PATCH text >" + tk.getPatch());
-        GitTaskService.saveTask(tk);
-        System.out.println("Read task >" + GitTaskService.getTask("XXXXXX", "marc"));
-        List<Session> sess = GitTaskService.getAllSessions("YYYYYY", "marc");
+        TaskGitManager.saveTask(tk);
+        System.out.println("Read task >" + TaskGitManager.getTask("XXXXXX", "marc"));
+        List<Session> sess = TaskGitManager.getAllSessions("YYYYYY", "marc");
         System.out.println("SESSIONS >" + sess);
         for (Session s : sess) {
             System.out.println(Task.getPatchString(s));
         }
-        System.out.println("FILES >" + GitTaskService.getAllOngoingTask("marc"));
-        System.out.println("JSON >" + GitTaskService.getTaskAsJson("XXXXXX", "marc"));
+        System.out.println("FILES >" + TaskGitManager.getAllOngoingTask("marc"));
+        System.out.println("JSON >" + TaskGitManager.getTaskAsJson("XXXXXX", "marc"));
     }
 
 }

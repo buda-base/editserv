@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -28,10 +26,11 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.EditPatchHeaders;
+import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class TaskService implements BUDAEditService {
+public class PatchService implements BUDAEditService {
 
     String payload;
     String userId;
@@ -40,22 +39,22 @@ public class TaskService implements BUDAEditService {
     int status;
     EditPatchHeaders ph;
 
-    public TaskService(HttpServletRequest req, String userId) throws PatchServiceException {
-        this.payload = req.getParameter("Payload");
-        this.userId = userId;
+    public PatchService(Task tsk) throws PatchServiceException {
+        this.payload = tsk.getPatch();
+        this.userId = tsk.getUser();
         String time = Long.toString(System.currentTimeMillis());
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
-        this.id = ph.getPatchId();
-        this.name = "PATCH_SVC_" + time;
+        this.id = tsk.getId();
+        this.name = "TASK_SVC_" + time;
     }
 
-    public TaskService(String payload, String userId) throws PatchServiceException {
+    public PatchService(String payload, String userId) throws PatchServiceException {
         this.payload = payload;
         this.userId = userId;
         String time = Long.toString(System.currentTimeMillis());
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
         this.id = ph.getPatchId();
-        this.name = "PATCH_SVC_" + time;
+        this.name = "TASK_SVC_" + time;
     }
 
     public void savePatch(String action) throws PatchServiceException {

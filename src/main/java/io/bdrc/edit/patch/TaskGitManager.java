@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class GitTaskService {
+public class TaskGitManager {
 
     static Repository taskRepo;
 

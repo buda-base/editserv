@@ -46,7 +46,7 @@ public class GitPatchService implements BUDAEditService {
      * @throws IOException
      */
     public void run() throws GitServiceException {
-        log.info("Running Git Service for task {}", tsk);
+        log.info("Running Git Patch Service for task {}", tsk);
         /*
          * this.remoteURL = EditConfig.getProperty("gitRemoteRootUrl") +
          * resType.toLowerCase() + "s.git"; try { localRepo = new

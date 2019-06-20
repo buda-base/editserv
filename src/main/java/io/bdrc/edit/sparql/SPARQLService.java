@@ -1,9 +1,10 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.sparql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.service.BUDAEditService;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class SPARQLService implements BUDAEditService {

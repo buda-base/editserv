@@ -9,10 +9,12 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
 
+@RunWith(SpringRunner.class)
 public class BasicTest {
 
     @BeforeClass
@@ -20,7 +22,6 @@ public class BasicTest {
         EditConfig.init();
     }
 
-    @Test
     public void sendPutTaskIdRequest() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPut put = new HttpPut("http://localhost:8080/tasks");

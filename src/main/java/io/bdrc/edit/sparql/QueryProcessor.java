@@ -11,7 +11,7 @@ import io.bdrc.edit.EditConfig;
 public class QueryProcessor {
 
     public static Model describeModel(final String fullUri) {
-        final Query q = QueryFactory.create("describe <" + fullUri.trim() + ">");
+        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + " describe <" + fullUri.trim() + ">");
         final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
         return qe.execDescribe();
     }

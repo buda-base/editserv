@@ -2,6 +2,7 @@ package io.bdrc.edit.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.jena.graph.Node;
@@ -10,14 +11,16 @@ import org.seaborne.patch.PatchHeader;
 public class EditPatchHeaders {
 
     public static final String KEY_GRAPH = "graph";
+    public static final String KEY_MAPPING = "mapping";
     public static final String KEY_CREATE = "create";
     public static final String KEY_ID = "id";
 
     private PatchHeader ph;
+    private HashMap<String, String> mappings;
 
     public EditPatchHeaders(PatchHeader header) {
         this.ph = header;
-        // TODO Auto-generated constructor stub
+        mappings = getResTypeMapping();
     }
 
     public List<String> getGraphUris() {
@@ -36,6 +39,24 @@ public class EditPatchHeaders {
             gph = Arrays.asList(graphs.getLiteral().toString().split(","));
         }
         return gph;
+    }
+
+    public String getResourceType(String resId) {
+        return mappings.get(resId);
+    }
+
+    public HashMap<String, String> getResTypeMapping() {
+        HashMap<String, String> resTypes = new HashMap<>();
+        List<String> map = new ArrayList<>();
+        Node restype = ph.get(KEY_MAPPING);
+        if (restype != null) {
+            map = Arrays.asList(restype.getLiteral().toString().split(","));
+        }
+        for (String res : map) {
+            String[] parts = res.split("-");
+            resTypes.put(parts[0], parts[1]);
+        }
+        return resTypes;
     }
 
     public String getPatchId() {

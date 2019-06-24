@@ -1,10 +1,6 @@
 package io.bdrc.edit.service;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -24,7 +20,7 @@ import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
@@ -55,53 +51,6 @@ public class PatchService implements BUDAEditService {
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(payload.getBytes())));
         this.id = ph.getPatchId();
         this.name = "TASK_SVC_" + time;
-    }
-
-    public void savePatch(String action) throws PatchServiceException {
-        try {
-            File f = new File(EditConfig.getProperty("patchesDir") + userId);
-            if (!f.exists()) {
-                f.mkdir();
-            }
-            String filename = "";
-            if (action.equals(EditConstants.PTC_FINAL)) {
-                filename = EditConfig.getProperty("patchesDir") + userId + "/" + id + EditConstants.PTC_EXT;
-            }
-            if (action.equals(EditConstants.PTC_STASH)) {
-                filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + id + EditConstants.PTC_EXT;
-            }
-            System.out.println("FILENAME >> " + filename);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
-            writer.write(payload);
-            writer.close();
-        } catch (Exception e) {
-            throw new PatchServiceException(e);
-        }
-    }
-
-    public static void deletePatch(String patchId, String userId, boolean stashed) throws IOException {
-        String filename = "";
-        if (!stashed) {
-            filename = EditConfig.getProperty("patchesDir") + userId + "/" + patchId + EditConstants.PTC_EXT;
-        } else {
-            filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + patchId + EditConstants.PTC_EXT;
-        }
-        new File(filename).delete();
-    }
-
-    public static File getPatch(String patchId, String userId, boolean stashed) {
-        String filename = "";
-        if (!stashed) {
-            filename = EditConfig.getProperty("patchesDir") + userId + "/" + patchId + EditConstants.PTC_EXT;
-        } else {
-            filename = EditConfig.getProperty("patchesDir") + userId + "/stashed/" + patchId + EditConstants.PTC_EXT;
-        }
-        File f = new File(filename);
-        if (!f.exists()) {
-            return null;
-        } else {
-            return f;
-        }
     }
 
     public String getPayload() {
@@ -166,11 +115,9 @@ public class PatchService implements BUDAEditService {
             for (String c : create) {
                 Node graphUri = NodeFactory.createURI(c);
                 Graph g = dsg.getGraph(graphUri);
-                Graph git = addGitInfo(g);
                 Model m = ModelFactory.createModelForGraph(g);
+                m.add(createGitInfo(graphUri.getURI()));
                 putModel(fusConn, c, m);
-                putGitModel(fusConn, git);
-
             }
             fusConn.close();
             patch.close();
@@ -186,18 +133,10 @@ public class PatchService implements BUDAEditService {
         fusConn.end();
     }
 
-    private void putGitModel(RDFConnectionFuseki fusConn, Graph g) throws Exception {
-        /*
-         * fusConn.begin(ReadWrite.WRITE); fusConn.put(graph, m); fusConn.commit();
-         * fusConn.end();
-         */
-    }
-
-    private Graph addGitInfo(Graph g) {
-        Graph gr = null;
-        // do whatever is necessary to create git info
-        // add gitInfo triples to gitInfo graph
-        return gr;
+    private Model createGitInfo(String graphUri) {
+        String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        AdminData data = new AdminData(resId, ph.getResourceType(resId));
+        return data.asModel();
     }
 
     public String getUserId() {

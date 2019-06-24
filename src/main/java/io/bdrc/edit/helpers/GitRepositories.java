@@ -14,6 +14,8 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.util.iterator.ExtendedIterator;
 
+import io.bdrc.edit.EditConstants;
+
 public class GitRepositories {
 
     public static String GIT_REPO_TYPES_FILE_URL = "https://raw.githubusercontent.com/buda-base/owl-schema/master/adm/types/git_repos.ttl";
@@ -42,8 +44,8 @@ public class GitRepositories {
         ExtendedIterator<Individual> ind = mod.listIndividuals();
         while (ind.hasNext()) {
             Individual i = ind.next();
-            String name = i.getProperty(ResourceFactory.createProperty(ResourceGitInfo.ADM_PREFIX + "gitRepoName")).getObject().toString();
-            String url = i.getProperty(ResourceFactory.createProperty(ResourceGitInfo.ADM_PREFIX + "gitUrl")).getObject().toString();
+            String name = i.getProperty(ResourceFactory.createProperty(EditConstants.ADM + "gitRepoName")).getObject().toString();
+            String url = i.getProperty(ResourceFactory.createProperty(EditConstants.ADM + "gitUrl")).getObject().toString();
             GitRepo rep = new GitRepo(i.getURI(), name, url);
             repos.put(rep.getRepoResType(), rep);
         }

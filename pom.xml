@@ -8,8 +8,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <jena.version>3.9.0</jena.version>
-    <boot.starter>2.1.6.RELEASE</boot.starter>     
+    <jena.version>3.9.0</jena.version>        
     <version.maven-compiler-plugin>3.7.0</version.maven-compiler-plugin>
     <version.spring-boot>2.1.3.RELEASE</version.spring-boot>
     <jetty.version>9.4.12.v20180830</jetty.version>
@@ -17,37 +16,60 @@
   </properties>
   <name>buda-edit</name>
   <description>BDRC BUDA editing services</description>
-   
-   <dependencies>  
+   <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>    
+    <version>2.0.6.RELEASE</version>
+  </parent>
+   <dependencies>     
 	<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->	   
     <dependency>    
 	    <groupId>org.springframework.boot</groupId>
 	    <artifactId>spring-boot-starter-web</artifactId>
-	    <version>${boot.starter}</version>
+        <exclusions>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+        </exclusion>
+      </exclusions>	    
 	</dependency>
     <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <version>${boot.starter}</version>
-        <scope>test</scope>
+        <artifactId>spring-boot-starter-test</artifactId>        
+        <!-- scope>test</scope-->
+        <exclusions>
+        <exclusion>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-tomcat</artifactId>
+    </dependency>
+    <!-- dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency-->
 	<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 	<dependency>
 	    <groupId>javax.servlet</groupId>
-	    <artifactId>javax.servlet-api</artifactId>
-	    <version>4.0.1</version>
+	    <artifactId>javax.servlet-api</artifactId>	    
 	    <scope>provided</scope>
 	</dependency>	
 	<dependency>
 	    <groupId>org.springframework</groupId>
-	    <artifactId>spring-web</artifactId>
-	    <version>5.1.8.RELEASE</version>
+	    <artifactId>spring-web</artifactId>	    
 	</dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <version>5.1.8.RELEASE</version>
+      <artifactId>spring-test</artifactId>      
     </dependency> 	
 	<!-- https://mvnrepository.com/artifact/org.apache.jena/jena-arq -->
     <dependency>
@@ -85,13 +107,6 @@
 	    <groupId>junit</groupId>
 	    <artifactId>junit</artifactId>
 	    <version>4.12</version>	    
-	</dependency>
-   
-    <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
-	<dependency>
-	    <groupId>ch.qos.logback</groupId>
-	    <artifactId>logback-classic</artifactId>
-	    <version>1.2.3</version>	    
 	</dependency>
     <!-- https://mvnrepository.com/artifact/javax.transaction/jta -->
 	<dependency>
@@ -155,10 +170,6 @@
     <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <mainClass>io.bdrc.edit.EditApplication</mainClass>
-          <classifier>exec</classifier>
-        </configuration>
         <executions>
           <execution>
             <goals>
@@ -166,15 +177,13 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-           <groupId>org.springframework.boot</groupId>
-           <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <classifier>exec</classifier>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
         <inherited>true</inherited>
         <configuration>
           <source>1.8</source>

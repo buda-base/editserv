@@ -13,6 +13,7 @@ public class Types {
     public static final int STATUS_FAILED = 19;
     public static final int STATUS_UNKNOWN = 20;
     public static final int STATUS_PROCESSING = 21;
+    public static final int STATUS_PREPARED = 22;
 
     static {
 
@@ -31,6 +32,7 @@ public class Types {
         TXN_STATUS.put(STATUS_FAILED, "STATUS_FAILED");
         TXN_STATUS.put(STATUS_UNKNOWN, "STATUS_UNKNOWN");
         TXN_STATUS.put(STATUS_PROCESSING, "STATUS_PROCESSING");
+        TXN_STATUS.put(STATUS_PREPARED, "STATUS_PREPARED");
     }
 
     public static String getTxnStatus(int st) {

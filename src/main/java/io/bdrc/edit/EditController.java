@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.service.GitPatchService;
 import io.bdrc.edit.service.PatchService;
 import io.bdrc.edit.service.TxnCloserService;
@@ -174,7 +174,8 @@ public class EditController {
             btx.enlistResource(new PatchService(t), 0);
             btx.enlistResource(new GitPatchService(t), 1);
             btx.enlistResource(new TxnCloserService(t), 2);
-            BUDATransactionManager.queueTxn(btx);
+            btx.setStatus(Types.STATUS_PREPARED);
+            BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -187,6 +188,7 @@ public class EditController {
     @RequestMapping(value = "/queuejob/{id}", method = RequestMethod.GET)
     public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {
         String status = BUDATransactionManager.getTxnStatus(id);
+        System.out.println("Status >>" + status);
         return new ResponseEntity<>(status, HttpStatus.OK);
     }
 

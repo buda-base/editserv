@@ -26,7 +26,7 @@ public class BUDATransactionManager implements Runnable {
         return INSTANCE;
     }
 
-    public static void queueTxn(BUDATransaction btx) {
+    public void queueTxn(BUDATransaction btx) {
         WAITING_QUEUE.add(btx);
         REQUESTS.add(btx.getId());
     }
@@ -48,7 +48,7 @@ public class BUDATransactionManager implements Runnable {
             BUDATransaction btx = null;
             try {
                 // Wait for the next available transaction in the queue
-                btx = WAITING_QUEUE.take();
+                // btx = WAITING_QUEUE.take();
                 if (btx != null) {
                     // Not a request anymore
                     REQUESTS.remove(btx.getId());

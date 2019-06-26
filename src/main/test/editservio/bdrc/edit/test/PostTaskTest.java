@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.edit.EditApplication;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.service.PatchService;
+import io.bdrc.edit.txn.exceptions.ServiceException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EditApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -65,14 +67,25 @@ public class PostTaskTest {
         client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/queuecjob/uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6");
         response = client.execute(get);
-        // byte[] b = new byte[(int) response.getEntity().getContentLength()];
-        // response.getEntity().getContent().read(b);
-        // System.out.println(new String(b));
         System.out.println("RESP >>" + response);
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    public String getResourceFileContent(String file) throws IOException {
+    @Test
+    public void taskService() throws ClientProtocolException, IOException, ServiceException {
+        String patch = getResourceFileContent("patch/simpleAdd.patch");
+        Task tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
+        PatchService tsvc = new PatchService(tk);
+        tsvc.run();
+        assert (Checker.checkResourceInConstruct("checks/simpleAdd.check", "bdr:P1583"));
+        patch = getResourceFileContent("patch/simpleDelete.patch");
+        tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
+        tsvc = new PatchService(tk);
+        tsvc.run();
+        assert (!Checker.checkResourceInConstruct("checks/simpleAdd.check", "bdr:P1583"));
+    }
+
+    public static String getResourceFileContent(String file) throws IOException {
         InputStream stream = PostTaskTest.class.getClassLoader().getResourceAsStream(file);
         StringWriter writer = new StringWriter();
         IOUtils.copy(stream, writer, "UTF-8");

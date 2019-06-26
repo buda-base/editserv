@@ -1,0 +1,1 @@
+construct {bdr:P1524 bdo:personTeacherOf ?o} where {bdr:P1524 bdo:personTeacherOf ?o}

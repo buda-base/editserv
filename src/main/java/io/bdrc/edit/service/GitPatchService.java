@@ -1,22 +1,28 @@
 package io.bdrc.edit.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 import org.apache.commons.codec.binary.Hex;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.GitServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.libraries.GitHelpers;
 
 public class GitPatchService implements BUDAEditService {
 
@@ -25,17 +31,19 @@ public class GitPatchService implements BUDAEditService {
     int status;
     String id;
     String userId;
-    String resType;
     Task tsk;
+    private List<String> create;
+    EditPatchHeaders eph;
 
     static Repository localRepo;
     static String remoteURL;
 
     public GitPatchService(Task tsk) {
         this.id = "GIT_" + id;
-        this.resType = resType;
         this.tsk = tsk;
         this.userId = tsk.getUser();
+        eph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
+        this.create = eph.getCreateUris();
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -47,6 +55,12 @@ public class GitPatchService implements BUDAEditService {
      */
     public void run() throws GitServiceException {
         log.info("Running Git Patch Service for task {}", tsk);
+        // First the existing graphs being updated
+        List<String> graphs = eph.getGraphUris();
+        for (String g : graphs) {
+            String resType = eph.getResourceType(g);
+            GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
+        }
         /*
          * this.remoteURL = EditConfig.getProperty("gitRemoteRootUrl") +
          * resType.toLowerCase() + "s.git"; try { localRepo = new
@@ -143,7 +157,7 @@ public class GitPatchService implements BUDAEditService {
         return hash;
     }
 
-    private boolean hasNoDir() {
+    private boolean hasNoDir(String resType) {
         return resType.equalsIgnoreCase("office") || resType.equalsIgnoreCase("corporation");
     }
 

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
@@ -170,8 +171,9 @@ public class EditController {
                 throw new ServiceException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
+            DataUpdate data = new DataUpdate(t);
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
-            btx.enlistResource(new PatchService(t), 0);
+            btx.enlistResource(new PatchService(data), 0);
             btx.enlistResource(new GitPatchService(t), 1);
             btx.enlistResource(new TxnCloserService(t), 2);
             btx.setStatus(Types.STATUS_PREPARED);

@@ -53,10 +53,11 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-tomcat</artifactId>
     </dependency>
-    <!-- dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency-->
+    <dependency>
+	  <groupId>io.bdrc.libraries</groupId>
+	  <artifactId>bdrc-libraries</artifactId>
+	  <version>0.1.0</version>
+	</dependency>
 	<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 	<dependency>
 	    <groupId>javax.servlet</groupId>

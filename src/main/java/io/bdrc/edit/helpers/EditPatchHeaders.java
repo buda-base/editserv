@@ -42,7 +42,6 @@ public class EditPatchHeaders {
     }
 
     public String getResourceType(String resId) {
-        System.out.println("MAPPINGS >>" + mappings);
         return mappings.get(resId);
     }
 

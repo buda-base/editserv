@@ -76,6 +76,7 @@ public class DataUpdate {
     }
 
     public String getResourceType(String resId) {
+        System.out.println("MP >>>>>>>>>>>>>>>" + ph.getResTypeMapping() + " resId=" + resId);
         return ph.getResourceType(resId);
     }
 
@@ -85,10 +86,10 @@ public class DataUpdate {
 
     private Model fetchGitInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData data = new AdminData(resId, ph.getResourceType(graphUri));
+        AdminData data = new AdminData(resId, getResourceType(graphUri));
         gitInfo.put(graphUri, data);
-        System.out.println("GIT info Map>>" + gitInfo);
-        System.out.println("admin data>>" + data);
+        // System.out.println("GIT info Map>>" + gitInfo);
+        // System.out.println("admin data>>" + data);
         System.out.println("GRAPH URI>>" + graphUri + " resType=" + ph.getResourceType(graphUri));
         return data.asModel();
     }

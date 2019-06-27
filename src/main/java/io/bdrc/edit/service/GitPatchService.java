@@ -1,13 +1,37 @@
 package io.bdrc.edit.service;
 
+import static io.bdrc.libraries.Models.ADM;
+import static io.bdrc.libraries.Models.BDA;
+import static io.bdrc.libraries.Models.BDG;
+import static io.bdrc.libraries.Models.BDO;
+import static io.bdrc.libraries.Models.BDR;
+
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.SortedMap;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.query.DatasetFactory;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.system.PrefixMap;
+import org.apache.jena.riot.system.PrefixMapFactory;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.util.Context;
+import org.apache.jena.sparql.util.Symbol;
+import org.apache.jena.vocabulary.OWL;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.SKOS;
+import org.apache.jena.vocabulary.VCARD4;
+import org.apache.jena.vocabulary.XSD;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -19,6 +43,10 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.exceptions.GitServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.jena.sttl.CompareComplex;
+import io.bdrc.jena.sttl.ComparePredicates;
+import io.bdrc.jena.sttl.STTLWriter;
+import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
 
 public class GitPatchService implements BUDAEditService {
@@ -31,6 +59,7 @@ public class GitPatchService implements BUDAEditService {
     DataUpdate data;
     List<String> create;
     List<String> graphs;
+    Context writerContext;
     static Repository localRepo;
     static String remoteURL;
 
@@ -40,6 +69,7 @@ public class GitPatchService implements BUDAEditService {
         this.userId = data.getUserId();
         this.create = data.getCreate();
         this.graphs = data.getGraphs();
+        this.writerContext = createWriterContext();
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -56,6 +86,7 @@ public class GitPatchService implements BUDAEditService {
             String resType = data.getResourceType(g);
             System.out.println("Admin DATA >>" + data.getGitInfo(g) + " graph=" + g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
+
         }
         /*
          * this.remoteURL = EditConfig.getProperty("gitRemoteRootUrl") +
@@ -112,6 +143,44 @@ public class GitPatchService implements BUDAEditService {
          * Types.getSvcStatus(Types.GIT_FAILED)); e.printStackTrace(); throw new
          * GitServiceException(e); }
          */
+    }
+
+    public void modelToOutputStream(Model m, OutputStream out, String type, int outputType, String fname) throws FileNotFoundException {
+        // compute graph uri from fname; if fname == null then testing so use a dummy
+        // graph URI
+        String foo = (fname != null && !fname.isEmpty()) ? fname.substring(fname.lastIndexOf("/") + 1) : "GraphForTesting";
+        foo = foo.replace(".trig", "").replace(".ttl", "");
+        String uriStr = BDG + foo;
+        Node graphUri = NodeFactory.createURI(uriStr);
+        DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
+        dsg.addGraph(graphUri, m.getGraph());
+        new STriGWriter().write(out, dsg, getPrefixMap(), graphUri.toString(m), writerContext);
+    }
+
+    private Context createWriterContext() {
+        SortedMap<String, Integer> nsPrio = ComparePredicates.getDefaultNSPriorities();
+        nsPrio.put(SKOS.getURI(), 1);
+        nsPrio.put("http://purl.bdrc.io/ontology/admin/", 5);
+        nsPrio.put("http://purl.bdrc.io/ontology/toberemoved/", 6);
+        List<String> predicatesPrio = CompareComplex.getDefaultPropUris();
+        predicatesPrio.add(ADM + "logDate");
+        predicatesPrio.add(BDO + "seqNum");
+        predicatesPrio.add(BDO + "onYear");
+        predicatesPrio.add(BDO + "notBefore");
+        predicatesPrio.add(BDO + "notAfter");
+        predicatesPrio.add(BDO + "noteText");
+        predicatesPrio.add(BDO + "noteWork");
+        predicatesPrio.add(BDO + "noteLocationStatement");
+        predicatesPrio.add(BDO + "volumeNumber");
+        predicatesPrio.add(BDO + "eventWho");
+        predicatesPrio.add(BDO + "eventWhere");
+        Context ctx = new Context();
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "nsPriorities"), nsPrio);
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "nsDefaultPriority"), 2);
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "complexPredicatesPriorities"), predicatesPrio);
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "indentBase"), 4);
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "predicateBaseWidth"), 18);
+        return ctx;
     }
 
     public boolean rollback() throws ServiceException {
@@ -181,6 +250,22 @@ public class GitPatchService implements BUDAEditService {
     public String getUserId() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public static PrefixMap getPrefixMap() {
+        PrefixMap pm = PrefixMapFactory.create();
+        pm.add("", BDO);
+        pm.add("adm", ADM);
+        pm.add("bda", BDA);
+        pm.add("bdg", BDG);
+        pm.add("bdr", BDR);
+        pm.add("owl", OWL.getURI());
+        pm.add("rdf", RDF.getURI());
+        pm.add("rdfs", RDFS.getURI());
+        pm.add("skos", SKOS.getURI());
+        pm.add("vcard", VCARD4.getURI());
+        pm.add("xsd", XSD.getURI());
+        return pm;
     }
 
 }

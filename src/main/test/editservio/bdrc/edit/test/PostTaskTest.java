@@ -42,7 +42,7 @@ public class PostTaskTest {
         EditConfig.init();
     }
 
-    @Test
+    // @Test
     public void ping() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/ping");
@@ -53,7 +53,7 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void postSimpleTask() throws ClientProtocolException, IOException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
@@ -84,11 +84,10 @@ public class PostTaskTest {
         GitPatchService gps = new GitPatchService(data);
         gps.run();
         patch = getResourceFileContent("patch/simpleDelete.patch");
-        tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
-        tsvc = new PatchService(new DataUpdate(tk));
+        Task tk1 = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
+        tsvc = new PatchService(new DataUpdate(tk1));
         tsvc.run();
-        // assert (!Checker.checkResourceInConstruct("checks/simpleAdd.check",
-        // "bdr:P1583"));
+        assert (!Checker.checkResourceInConstruct("checks/simpleAdd.check", "bdr:P1583"));
     }
 
     public static String getResourceFileContent(String file) throws IOException {

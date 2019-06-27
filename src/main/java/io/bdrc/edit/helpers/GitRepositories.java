@@ -52,12 +52,12 @@ public class GitRepositories {
     }
 
     public static GitRepo getRepo(String resType) {
-        System.out.println(repos);
+        // System.out.println(repos);
         return repos.get(resType);
     }
 
     public static void main(String[] args) {
-        System.out.println("repo >> " + GitRepositories.getRepo("role"));
+        // System.out.println("repo >> " + GitRepositories.getRepo("role"));
     }
 
 }

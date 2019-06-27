@@ -45,7 +45,6 @@ public class PatchService implements BUDAEditService {
     @Override
     public void run() throws ServiceException {
         try {
-            System.out.println("Using remote endpoint in patchSVC run()>>" + EditConfig.getProperty("fusekiData"));
             InputStream patch = new ByteArrayInputStream(data.getPatch().getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));

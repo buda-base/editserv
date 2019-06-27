@@ -56,8 +56,14 @@
     <dependency>
 	  <groupId>io.bdrc.libraries</groupId>
 	  <artifactId>bdrc-libraries</artifactId>
-	  <version>0.1.0</version>
+	  <version>0.3.0</version>
 	</dependency>
+    <!-- https://mvnrepository.com/artifact/io.bdrc/jena-stable-turtle -->
+    <dependency>
+        <groupId>io.bdrc</groupId>
+        <artifactId>jena-stable-turtle</artifactId>
+        <version>0.6.0</version>
+    </dependency>
 	<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 	<dependency>
 	    <groupId>javax.servlet</groupId>
@@ -96,13 +102,7 @@
       <groupId>org.apache.jena</groupId>
       <artifactId>jena-rdfconnection</artifactId>
       <version>${jena.version}</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/io.bdrc/jena-stable-turtle -->
-    <dependency>
-      <groupId>io.bdrc</groupId>
-      <artifactId>jena-stable-turtle</artifactId>
-      <version>0.5.0</version>
-    </dependency>
+    </dependency>    
     <!-- https://mvnrepository.com/artifact/junit/junit -->
 	<dependency>
 	    <groupId>junit</groupId>

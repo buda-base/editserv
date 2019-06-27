@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -29,6 +28,7 @@ public class DataUpdate {
     private List<String> graphs;
     private DatasetGraph dsg;
     private HashMap<String, Model> models;
+    private HashMap<String, AdminData> gitInfo;
 
     public DataUpdate(Task tsk) throws DataUpdateException {
         super();
@@ -36,6 +36,8 @@ public class DataUpdate {
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
+        this.models = new HashMap<>();
+        this.gitInfo = new HashMap<>();
         prepareModels();
     }
 
@@ -52,9 +54,11 @@ public class DataUpdate {
             Node graphUri = NodeFactory.createURI(st);
             try {
                 Graph gp = fusConn.fetch(st).getGraph();
+                fetchGitInfo(graphUri.getURI());
                 models.put(graphUri.getURI(), ModelFactory.createModelForGraph(gp));
                 dsg.addGraph(graphUri, gp);
-            } catch (HttpException ex) {
+            } catch (Exception ex) {
+                ex.printStackTrace();
                 throw new DataUpdateException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
             }
         }
@@ -66,19 +70,31 @@ public class DataUpdate {
             dsg.addGraph(graphUri, Graph.emptyGraph);
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
-            m.add(createGitInfo(graphUri.getURI()));
+            m.add(fetchGitInfo(graphUri.getURI()));
             models.put(graphUri.getURI(), m);
         }
+    }
+
+    public String getResourceType(String resId) {
+        return ph.getResourceType(resId);
     }
 
     public Model getModelByUri(String Uri) {
         return models.get(Uri);
     }
 
-    private Model createGitInfo(String graphUri) {
+    private Model fetchGitInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData data = new AdminData(resId, ph.getResourceType(resId));
+        AdminData data = new AdminData(resId, ph.getResourceType(graphUri));
+        gitInfo.put(graphUri, data);
+        System.out.println("GIT info Map>>" + gitInfo);
+        System.out.println("admin data>>" + data);
+        System.out.println("GRAPH URI>>" + graphUri + " resType=" + ph.getResourceType(graphUri));
         return data.asModel();
+    }
+
+    public AdminData getGitInfo(String graphUri) {
+        return gitInfo.get(graphUri);
     }
 
     public List<String> getCreate() {

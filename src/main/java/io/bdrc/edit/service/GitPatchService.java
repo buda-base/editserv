@@ -1,6 +1,5 @@
 package io.bdrc.edit.service;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -13,13 +12,11 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.TextProgressMonitor;
-import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.helpers.EditPatchHeaders;
-import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.exceptions.GitServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.libraries.GitHelpers;
@@ -31,19 +28,18 @@ public class GitPatchService implements BUDAEditService {
     int status;
     String id;
     String userId;
-    Task tsk;
-    private List<String> create;
-    EditPatchHeaders eph;
-
+    DataUpdate data;
+    List<String> create;
+    List<String> graphs;
     static Repository localRepo;
     static String remoteURL;
 
-    public GitPatchService(Task tsk) {
-        this.id = "GIT_" + id;
-        this.tsk = tsk;
-        this.userId = tsk.getUser();
-        eph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
-        this.create = eph.getCreateUris();
+    public GitPatchService(DataUpdate data) {
+        this.data = data;
+        this.id = "GIT_" + data.getTaskId();
+        this.userId = data.getUserId();
+        this.create = data.getCreate();
+        this.graphs = data.getGraphs();
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -54,11 +50,11 @@ public class GitPatchService implements BUDAEditService {
      * @throws IOException
      */
     public void run() throws GitServiceException {
-        log.info("Running Git Patch Service for task {}", tsk);
+        log.info("Running Git Patch Service for task {}", data.getTaskId());
         // First the existing graphs being updated
-        List<String> graphs = eph.getGraphUris();
         for (String g : graphs) {
-            String resType = eph.getResourceType(g);
+            String resType = data.getResourceType(g);
+            System.out.println("Admin DATA >>" + data.getGitInfo(g) + " graph=" + g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
         }
         /*

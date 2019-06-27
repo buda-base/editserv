@@ -2,7 +2,6 @@ package io.bdrc.edit.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
 
 import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.NodeFactory;
@@ -28,17 +27,13 @@ public class PatchService implements BUDAEditService {
     String name;
     int status;
     EditPatchHeaders ph;
-    private HashMap<String, Model> models;
 
     public PatchService(DataUpdate data) throws PatchServiceException {
         this.userId = data.getUserId();
         String time = Long.toString(System.currentTimeMillis());
         this.id = data.getTaskId();
         this.name = "TASK_SVC_" + time;
-    }
-
-    public HashMap<String, Model> getModels() {
-        return models;
+        this.data = data;
     }
 
     @Override
@@ -50,7 +45,7 @@ public class PatchService implements BUDAEditService {
     @Override
     public void run() throws ServiceException {
         try {
-            System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
+            System.out.println("Using remote endpoint in patchSVC run()>>" + EditConfig.getProperty("fusekiData"));
             InputStream patch = new ByteArrayInputStream(data.getPatch().getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
@@ -78,6 +73,7 @@ public class PatchService implements BUDAEditService {
             fusConn.close();
             patch.close();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new PatchServiceException(e);
         }
     }

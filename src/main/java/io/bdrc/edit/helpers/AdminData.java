@@ -97,12 +97,12 @@ public class AdminData {
 
     @Override
     public String toString() {
-        return "ResourceGitInfo [gitRepo=" + gitRepo + ", gitPath=" + gitPath + ", gitRevision=" + gitRevision + ", resourceType=" + resourceType + "]";
+        return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", gitRevision=" + gitRevision + ", resourceType=" + resourceType + "]";
     }
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = new AdminData("W22084", "work").asModel();
+        Model m = new AdminData("P1524", "person").asModel();
         m.write(System.out, "TURTLE");
     }
 

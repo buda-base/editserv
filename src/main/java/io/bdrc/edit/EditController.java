@@ -174,7 +174,7 @@ public class EditController {
             DataUpdate data = new DataUpdate(t);
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
             btx.enlistResource(new PatchService(data), 0);
-            btx.enlistResource(new GitPatchService(t), 1);
+            btx.enlistResource(new GitPatchService(data), 1);
             btx.enlistResource(new TxnCloserService(t), 2);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);

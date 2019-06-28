@@ -2,6 +2,7 @@ package io.bdrc.edit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -158,12 +159,14 @@ public class EditController {
     /**
      * Applies a Patch
      * 
+     * @throws NoSuchAlgorithmException
+     * 
      * @throws IOException
      * @throws ServiceSequenceException
      */
 
     @RequestMapping(value = "/tasks", consumes = "application/json", produces = "application/json", method = RequestMethod.POST)
-    public ResponseEntity<String> applyPatch(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) {
+    public ResponseEntity<String> applyPatch(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) throws NoSuchAlgorithmException {
         String userId = getUser(req);
         Task t = null;
         try {

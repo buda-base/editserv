@@ -3,6 +3,7 @@ package editservio.bdrc.edit.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -74,7 +75,7 @@ public class PostTaskTest {
     }
 
     @Test
-    public void taskService() throws ClientProtocolException, IOException, ServiceException {
+    public void taskService() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);

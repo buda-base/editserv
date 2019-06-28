@@ -1,9 +1,14 @@
 package io.bdrc.edit.helpers;
 
 import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -30,7 +35,7 @@ public class DataUpdate {
     private HashMap<String, Model> models;
     private HashMap<String, AdminData> gitInfo;
 
-    public DataUpdate(Task tsk) throws DataUpdateException {
+    public DataUpdate(Task tsk) throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
         super();
         this.tsk = tsk;
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
@@ -41,7 +46,7 @@ public class DataUpdate {
         prepareModels();
     }
 
-    private void prepareModels() throws DataUpdateException {
+    private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
         System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
 
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
@@ -70,7 +75,7 @@ public class DataUpdate {
             dsg.addGraph(graphUri, Graph.emptyGraph);
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
-            m.add(fetchGitInfo(graphUri.getURI()));
+            m.add(createGitInfo(graphUri.getURI()));
             models.put(graphUri.getURI(), m);
         }
     }
@@ -92,6 +97,28 @@ public class DataUpdate {
         // System.out.println("admin data>>" + data);
         System.out.println("GRAPH URI>>" + graphUri + " resType=" + ph.getResourceType(graphUri));
         return data.asModel();
+    }
+
+    private Model createGitInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        AdminData data = new AdminData(resId, getResourceType(graphUri), getGitDir(resId), "");
+        gitInfo.put(graphUri, data);
+        // System.out.println("GIT info Map>>" + gitInfo);
+        // System.out.println("admin data>>" + data);
+        System.out.println("GRAPH URI>>" + graphUri + " resType=" + ph.getResourceType(graphUri));
+        return data.asModel();
+    }
+
+    private String getGitDir(String resId) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        int index = resId.indexOf('_');
+        if (index != -1) {
+            resId = resId.substring(0, index);
+        }
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.reset();
+        md.update(resId.getBytes(Charset.forName("UTF8")));
+        String hash = new String(Hex.encodeHex(md.digest())).substring(0, 2);
+        return hash;
     }
 
     public AdminData getGitInfo(String graphUri) {

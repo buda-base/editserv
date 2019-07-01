@@ -7,6 +7,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.jena.graph.Graph;
@@ -78,6 +80,11 @@ public class DataUpdate {
             m.add(createGitInfo(graphUri.getURI()));
             models.put(graphUri.getURI(), m);
         }
+    }
+
+    public List<String> getAllAffectedGraphs() {
+        List<String> all = Stream.of(graphs, create).flatMap(x -> x.stream()).collect(Collectors.toList());
+        return all;
     }
 
     public String getResourceType(String resId) {

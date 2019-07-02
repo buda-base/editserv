@@ -56,7 +56,7 @@
     <dependency>
 	  <groupId>io.bdrc.libraries</groupId>
 	  <artifactId>bdrc-libraries</artifactId>
-	  <version>0.3.0</version>
+	  <version>0.4.0</version>
 	</dependency>
     <!-- https://mvnrepository.com/artifact/io.bdrc/jena-stable-turtle -->
     <dependency>
@@ -144,12 +144,7 @@
 	    <artifactId>rdf-delta-server-local</artifactId>
 	    <version>0.7.0</version>
 	</dependency>
-	<!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-jasper -->
-	<dependency>
-	    <groupId>org.apache.tomcat.embed</groupId>
-	    <artifactId>tomcat-embed-jasper</artifactId>
-	    <version>9.0.20</version>
-	</dependency>
+	
 	<!-- Need this to compile JSP, 
             tomcat-embed-jasper version is not working, no idea why -->
         <dependency>
@@ -158,12 +153,7 @@
             <version>4.6.1</version>
             <scope>provided</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/javax.servlet/jstl -->
-	<dependency>
-	    <groupId>javax.servlet</groupId>
-	    <artifactId>jstl</artifactId>
-	    <version>1.2</version>
-	</dependency>
+        <!-- https://mvnrepository.com/artifact/javax.servlet/jstl -->	
   </dependencies>
   <build>
     <finalName>editserv</finalName>

@@ -5,6 +5,10 @@ import java.util.Date;
 
 public class Session implements Serializable {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 5870830073494191588L;
     public Date date;
     public String gitVersion;
     public String taskVersion;

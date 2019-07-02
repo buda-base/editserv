@@ -107,7 +107,6 @@ public class Task {
         Task t = new Task("saveMsg", "message", "id", "shortName", "payload", "user");
         System.out.println(t);
         // using mapper and create method
-        ObjectMapper mapper = new ObjectMapper();
         // mapper.writeValue(System.out, t);
         String test = "  {\n" + "    \"id\": \"YYYYYY\",\n" + "    \"shortName\": \"Yoga Collection\",\n" + "    \"message\":\"about the task\",\n" + "    \"user\":\"marc\", \n"
                 + "    \"patch\":\"here is one more version of the content of the patch YYY\" \n" + "    \n" + "  } ";

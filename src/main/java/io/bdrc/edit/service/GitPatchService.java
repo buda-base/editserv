@@ -29,8 +29,11 @@ import org.apache.jena.vocabulary.VCARD4;
 import org.apache.jena.vocabulary.XSD;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +76,11 @@ public class GitPatchService implements BUDAEditService {
     /**
      * Run the service and logs execution.
      * 
-     * @throws @throws IOException
+     * @throws GitAPIException
+     * @throws TransportException
+     * @throws InvalidRemoteException
+     * 
+     * @throws                        @throws IOException
      */
     public void run() throws GitServiceException {
         log.info("Running Git Patch Service for task {}", data.getTaskId());
@@ -87,8 +94,16 @@ public class GitPatchService implements BUDAEditService {
             try {
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 modelToOutputStream(data.getModelByUri(g), fos, g.substring(g.lastIndexOf("/") + 1));
-                GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
-            } catch (FileNotFoundException e) {
+                RevCommit rev = GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
+                data.addGitRevisionInfo(g, rev.getName());
+                System.out.println("GIT USER >>" + EditConfig.getProperty("gitUser"));
+                System.out.println("GIT PASS >>" + EditConfig.getProperty("gitPass"));
+                // GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"),
+                // EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitUser"),
+                // EditConfig.getProperty("gitLocalRoot"));
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), "magate", "tchame2011", EditConfig.getProperty("gitLocalRoot"));
+
+            } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
                 throw new GitServiceException(e);
@@ -105,8 +120,10 @@ public class GitPatchService implements BUDAEditService {
             try {
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 modelToOutputStream(data.getModelByUri(c), fos, c.substring(c.lastIndexOf("/") + 1));
-                GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
-            } catch (FileNotFoundException e) {
+                RevCommit rev = GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
+                data.addGitRevisionInfo(c, rev.getName());
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitLocalRoot"));
+            } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
                 throw new GitServiceException(e);
@@ -168,15 +185,12 @@ public class GitPatchService implements BUDAEditService {
              * UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"),
              * EditConfig.getProperty("gitPassword"))).setRemote(remoteURL).call(); break; }
              */
+            git.close();
         } catch (GitAPIException e) {
             e.printStackTrace();
             throw new GitServiceException(e);
         }
         return false;
-    }
-
-    private boolean hasNoDir(String resType) {
-        return resType.equalsIgnoreCase("office") || resType.equalsIgnoreCase("corporation");
     }
 
     @Override

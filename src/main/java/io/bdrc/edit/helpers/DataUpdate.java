@@ -36,6 +36,7 @@ public class DataUpdate {
     private DatasetGraph dsg;
     private HashMap<String, Model> models;
     private HashMap<String, AdminData> gitInfo;
+    private HashMap<String, String> gitRev;
 
     public DataUpdate(Task tsk) throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
         super();
@@ -45,6 +46,7 @@ public class DataUpdate {
         this.graphs = ph.getGraphUris();
         this.models = new HashMap<>();
         this.gitInfo = new HashMap<>();
+        this.gitRev = new HashMap<>();
         prepareModels();
     }
 
@@ -80,6 +82,10 @@ public class DataUpdate {
             m.add(createGitInfo(graphUri.getURI()));
             models.put(graphUri.getURI(), m);
         }
+    }
+
+    public void addGitRevisionInfo(String graph, String sha1) {
+        gitRev.put(graph, sha1);
     }
 
     public List<String> getAllAffectedGraphs() {
@@ -150,6 +156,10 @@ public class DataUpdate {
 
     public String getPatch() {
         return tsk.getPatch();
+    }
+
+    public HashMap<String, String> getGitRev() {
+        return gitRev;
     }
 
     public DatasetGraph getDatasetGraph() {

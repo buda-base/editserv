@@ -29,6 +29,7 @@ import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.service.GitPatchService;
+import io.bdrc.edit.service.GitRevisionService;
 import io.bdrc.edit.service.PatchService;
 import io.bdrc.edit.service.TxnCloserService;
 import io.bdrc.edit.txn.BUDATransaction;
@@ -178,8 +179,8 @@ public class EditController {
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
             btx.enlistResource(new PatchService(data), 0);
             btx.enlistResource(new GitPatchService(data), 1);
-            // btx.enlistResource(new GitRevisionService(data), 1);
-            btx.enlistResource(new TxnCloserService(t), 2);
+            btx.enlistResource(new GitRevisionService(data.getGitRev(), data), 2);
+            btx.enlistResource(new TxnCloserService(t), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {

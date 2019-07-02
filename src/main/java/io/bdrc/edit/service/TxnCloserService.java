@@ -8,6 +8,12 @@ import io.bdrc.edit.txn.exceptions.ServiceException;
 
 public class TxnCloserService implements BUDAEditService {
 
+    /*
+     * This service takes care of finalizing the transaction and do the necessary
+     * cleanup It makes sure the queue is in a consistent state, give the
+     * transaction its final status and store the transaction log properly
+     */
+
     public final static Logger log = LoggerFactory.getLogger(TxnCloserService.class.getName());
 
     Task tsk;

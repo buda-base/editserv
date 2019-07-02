@@ -2,6 +2,11 @@ package io.bdrc.edit.txn.exceptions;
 
 public class GitRevisionException extends ServiceException {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5608978168779760912L;
+
     public GitRevisionException() {
         super();
         // TODO Auto-generated constructor stub

@@ -2,6 +2,11 @@ package io.bdrc.edit.txn.exceptions;
 
 public class DataUpdateException extends ServiceException {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5184089676754550861L;
+
     public DataUpdateException() {
         super();
         // TODO Auto-generated constructor stub

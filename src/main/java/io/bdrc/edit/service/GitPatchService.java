@@ -98,10 +98,7 @@ public class GitPatchService implements BUDAEditService {
                 data.addGitRevisionInfo(g, rev.getName());
                 System.out.println("GIT USER >>" + EditConfig.getProperty("gitUser"));
                 System.out.println("GIT PASS >>" + EditConfig.getProperty("gitPass"));
-                // GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"),
-                // EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitUser"),
-                // EditConfig.getProperty("gitLocalRoot"));
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), "magate", "tchame2011", EditConfig.getProperty("gitLocalRoot"));
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
 
             } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block

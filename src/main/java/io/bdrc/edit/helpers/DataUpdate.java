@@ -14,16 +14,19 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 
@@ -35,7 +38,7 @@ public class DataUpdate {
     private List<String> graphs;
     private DatasetGraph dsg;
     private HashMap<String, Model> models;
-    private HashMap<String, AdminData> gitInfo;
+    private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
 
     public DataUpdate(Task tsk) throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
@@ -45,12 +48,12 @@ public class DataUpdate {
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
         this.models = new HashMap<>();
-        this.gitInfo = new HashMap<>();
+        this.admData = new HashMap<>();
         this.gitRev = new HashMap<>();
-        prepareModels(true);
+        prepareModels();
     }
 
-    private void prepareModels(boolean withGitInfo) throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
+    private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
         System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
 
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
@@ -63,8 +66,9 @@ public class DataUpdate {
             Node graphUri = NodeFactory.createURI(st);
             try {
                 Graph gp = fusConn.fetch(st).getGraph();
-                fetchGitInfo(graphUri.getURI(), withGitInfo);
-                models.put(graphUri.getURI(), ModelFactory.createModelForGraph(gp));
+                fetchGitInfo(graphUri.getURI());
+                Model m = ModelFactory.createModelForGraph(gp);
+                models.put(graphUri.getURI(), removeGitRevisionInfo(st, m));
                 dsg.addGraph(graphUri, gp);
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -79,9 +83,17 @@ public class DataUpdate {
             dsg.addGraph(graphUri, Graph.emptyGraph);
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
-            m.add(createGitInfo(graphUri.getURI(), withGitInfo));
-            models.put(graphUri.getURI(), m);
+            createGitInfo(graphUri.getURI());
+            models.put(graphUri.getURI(), removeGitRevisionInfo(c, m));
         }
+    }
+
+    private Model removeGitRevisionInfo(String graphUri, Model m) {
+        String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        Triple tpl = Triple.create(ResourceFactory.createResource(EditConstants.BDA + resId).asNode(), AdminData.GIT_REVISION.asNode(), Node.ANY);
+        Graph g = m.getGraph();
+        g.delete(tpl);
+        return ModelFactory.createModelForGraph(g);
     }
 
     public void addGitRevisionInfo(String graph, String sha1) {
@@ -94,7 +106,6 @@ public class DataUpdate {
     }
 
     public String getResourceType(String resId) {
-        System.out.println("MP >>>>>>>>>>>>>>>" + ph.getResTypeMapping() + " resId=" + resId);
         return ph.getResourceType(resId);
     }
 
@@ -102,18 +113,16 @@ public class DataUpdate {
         return models.get(Uri);
     }
 
-    private Model fetchGitInfo(String graphUri, boolean withGitInfo) {
+    private Model fetchGitInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData data = new AdminData(resId, getResourceType(graphUri));
-        gitInfo.put(graphUri, data);
-        return data.asModel(withGitInfo);
+        admData.put(graphUri, new AdminData(resId, getResourceType(graphUri)));
+        return admData.get(graphUri).asModel();
     }
 
-    private Model createGitInfo(String graphUri, boolean withGitInfo) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private Model createGitInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData data = new AdminData(resId, getResourceType(graphUri), getGitDir(resId), "");
-        gitInfo.put(graphUri, data);
-        return data.asModel(withGitInfo);
+        admData.put(graphUri, new AdminData(resId, getResourceType(graphUri), getGitDir(resId)));
+        return admData.get(graphUri).asModel();
     }
 
     private String getGitDir(String resId) throws NoSuchAlgorithmException, UnsupportedEncodingException {
@@ -128,8 +137,8 @@ public class DataUpdate {
         return hash;
     }
 
-    public AdminData getGitInfo(String graphUri) {
-        return gitInfo.get(graphUri);
+    public AdminData getAdminData(String graphUri) {
+        return admData.get(graphUri);
     }
 
     public List<String> getCreate() {

@@ -27,36 +27,34 @@ public class AdminData {
     public GitRepo gitRepo;
     public String resId;
     public String gitPath;
-    public String gitRevision;
     public String resourceType;
 
-    public AdminData(String resId, String resourceType, String gitPath, String gitRevision) {
+    public AdminData(String resId, String resourceType, String gitPath) {
         this.resId = resId;
         this.resourceType = resourceType;
         this.gitRepo = GitRepositories.getRepo(resourceType);
         this.gitPath = gitPath;
-        this.gitRevision = gitRevision;
     }
 
     public AdminData(String resId, String resourceType) {
+
         this.resId = resId;
         this.resourceType = resourceType;
         this.gitRepo = GitRepositories.getRepo(resourceType);
         Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId);
         NodeIterator ni = adm.listObjectsOfProperty(GIT_PATH);
-        this.gitPath = ni.next().asLiteral().getString();
-        ni = adm.listObjectsOfProperty(GIT_REVISION);
-        this.gitRevision = ni.next().asLiteral().getString();
+        if (ni.hasNext()) {
+            this.gitPath = ni.next().asLiteral().getString();
+        }
     }
 
-    public Model asModel(boolean withGit) {
+    public Model asModel() {
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
         m.add(ResourceFactory.createStatement(r, RDF.type, ADMIN_DATA));
-        if (withGit) {
-            m.add(ResourceFactory.createStatement(r, GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
+        m.add(ResourceFactory.createStatement(r, GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
+        if (gitPath != null) {
             m.add(ResourceFactory.createStatement(r, GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
-            m.add(ResourceFactory.createStatement(r, GIT_REVISION, ResourceFactory.createPlainLiteral(gitRevision)));
         }
         m.add(ResourceFactory.createStatement(r, ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
         m.add(ResourceFactory.createStatement(r, ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
@@ -89,22 +87,21 @@ public class AdminData {
         this.gitPath = gitPath;
     }
 
-    public String getGitRevision() {
-        return gitRevision;
-    }
-
-    public void setGitRevision(String gitRevision) {
-        this.gitRevision = gitRevision;
-    }
+    /*
+     * public String getGitRevision() { return gitRevision; }
+     * 
+     * public void setGitRevision(String gitRevision) { this.gitRevision =
+     * gitRevision; }
+     */
 
     @Override
     public String toString() {
-        return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", gitRevision=" + gitRevision + ", resourceType=" + resourceType + "]";
+        return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
     }
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = new AdminData("P1524", "person").asModel(false);
+        Model m = new AdminData("P1524", "person").asModel();
         m.write(System.out, "TURTLE");
     }
 

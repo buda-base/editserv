@@ -90,7 +90,7 @@ public class GitPatchService implements BUDAEditService {
         // First: processing the existing graphs being updated
         for (String g : graphs) {
             String resType = data.getResourceType(g);
-            AdminData adm = data.getGitInfo(g);
+            AdminData adm = data.getAdminData(g);
             System.out.println("Admin DATA >>" + adm + " graph=" + g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
@@ -112,7 +112,7 @@ public class GitPatchService implements BUDAEditService {
         // second: new resources, created graphs
         for (String c : create) {
             String resType = data.getResourceType(c);
-            AdminData adm = data.getGitInfo(c);
+            AdminData adm = data.getAdminData(c);
             System.out.println("Admin DATA >>" + adm + " graph=" + c);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;

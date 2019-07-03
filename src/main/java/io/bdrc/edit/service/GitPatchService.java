@@ -87,7 +87,6 @@ public class GitPatchService implements BUDAEditService {
         log.info("Running Git Patch Service for task {}", data.getTaskId());
         String gitUser = EditConfig.getProperty("gitUser");
         String gitPass = EditConfig.getProperty("gitPass");
-        System.out.println("User >>" + gitUser + " pass=" + gitPass);
         // First: processing the existing graphs being updated
         for (String g : graphs) {
             String resType = data.getResourceType(g);
@@ -96,12 +95,11 @@ public class GitPatchService implements BUDAEditService {
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
             try {
+                String resId = g.substring(g.lastIndexOf("/") + 1);
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
-                modelToOutputStream(data.getModelByUri(g), fos, g.substring(g.lastIndexOf("/") + 1));
+                modelToOutputStream(data.getModelByUri(g), fos, resId + ".trig");
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
-                System.out.println("GIT USER >>" + EditConfig.getProperty("gitUser"));
-                System.out.println("GIT PASS >>" + EditConfig.getProperty("gitPass"));
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
 
             } catch (FileNotFoundException | GitAPIException e) {
@@ -124,7 +122,7 @@ public class GitPatchService implements BUDAEditService {
                 if (!file.exists()) {
                     file.mkdir();
                 }
-                fos = new FileOutputStream(file + "/" + resId);
+                fos = new FileOutputStream(file + "/" + resId + ".trig");
                 modelToOutputStream(data.getModelByUri(c), fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(c, rev.getName());

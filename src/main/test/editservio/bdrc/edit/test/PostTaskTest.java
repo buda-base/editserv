@@ -82,7 +82,7 @@ public class PostTaskTest {
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
         PatchService tsvc = new PatchService(data);
-        tsvc.run();
+        // tsvc.run();
         // assert (Checker.checkResourceInConstruct("checks/simpleAdd.check",
         // "bdr:P1524X"));
         GitPatchService gps = new GitPatchService(data);
@@ -90,7 +90,7 @@ public class PostTaskTest {
         patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
         tsvc = new PatchService(new DataUpdate(tk1));
-        // tsvc.run();
+        tsvc.run();
         // assert (!Checker.checkResourceInConstruct("checks/simpleAdd.check",
         // "bdr:P1583"));
     }

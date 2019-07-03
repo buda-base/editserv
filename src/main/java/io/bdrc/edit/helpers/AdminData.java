@@ -49,13 +49,15 @@ public class AdminData {
         this.gitRevision = ni.next().asLiteral().getString();
     }
 
-    public Model asModel() {
+    public Model asModel(boolean withGit) {
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
         m.add(ResourceFactory.createStatement(r, RDF.type, ADMIN_DATA));
-        m.add(ResourceFactory.createStatement(r, GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
-        m.add(ResourceFactory.createStatement(r, GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
-        m.add(ResourceFactory.createStatement(r, GIT_REVISION, ResourceFactory.createPlainLiteral(gitRevision)));
+        if (withGit) {
+            m.add(ResourceFactory.createStatement(r, GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
+            m.add(ResourceFactory.createStatement(r, GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
+            m.add(ResourceFactory.createStatement(r, GIT_REVISION, ResourceFactory.createPlainLiteral(gitRevision)));
+        }
         m.add(ResourceFactory.createStatement(r, ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
         m.add(ResourceFactory.createStatement(r, ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
         m.add(ResourceFactory.createStatement(r, ADMIN_STATUS, STATUS_PROV));
@@ -102,7 +104,7 @@ public class AdminData {
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = new AdminData("P1524", "person").asModel();
+        Model m = new AdminData("P1524", "person").asModel(false);
         m.write(System.out, "TURTLE");
     }
 

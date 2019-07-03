@@ -6,6 +6,7 @@ import static io.bdrc.libraries.Models.BDG;
 import static io.bdrc.libraries.Models.BDO;
 import static io.bdrc.libraries.Models.BDR;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -84,6 +85,9 @@ public class GitPatchService implements BUDAEditService {
      */
     public void run() throws GitServiceException {
         log.info("Running Git Patch Service for task {}", data.getTaskId());
+        String gitUser = EditConfig.getProperty("gitUser");
+        String gitPass = EditConfig.getProperty("gitPass");
+        System.out.println("User >>" + gitUser + " pass=" + gitPass);
         // First: processing the existing graphs being updated
         for (String g : graphs) {
             String resType = data.getResourceType(g);
@@ -94,11 +98,11 @@ public class GitPatchService implements BUDAEditService {
             try {
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 modelToOutputStream(data.getModelByUri(g), fos, g.substring(g.lastIndexOf("/") + 1));
-                RevCommit rev = GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
+                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
                 System.out.println("GIT USER >>" + EditConfig.getProperty("gitUser"));
                 System.out.println("GIT PASS >>" + EditConfig.getProperty("gitPass"));
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
 
             } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block
@@ -115,11 +119,16 @@ public class GitPatchService implements BUDAEditService {
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
             try {
-                fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
-                modelToOutputStream(data.getModelByUri(c), fos, c.substring(c.lastIndexOf("/") + 1));
-                RevCommit rev = GitHelpers.commitChanges(resType, "Commit message at " + System.currentTimeMillis());
+                String resId = c.substring(c.lastIndexOf("/") + 1);
+                File file = new File(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
+                if (!file.exists()) {
+                    file.mkdir();
+                }
+                fos = new FileOutputStream(file + "/" + resId);
+                modelToOutputStream(data.getModelByUri(c), fos, resId);
+                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(c, rev.getName());
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitLocalRoot"));
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
             } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

@@ -177,10 +177,10 @@ public class EditController {
             t = Task.create(jsonTask);
             DataUpdate data = new DataUpdate(t);
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
-            btx.enlistResource(new PatchService(data), 0);
-            btx.enlistResource(new GitPatchService(data), 1);
-            btx.enlistResource(new GitRevisionService(data.getGitRev(), data), 2);
-            btx.enlistResource(new TxnCloserService(t), 3);
+            btx.enlistService(new PatchService(data), 0);
+            btx.enlistService(new GitPatchService(data), 1);
+            btx.enlistService(new GitRevisionService(data.getGitRev(), data), 2);
+            btx.enlistService(new TxnCloserService(t), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {

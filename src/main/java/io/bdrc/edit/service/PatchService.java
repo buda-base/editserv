@@ -7,6 +7,7 @@ import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -58,7 +59,8 @@ public class PatchService implements BUDAEditService {
             // Putting the graphs back into main fuseki dataset
             for (String st : data.getGraphs()) {
                 try {
-                    Model m = data.getModelByUri(NodeFactory.createURI(st).getURI());
+                    Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
+                    m.write(System.out, "TRIG");
                     putModel(fusConn, st, m);
                 } catch (HttpException ex) {
                     throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
@@ -66,7 +68,7 @@ public class PatchService implements BUDAEditService {
             }
             // Adding created and populated graphs to the main fuseki dataset
             for (String c : data.getCreate()) {
-                Model m = data.getModelByUri(NodeFactory.createURI(c).getURI());
+                Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(c)));
                 putModel(fusConn, c, m);
             }
             fusConn.close();

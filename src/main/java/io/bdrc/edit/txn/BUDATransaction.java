@@ -28,7 +28,7 @@ public class BUDATransaction {
      * 
      * @throws ServiceSequenceException
      */
-    public boolean enlistResource(BUDAEditService serv, int order) throws ServiceSequenceException {
+    public boolean enlistService(BUDAEditService serv, int order) throws ServiceSequenceException {
         if (servicesMap.containsKey(order)) {
             throw new ServiceSequenceException();
         }

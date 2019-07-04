@@ -1,4 +1,4 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.modules;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -20,7 +20,7 @@ import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class PatchService implements BUDAEditService {
+public class PatchModule implements BUDAEditModule {
 
     DataUpdate data;
     String userId;
@@ -29,7 +29,7 @@ public class PatchService implements BUDAEditService {
     int status;
     EditPatchHeaders ph;
 
-    public PatchService(DataUpdate data) throws PatchServiceException {
+    public PatchModule(DataUpdate data) throws PatchServiceException {
         this.userId = data.getUserId();
         String time = Long.toString(System.currentTimeMillis());
         this.id = data.getTaskId();
@@ -52,6 +52,8 @@ public class PatchService implements BUDAEditService {
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
 
             DatasetGraph dsg = data.getDatasetGraph();
+            Model MM = ModelFactory.createModelForGraph(dsg.getUnionGraph());
+            MM.write(System.out, "TRIG");
             // Applying changes
             RDFChangesApply apply = new RDFChangesApply(dsg);
             rdf.apply(apply);
@@ -60,8 +62,10 @@ public class PatchService implements BUDAEditService {
             for (String st : data.getGraphs()) {
                 try {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
+                    System.out.println("AFTER: graph >> " + st);
                     m.write(System.out, "TRIG");
                     putModel(fusConn, st, m);
+                    data.updateDatasetGraph(st, m);
                 } catch (HttpException ex) {
                     throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
                 }
@@ -70,6 +74,7 @@ public class PatchService implements BUDAEditService {
             for (String c : data.getCreate()) {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(c)));
                 putModel(fusConn, c, m);
+                data.updateDatasetGraph(c, m);
             }
             fusConn.close();
             patch.close();

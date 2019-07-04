@@ -1,4 +1,4 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.modules;
 
 import static io.bdrc.libraries.Models.ADM;
 import static io.bdrc.libraries.Models.BDA;
@@ -50,9 +50,9 @@ import io.bdrc.jena.sttl.STTLWriter;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
 
-public class GitPatchService implements BUDAEditService {
+public class GitPatchModule implements BUDAEditModule {
 
-    public final static Logger log = LoggerFactory.getLogger(GitPatchService.class.getName());
+    public final static Logger log = LoggerFactory.getLogger(GitPatchModule.class.getName());
 
     int status;
     String id;
@@ -64,7 +64,7 @@ public class GitPatchService implements BUDAEditService {
     static Repository localRepo;
     static String remoteURL;
 
-    public GitPatchService(DataUpdate data) {
+    public GitPatchModule(DataUpdate data) {
         this.data = data;
         this.id = "GIT_" + data.getTaskId();
         this.userId = data.getUserId();
@@ -98,7 +98,9 @@ public class GitPatchService implements BUDAEditService {
             try {
                 String resId = g.substring(g.lastIndexOf("/") + 1);
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
-                modelToOutputStream(ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g))), fos, resId + ".trig");
+                Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
+                to_write.write(System.out, "TURTLE");
+                modelToOutputStream(to_write, fos, resId + ".trig");
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));

@@ -1,4 +1,4 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.modules;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class TxnCloserService implements BUDAEditService {
+public class TxnCloserModule implements BUDAEditModule {
 
     /*
      * This service takes care of finalizing the transaction and do the necessary
@@ -14,11 +14,11 @@ public class TxnCloserService implements BUDAEditService {
      * transaction its final status and store the transaction log properly
      */
 
-    public final static Logger log = LoggerFactory.getLogger(TxnCloserService.class.getName());
+    public final static Logger log = LoggerFactory.getLogger(TxnCloserModule.class.getName());
 
     Task tsk;
 
-    public TxnCloserService(Task tsk) {
+    public TxnCloserModule(Task tsk) {
         super();
         this.tsk = tsk;
     }

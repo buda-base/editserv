@@ -37,7 +37,6 @@ public class DataUpdate {
     private List<String> create;
     private List<String> graphs;
     private DatasetGraph dsg;
-    private HashMap<String, Model> models;
     private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
 
@@ -47,7 +46,6 @@ public class DataUpdate {
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
-        this.models = new HashMap<>();
         this.admData = new HashMap<>();
         this.gitRev = new HashMap<>();
         prepareModels();
@@ -68,8 +66,8 @@ public class DataUpdate {
                 Graph gp = fusConn.fetch(st).getGraph();
                 fetchGitInfo(graphUri.getURI());
                 Model m = ModelFactory.createModelForGraph(gp);
-                models.put(graphUri.getURI(), removeGitRevisionInfo(st, m));
-                dsg.addGraph(graphUri, gp);
+                removeGitRevisionInfo(st, m);
+                dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
                 throw new DataUpdateException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
@@ -83,8 +81,9 @@ public class DataUpdate {
             dsg.addGraph(graphUri, Graph.emptyGraph);
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
+            removeGitRevisionInfo(c, m);
             createGitInfo(graphUri.getURI());
-            models.put(graphUri.getURI(), removeGitRevisionInfo(c, m));
+            dsg.addGraph(graphUri, m.getGraph());
         }
     }
 
@@ -109,9 +108,9 @@ public class DataUpdate {
         return ph.getResourceType(resId);
     }
 
-    public Model getModelByUri(String Uri) {
-        return models.get(Uri);
-    }
+    /*
+     * public Model getModelByUri(String Uri) { return models.get(Uri); }
+     */
 
     private Model fetchGitInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
@@ -163,6 +162,11 @@ public class DataUpdate {
 
     public HashMap<String, String> getGitRev() {
         return gitRev;
+    }
+
+    public void updateDatasetGraph(String graphUri, Model m) {
+        dsg.removeGraph(NodeFactory.createURI(graphUri));
+        dsg.addGraph(NodeFactory.createURI(graphUri), m.getGraph());
     }
 
     public DatasetGraph getDatasetGraph() {

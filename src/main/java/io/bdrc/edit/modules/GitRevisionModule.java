@@ -1,4 +1,4 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.modules;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -22,13 +22,13 @@ import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.exceptions.GitRevisionException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class GitRevisionService implements BUDAEditService {
+public class GitRevisionModule implements BUDAEditModule {
 
     HashMap<String, String> revMap;
     String patch;
     DataUpdate data;
 
-    public GitRevisionService(DataUpdate data) throws GitRevisionException {
+    public GitRevisionModule(DataUpdate data) throws GitRevisionException {
         super();
         this.revMap = data.getGitRev();
         this.patch = buildRevisionPatch();
@@ -42,11 +42,18 @@ public class GitRevisionService implements BUDAEditService {
             sb.append("TX .");
             for (String key : keys) {
                 String resId = key.substring(key.lastIndexOf('/') + 1);
-                String line = "A <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + revMap.get(key) + "\" <http://purl.bdrc.io/graph/" + resId + "> .";
+                String line = "D <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + revMap.get(key) + "\" <http://purl.bdrc.io/graph/" + resId + "> .";
                 sb.append(System.lineSeparator());
                 sb.append(line);
-
+                //
+                String line1 = "D <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + "0a1050350a3443a1bd0c21dfc17949a5264d6d96" + "\" <http://purl.bdrc.io/graph/" + resId + "> .";
+                sb.append(System.lineSeparator());
+                sb.append(line1);
+                String line2 = "D <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + "d82228cf109266ddfe96bddda12e7e3745514dcc" + "\" <http://purl.bdrc.io/graph/" + resId + "> .";
+                sb.append(System.lineSeparator());
+                sb.append(line2);
             }
+
             sb.append(System.lineSeparator());
             sb.append("TC .");
         } catch (Exception e) {

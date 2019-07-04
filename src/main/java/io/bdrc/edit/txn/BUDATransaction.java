@@ -4,7 +4,7 @@ import java.util.TreeMap;
 
 import javax.transaction.Status;
 
-import io.bdrc.edit.service.BUDAEditService;
+import io.bdrc.edit.modules.BUDAEditModule;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
@@ -14,12 +14,12 @@ public class BUDATransaction {
     int currentSvc = -1;
     String id;
     String user;
-    TreeMap<Integer, BUDAEditService> servicesMap;
+    TreeMap<Integer, BUDAEditModule> modulesMap;
 
     public BUDATransaction(String id, String user) {
         this.id = id;
         this.user = user;
-        this.servicesMap = new TreeMap<>();
+        this.modulesMap = new TreeMap<>();
     }
 
     /**
@@ -28,11 +28,11 @@ public class BUDATransaction {
      * 
      * @throws ServiceSequenceException
      */
-    public boolean enlistService(BUDAEditService serv, int order) throws ServiceSequenceException {
-        if (servicesMap.containsKey(order)) {
+    public boolean addModule(BUDAEditModule serv, int order) throws ServiceSequenceException {
+        if (modulesMap.containsKey(order)) {
             throw new ServiceSequenceException();
         }
-        servicesMap.put(order, serv);
+        modulesMap.put(order, serv);
         return true;
     }
 
@@ -44,11 +44,11 @@ public class BUDATransaction {
      */
     public void commit() throws Exception {
         setStatus(Status.STATUS_COMMITTED);
-        for (int svc : servicesMap.keySet()) {
+        for (int svc : modulesMap.keySet()) {
             try {
                 // log.logMsg("Running service ", servicesMap.get(svc).getName() + " SVC =" +
                 // svc);
-                servicesMap.get(svc).run();
+                modulesMap.get(svc).run();
                 currentSvc = svc;
                 // log.logMsg("Finished Running service ", servicesMap.get(svc).getName());
             } catch (Exception e) {

@@ -3,11 +3,11 @@ package io.bdrc.edit.sparql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.bdrc.edit.modules.BUDAEditModule;
 import io.bdrc.edit.patch.Task;
-import io.bdrc.edit.service.BUDAEditService;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public class SPARQLService implements BUDAEditService {
+public class SPARQLService implements BUDAEditModule {
 
     public final static Logger log = LoggerFactory.getLogger(SPARQLService.class.getName());
 

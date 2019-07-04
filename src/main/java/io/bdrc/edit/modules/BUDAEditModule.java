@@ -1,8 +1,8 @@
-package io.bdrc.edit.service;
+package io.bdrc.edit.modules;
 
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
-public interface BUDAEditService {
+public interface BUDAEditModule {
 
     /**
      * Rollback to previous state, before service execution/failure

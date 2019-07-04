@@ -25,13 +25,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.modules.GitPatchModule;
+import io.bdrc.edit.modules.GitRevisionModule;
+import io.bdrc.edit.modules.PatchModule;
+import io.bdrc.edit.modules.TxnCloserModule;
 import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
-import io.bdrc.edit.service.GitPatchService;
-import io.bdrc.edit.service.GitRevisionService;
-import io.bdrc.edit.service.PatchService;
-import io.bdrc.edit.service.TxnCloserService;
 import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ServiceException;
@@ -177,10 +177,10 @@ public class EditController {
             t = Task.create(jsonTask);
             DataUpdate data = new DataUpdate(t);
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
-            btx.enlistService(new PatchService(data), 0);
-            btx.enlistService(new GitPatchService(data), 1);
-            btx.enlistService(new GitRevisionService(data), 2);
-            btx.enlistService(new TxnCloserService(t), 3);
+            btx.addModule(new PatchModule(data), 0);
+            btx.addModule(new GitPatchModule(data), 1);
+            btx.addModule(new GitRevisionModule(data), 2);
+            btx.addModule(new TxnCloserModule(t), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {

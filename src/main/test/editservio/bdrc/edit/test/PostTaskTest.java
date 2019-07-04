@@ -26,10 +26,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.edit.EditApplication;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.modules.GitPatchModule;
+import io.bdrc.edit.modules.GitRevisionModule;
+import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Task;
-import io.bdrc.edit.service.GitPatchService;
-import io.bdrc.edit.service.GitRevisionService;
-import io.bdrc.edit.service.PatchService;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 @RunWith(SpringRunner.class)
@@ -75,29 +75,31 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    // @Test
+    @Test
     public void deletePatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
 
         String patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk1);
-        PatchService tsvc = new PatchService(new DataUpdate(tk1));
+        PatchModule tsvc = new PatchModule(new DataUpdate(tk1));
         tsvc.run();
-        GitPatchService gps = new GitPatchService(data);
+        GitPatchModule gps = new GitPatchModule(data);
         gps.run();
+        GitRevisionModule grs = new GitRevisionModule(data);
+        grs.run();
     }
 
-    @Test
+    // @Test
     public void createPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/create.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchService tsvc = new PatchService(data);
+        PatchModule tsvc = new PatchModule(data);
         tsvc.run();
-        GitPatchService gps = new GitPatchService(data);
+        GitPatchModule gps = new GitPatchModule(data);
         gps.run();
-        GitRevisionService grs = new GitRevisionService(data);
-        grs.run();
+        // GitRevisionModule grs = new GitRevisionModule(data);
+        // grs.run();
     }
 
     public static String getResourceFileContent(String file) throws IOException {

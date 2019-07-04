@@ -179,7 +179,7 @@ public class EditController {
             BUDATransaction btx = new BUDATransaction(t.getId(), userId);
             btx.enlistService(new PatchService(data), 0);
             btx.enlistService(new GitPatchService(data), 1);
-            btx.enlistService(new GitRevisionService(data.getGitRev(), data), 2);
+            btx.enlistService(new GitRevisionService(data), 2);
             btx.enlistService(new TxnCloserService(t), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);

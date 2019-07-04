@@ -1,10 +1,7 @@
 package io.bdrc.edit.service;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -12,6 +9,7 @@ import java.util.Set;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -19,6 +17,7 @@ import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.exceptions.GitRevisionException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
@@ -29,29 +28,35 @@ public class GitRevisionService implements BUDAEditService {
     String patch;
     DataUpdate data;
 
-    public GitRevisionService(HashMap<String, String> revMap, DataUpdate data) throws GitRevisionException {
+    public GitRevisionService(DataUpdate data) throws GitRevisionException {
         super();
-        this.revMap = revMap;
+        this.revMap = data.getGitRev();
         this.patch = buildRevisionPatch();
         this.data = data;
     }
 
     private String buildRevisionPatch() throws GitRevisionException {
         Set<String> keys = revMap.keySet();
-        BufferedWriter bw = new BufferedWriter(new StringWriter());
-        for (String key : keys) {
-            String resId = key.substring(key.lastIndexOf('/') + 1);
-            String line = "A <" + key + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + revMap.get(key) + "\" <http://purl.bdrc.io/graph/" + resId + ">";
-            try {
-                bw.write(line);
-                bw.newLine();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                throw new GitRevisionException(e);
+        StringBuffer sb = new StringBuffer();
+        try {
+            sb.append("TX .");
+            for (String key : keys) {
+                String resId = key.substring(key.lastIndexOf('/') + 1);
+                String line = "A <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + revMap.get(key) + "\" <http://purl.bdrc.io/graph/" + resId + "> .";
+                sb.append(System.lineSeparator());
+                sb.append(line);
+
             }
+            sb.append(System.lineSeparator());
+            sb.append("TC .");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            throw new GitRevisionException(e);
         }
-        return bw.toString();
+        String s = sb.toString();
+        System.out.println(s);
+        return s;
     }
 
     @Override
@@ -72,7 +77,7 @@ public class GitRevisionService implements BUDAEditService {
         rdf.apply(apply);
         List<String> allGraphs = data.getAllAffectedGraphs();
         for (String g : allGraphs) {
-            Model m = data.getModelByUri(NodeFactory.createURI(g).getURI());
+            Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(g)));
             putModel(fusConn, g, m);
         }
     }

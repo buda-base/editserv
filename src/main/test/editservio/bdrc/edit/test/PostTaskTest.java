@@ -111,8 +111,8 @@ public class PostTaskTest {
         tsvc.run();
         GitPatchModule gps = new GitPatchModule(data);
         gps.run();
-        // GitRevisionModule grs = new GitRevisionModule(data);
-        // grs.run();
+        GitRevisionModule grs = new GitRevisionModule(data);
+        grs.run();
     }
 
     public static String getResourceFileContent(String file) throws IOException {

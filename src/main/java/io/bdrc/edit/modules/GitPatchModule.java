@@ -13,8 +13,10 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.SortedMap;
 
+import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -141,11 +143,27 @@ public class GitPatchModule implements BUDAEditModule {
     }
 
     public void modelToOutputStream(Model m, OutputStream out, String resId) throws FileNotFoundException {
+        m = removeGitInfo(m);
         String uriStr = BDG + resId;
         Node graphUri = NodeFactory.createURI(uriStr);
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
         new STriGWriter().write(out, dsg, getPrefixMap(), graphUri.toString(m), writerContext);
+    }
+
+    private Model removeGitInfo(Model m) {
+        Triple tpl = Triple.create(Node.ANY, AdminData.GIT_PATH.asNode(), Node.ANY);
+        Triple tpl1 = Triple.create(Node.ANY, AdminData.GIT_REPO.asNode(), Node.ANY);
+        Graph g = m.getGraph();
+        List<Triple> list = g.find(tpl).toList();
+        for (Triple t : list) {
+            g.delete(t);
+        }
+        list = g.find(tpl1).toList();
+        for (Triple t : list) {
+            g.delete(t);
+        }
+        return ModelFactory.createModelForGraph(g);
     }
 
     private Context createWriterContext() {

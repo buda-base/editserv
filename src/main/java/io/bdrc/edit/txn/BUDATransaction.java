@@ -11,7 +11,7 @@ import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 public class BUDATransaction {
 
     int status;
-    int currentSvc = -1;
+    int currentModule = -1;
     String id;
     String user;
     TreeMap<Integer, BUDAEditModule> modulesMap;
@@ -28,11 +28,11 @@ public class BUDATransaction {
      * 
      * @throws ServiceSequenceException
      */
-    public boolean addModule(BUDAEditModule serv, int order) throws ServiceSequenceException {
+    public boolean addModule(BUDAEditModule module, int order) throws ServiceSequenceException {
         if (modulesMap.containsKey(order)) {
             throw new ServiceSequenceException();
         }
-        modulesMap.put(order, serv);
+        modulesMap.put(order, module);
         return true;
     }
 
@@ -44,12 +44,12 @@ public class BUDATransaction {
      */
     public void commit() throws Exception {
         setStatus(Status.STATUS_COMMITTED);
-        for (int svc : modulesMap.keySet()) {
+        for (int module : modulesMap.keySet()) {
             try {
                 // log.logMsg("Running service ", servicesMap.get(svc).getName() + " SVC =" +
                 // svc);
-                modulesMap.get(svc).run();
-                currentSvc = svc;
+                modulesMap.get(module).run();
+                currentModule = module;
                 // log.logMsg("Finished Running service ", servicesMap.get(svc).getName());
             } catch (Exception e) {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
@@ -67,8 +67,8 @@ public class BUDATransaction {
         this.status = stat;
     }
 
-    public int getCurrentSvc() {
-        return currentSvc;
+    public int getCurrentModule() {
+        return currentModule;
     }
 
     public String getId() {

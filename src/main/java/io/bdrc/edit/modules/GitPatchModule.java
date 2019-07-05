@@ -88,17 +88,19 @@ public class GitPatchModule implements BUDAEditModule {
         log.info("Running Git Patch Service for task {}", data.getTaskId());
         String gitUser = EditConfig.getProperty("gitUser");
         String gitPass = EditConfig.getProperty("gitPass");
+
         // First: processing the existing graphs being updated
         for (String g : graphs) {
+            System.out.println("GRAPH DATA >>" + g);
             String resType = data.getResourceType(g);
             AdminData adm = data.getAdminData(g);
-            System.out.println("Admin DATA >>" + adm + " graph=" + g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
             try {
                 String resId = g.substring(g.lastIndexOf("/") + 1);
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
+                System.out.println("MODEL SIZE >>" + to_write.size());
                 to_write.write(System.out, "TURTLE");
                 modelToOutputStream(to_write, fos, resId + ".trig");
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());

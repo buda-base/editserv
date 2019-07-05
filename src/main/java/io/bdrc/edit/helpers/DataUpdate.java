@@ -52,8 +52,6 @@ public class DataUpdate {
     }
 
     private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        System.out.println("Using remote endpoint >>" + EditConfig.getProperty("fusekiData"));
-
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         Dataset ds = DatasetFactory.create();
@@ -66,7 +64,7 @@ public class DataUpdate {
                 Graph gp = fusConn.fetch(st).getGraph();
                 fetchGitInfo(graphUri.getURI());
                 Model m = ModelFactory.createModelForGraph(gp);
-                removeGitRevisionInfo(st, m);
+                m = removeGitRevisionInfo(st, m);
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -91,7 +89,10 @@ public class DataUpdate {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         Triple tpl = Triple.create(ResourceFactory.createResource(EditConstants.BDA + resId).asNode(), AdminData.GIT_REVISION.asNode(), Node.ANY);
         Graph g = m.getGraph();
-        g.delete(tpl);
+        List<Triple> list = g.find(tpl).toList();
+        for (Triple t : list) {
+            g.delete(t);
+        }
         return ModelFactory.createModelForGraph(g);
     }
 
@@ -107,10 +108,6 @@ public class DataUpdate {
     public String getResourceType(String resId) {
         return ph.getResourceType(resId);
     }
-
-    /*
-     * public Model getModelByUri(String Uri) { return models.get(Uri); }
-     */
 
     private Model fetchGitInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
@@ -162,11 +159,6 @@ public class DataUpdate {
 
     public HashMap<String, String> getGitRev() {
         return gitRev;
-    }
-
-    public void updateDatasetGraph(String graphUri, Model m) {
-        dsg.removeGraph(NodeFactory.createURI(graphUri));
-        dsg.addGraph(NodeFactory.createURI(graphUri), m.getGraph());
     }
 
     public DatasetGraph getDatasetGraph() {

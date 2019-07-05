@@ -75,7 +75,7 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void deletePatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
 
         String patch = getResourceFileContent("patch/createDelete.patch");
@@ -92,6 +92,19 @@ public class PostTaskTest {
     // @Test
     public void createPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/create.patch");
+        Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
+        DataUpdate data = new DataUpdate(tk);
+        PatchModule tsvc = new PatchModule(data);
+        tsvc.run();
+        GitPatchModule gps = new GitPatchModule(data);
+        gps.run();
+        // GitRevisionModule grs = new GitRevisionModule(data);
+        // grs.run();
+    }
+
+    @Test
+    public void simpleAddPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
+        String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
         PatchModule tsvc = new PatchModule(data);

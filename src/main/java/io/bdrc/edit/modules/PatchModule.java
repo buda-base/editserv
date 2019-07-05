@@ -52,8 +52,6 @@ public class PatchModule implements BUDAEditModule {
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
 
             DatasetGraph dsg = data.getDatasetGraph();
-            Model MM = ModelFactory.createModelForGraph(dsg.getUnionGraph());
-            MM.write(System.out, "TRIG");
             // Applying changes
             RDFChangesApply apply = new RDFChangesApply(dsg);
             rdf.apply(apply);
@@ -62,10 +60,10 @@ public class PatchModule implements BUDAEditModule {
             for (String st : data.getGraphs()) {
                 try {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                    System.out.println("AFTER: graph >> " + st);
+                    System.out.println("Model after patching for ------>> " + st);
                     m.write(System.out, "TRIG");
                     putModel(fusConn, st, m);
-                    data.updateDatasetGraph(st, m);
+                    data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {
                     throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
                 }
@@ -74,7 +72,7 @@ public class PatchModule implements BUDAEditModule {
             for (String c : data.getCreate()) {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(c)));
                 putModel(fusConn, c, m);
-                data.updateDatasetGraph(c, m);
+                data.getDatasetGraph().addGraph(NodeFactory.createURI(c), m.getGraph());
             }
             fusConn.close();
             patch.close();

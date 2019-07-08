@@ -61,7 +61,7 @@ public class PatchModule implements BUDAEditModule {
                 try {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
                     System.out.println("Model after patching for ------>> " + st);
-                    m.write(System.out, "TRIG");
+                    // m.write(System.out, "TRIG");
                     putModel(fusConn, st, m);
                     data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {

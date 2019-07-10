@@ -75,6 +75,25 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
+    @Test
+    public void putNewTask() throws ClientProtocolException, IOException {
+        String patch = getResourceFileContent("patch/create.patch");
+        Task tk = new Task("saveMsg", "message", "uuid:abcdef-ghijk-lmnopq-rstuvwxyz", "shortName", patch, "marc");
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost put = new HttpPost("http://localhost:" + environment.getProperty("local.server.port") + "/tasks");
+        ObjectMapper mapper = new ObjectMapper();
+        StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
+        put.setEntity(entity);
+        put.setHeader("Accept", "application/json");
+        put.setHeader("Content-type", "application/json");
+        HttpResponse response = client.execute(put);
+        // byte[] b = new byte[(int) response.getEntity().getContentLength()];
+        // response.getEntity().getContent().read(b);
+        System.out.println(response);
+        assert (response.getStatusLine().getStatusCode() == 204);
+        assert (response.getFirstHeader("Location").getValue().equals("tasks/" + tk.getId()));
+    }
+
     // @Test
     public void deletePatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
 
@@ -89,7 +108,7 @@ public class PostTaskTest {
         grs.run();
     }
 
-    @Test
+    // @Test
     public void createPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/mixed.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3bTTTT", "shortName", patch, "marc");

@@ -25,10 +25,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.modules.FinalizerModule;
 import io.bdrc.edit.modules.GitPatchModule;
 import io.bdrc.edit.modules.GitRevisionModule;
 import io.bdrc.edit.modules.PatchModule;
-import io.bdrc.edit.modules.TxnCloserModule;
 import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
@@ -145,6 +145,7 @@ public class EditController {
                 throw new ServiceException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
+            System.out.println("IN PUT, task is " + t);
             TaskGitManager.saveTask(t);
 
             // res = GitTaskService.getTaskAsJson(taskId, userId);
@@ -180,7 +181,7 @@ public class EditController {
             btx.addModule(new PatchModule(data), 0);
             btx.addModule(new GitPatchModule(data), 1);
             btx.addModule(new GitRevisionModule(data), 2);
-            btx.addModule(new TxnCloserModule(t), 3);
+            btx.addModule(new FinalizerModule(t), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {

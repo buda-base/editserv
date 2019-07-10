@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.GitServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.jena.sttl.CompareComplex;
@@ -62,6 +63,7 @@ public class GitPatchModule implements BUDAEditModule {
     DataUpdate data;
     List<String> create;
     List<String> graphs;
+    List<String> delete;
     Context writerContext;
     static Repository localRepo;
     static String remoteURL;
@@ -72,6 +74,7 @@ public class GitPatchModule implements BUDAEditModule {
         this.userId = data.getUserId();
         this.create = data.getCreate();
         this.graphs = data.getGraphs();
+        this.delete = data.getDelete();
         this.writerContext = createWriterContext();
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
@@ -90,8 +93,40 @@ public class GitPatchModule implements BUDAEditModule {
         log.info("Running Git Patch Service for task {}", data.getTaskId());
         String gitUser = EditConfig.getProperty("gitUser");
         String gitPass = EditConfig.getProperty("gitPass");
-
         // First: processing the existing graphs being updated
+        processUpdates(gitUser, gitPass);
+        // second: graphs to be deleted
+        processDeletes(gitUser, gitPass);
+        // third: new resources, created graphs
+        processCreates(gitUser, gitPass);
+
+    }
+
+    private void processDeletes(String gitUser, String gitPass) throws GitServiceException {
+        try {
+            for (String d : delete) {
+                String resId = d.substring(d.lastIndexOf("/") + 1);
+                QueryProcessor.dropGraph(d);
+                String resType = data.getResourceType(d);
+                AdminData adm = data.getAdminData(d);
+                System.out.println("ADM Data >>" + adm);
+                GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
+                File f = null;
+                String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
+                System.out.println("Delete path =" + deletePath);
+                boolean delete = new File(deletePath).delete();
+                System.out.println("Running GitService... deleting process returned : " + delete);
+                GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId());
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new GitServiceException(e);
+        }
+    }
+
+    private void processUpdates(String gitUser, String gitPass) throws GitServiceException {
+
         for (String g : graphs) {
             System.out.println("GRAPH DATA >>" + g);
             String resType = data.getResourceType(g);
@@ -117,8 +152,9 @@ public class GitPatchModule implements BUDAEditModule {
                 throw new GitServiceException(e);
             }
         }
+    }
 
-        // second: new resources, created graphs
+    private void processCreates(String gitUser, String gitPass) throws GitServiceException {
         for (String c : create) {
             String resType = data.getResourceType(c);
             AdminData adm = data.getAdminData(c);

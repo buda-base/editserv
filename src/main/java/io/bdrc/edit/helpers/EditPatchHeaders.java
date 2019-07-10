@@ -13,6 +13,7 @@ public class EditPatchHeaders {
     public static final String KEY_GRAPH = "graph";
     public static final String KEY_MAPPING = "mapping";
     public static final String KEY_CREATE = "create";
+    public static final String KEY_DELETE = "delete";
     public static final String KEY_ID = "id";
 
     private PatchHeader ph;
@@ -39,6 +40,15 @@ public class EditPatchHeaders {
             gph = Arrays.asList(graphs.getLiteral().toString().split(","));
         }
         return gph;
+    }
+
+    public List<String> getDeleteUris() {
+        List<String> dph = new ArrayList<>();
+        Node graphs = ph.get(KEY_DELETE);
+        if (graphs != null) {
+            dph = Arrays.asList(graphs.getLiteral().toString().split(","));
+        }
+        return dph;
     }
 
     public String getResourceType(String resId) {

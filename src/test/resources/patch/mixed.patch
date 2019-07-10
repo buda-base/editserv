@@ -1,10 +1,11 @@
 H  id     <uuid:1a2b3c4d-5e6f-7a8b-9c0d-YYYYYYYYY> . 
 H  graph  "http://purl.bdrc.io/graph/P1524" .
-H  create  "http://purl.bdrc.io/graph/P1524X" .
+#H  create  "http://purl.bdrc.io/graph/P1524X" .
+H  delete  "http://purl.bdrc.io/graph/P1524X" .
 H  mapping  "http://purl.bdrc.io/graph/P1524-person,http://purl.bdrc.io/graph/P1524X-person" . 
 TX . 
-A <http://purl.bdrc.io/resource/P1524X> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://purl.bdrc.io/ontology/core/Person> <http://purl.bdrc.io/graph/P1524X> .
-A <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personGender> <http://purl.bdrc.io/resource/GenderMale> <http://purl.bdrc.io/graph/P1524X> .
-A <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1584> <http://purl.bdrc.io/graph/P1524X> .
+#A <http://purl.bdrc.io/resource/P1524X> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://purl.bdrc.io/ontology/core/Person> <http://purl.bdrc.io/graph/P1524X> .
+#A <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personGender> <http://purl.bdrc.io/resource/GenderMale> <http://purl.bdrc.io/graph/P1524X> .
+#A <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1584> <http://purl.bdrc.io/graph/P1524X> .
 A <http://purl.bdrc.io/resource/P1524> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1584> <http://purl.bdrc.io/graph/P1524> .
 TC .

@@ -36,6 +36,7 @@ public class DataUpdate {
     private EditPatchHeaders ph;
     private List<String> create;
     private List<String> graphs;
+    private List<String> delete;
     private DatasetGraph dsg;
     private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
@@ -46,6 +47,7 @@ public class DataUpdate {
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
+        this.delete = ph.getDeleteUris();
         this.admData = new HashMap<>();
         this.gitRev = new HashMap<>();
         prepareModels();
@@ -80,6 +82,19 @@ public class DataUpdate {
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
             removeGitRevisionInfo(c, m);
+            createGitInfo(graphUri.getURI());
+            dsg.addGraph(graphUri, m.getGraph());
+        }
+
+        // Listing the graphs to delete
+        List<String> delete = ph.getDeleteUris();
+        // add empty named graphs to the dataset
+        for (String d : delete) {
+            Node graphUri = NodeFactory.createURI(d);
+            dsg.addGraph(graphUri, Graph.emptyGraph);
+            Graph g = dsg.getGraph(graphUri);
+            Model m = ModelFactory.createModelForGraph(g);
+            removeGitRevisionInfo(d, m);
             createGitInfo(graphUri.getURI());
             dsg.addGraph(graphUri, m.getGraph());
         }
@@ -139,6 +154,10 @@ public class DataUpdate {
 
     public List<String> getCreate() {
         return create;
+    }
+
+    public List<String> getDelete() {
+        return delete;
     }
 
     public List<String> getGraphs() {

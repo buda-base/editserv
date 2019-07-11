@@ -6,7 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.Types;
+import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.FinalizerModuleException;
@@ -23,12 +24,18 @@ public class FinalizerModule implements BUDAEditModule {
     public final static Logger logger = LoggerFactory.getLogger(FinalizerModule.class.getName());
     TransactionLog log;
 
-    Task tsk;
+    // Task tsk;
+    int status;
+    String name;
+    DataUpdate data;
 
-    public FinalizerModule(Task tsk, TransactionLog log) {
+    public FinalizerModule(DataUpdate data, TransactionLog log) {
         super();
-        this.tsk = tsk;
+        this.data = data;
         this.log = log;
+        this.name = "FINAL_MOD_" + data.getTaskId();
+        setStatus(Types.STATUS_PREPARED);
+        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     @Override
@@ -41,10 +48,10 @@ public class FinalizerModule implements BUDAEditModule {
     public void run() throws ServiceException {
         try {
             // 1) move task from user "stashed" to user "processed" directories
-            new File(EditConfig.getProperty("gitTaskRepo") + tsk.getUser() + "/" + tsk.getId() + ".patch").renameTo(new File(EditConfig.getProperty("gitTransactDir") + tsk.getId() + ".patch"));
-            TaskGitManager.deleteTask(tsk.getUser(), tsk.getId());
+            new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + getId() + ".patch").renameTo(new File(EditConfig.getProperty("gitTransactDir") + getId() + ".patch"));
+            TaskGitManager.deleteTask(getUserId(), getId());
             // 2) close and write transaction log
-            logger.info("Running Txn Closer Service for task {}", tsk);
+            logger.info("Running Txn Closer Service for task {}", data.getTaskId());
         } catch (Exception e) {
             e.printStackTrace();
             throw new FinalizerModuleException(e);
@@ -53,32 +60,27 @@ public class FinalizerModule implements BUDAEditModule {
 
     @Override
     public int getStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+        return status;
     }
 
     @Override
     public void setStatus(int st) {
-        // TODO Auto-generated method stub
-
+        status = st;
     }
 
     @Override
     public String getId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getTaskId();
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return name;
     }
 
     @Override
     public String getUserId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getUserId();
     }
 
 }

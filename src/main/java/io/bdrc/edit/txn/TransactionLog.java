@@ -16,15 +16,17 @@ public class TransactionLog {
     HashMap<String, String> content;
     HashMap<String, String> error;
 
-    public static String HEADER = "header";
-    public static String CONTENT = "content";
-    public static String ERROR = "error";
+    public static final String HEADER = "header";
+    public static final String CONTENT = "content";
+    public static final String ERROR = "error";
 
     public static String USER_ID = "userId";
     public static String DATE = "date";
     public static String TASK_ID = "taskId";
     public static String TXN_LAST_STATUS = "txn_last_Status";
     public static String ERROR_MSG = "error_msg";
+    static String CONTENT_LENGTH = "content_length";
+    static String ERROR_LENGTH = "error_length";
 
     public TransactionLog(Task tk) {
         header = new HashMap<>();
@@ -51,7 +53,9 @@ public class TransactionLog {
             content.put(key, tmp + ";" + value);
         } else {
             content.put(key, value);
+            incrementLength("content");
         }
+
     }
 
     public void addError(String key, String value) {
@@ -59,8 +63,31 @@ public class TransactionLog {
         if (tmp != null) {
             error.put(key, tmp + ";" + value);
         } else {
+            incrementLength("error");
             error.put(key, value);
         }
+
+    }
+
+    private boolean incrementLength(String section) {
+        String key = "";
+        switch (section) {
+        case CONTENT:
+            key = CONTENT_LENGTH;
+            break;
+        case ERROR:
+            key = ERROR_LENGTH;
+            break;
+        default:
+            return false;
+        }
+        String tmp = header.get(key);
+        if (tmp != null) {
+            header.put(key, Integer.toString(Integer.parseInt(tmp) + 1));
+        } else {
+            header.put(key, "1");
+        }
+        return true;
     }
 
     public static String asJson(TransactionLog log) throws JsonProcessingException {
@@ -75,6 +102,8 @@ public class TransactionLog {
     public static void main(String[] args) throws JsonProcessingException {
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", "patch content", "marc");
         TransactionLog log = new TransactionLog(tk);
+        log.addContent("test", "whatever");
+        log.addContent("test", "whatever");
         System.out.println(TransactionLog.asJson(log));
     }
 

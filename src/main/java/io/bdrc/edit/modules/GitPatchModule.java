@@ -13,10 +13,8 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.SortedMap;
 
-import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.graph.Triple;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -42,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
@@ -59,8 +58,7 @@ public class GitPatchModule implements BUDAEditModule {
     public final static Logger logger = LoggerFactory.getLogger(GitPatchModule.class.getName());
 
     int status;
-    String id;
-    String userId;
+    String name;
     DataUpdate data;
     List<String> create;
     List<String> graphs;
@@ -72,13 +70,14 @@ public class GitPatchModule implements BUDAEditModule {
 
     public GitPatchModule(DataUpdate data, TransactionLog log) {
         this.data = data;
-        this.id = "GIT_" + data.getTaskId();
-        this.userId = data.getUserId();
+        this.name = "GIT_PATCH_MOD" + data.getTaskId();
         this.create = data.getCreate();
         this.graphs = data.getGraphs();
         this.delete = data.getDelete();
         this.writerContext = createWriterContext();
         this.log = log;
+        setStatus(Types.STATUS_PREPARED);
+        log.addContent(name, name + " entered " + Types.getStatus(status));
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -145,7 +144,7 @@ public class GitPatchModule implements BUDAEditModule {
                 System.out.println("MODEL SIZE >>" + to_write.size());
                 // to_write.write(System.out, "TURTLE");
                 modelToOutputStream(to_write, fos, resId + ".trig");
-                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
+                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
 
@@ -173,7 +172,7 @@ public class GitPatchModule implements BUDAEditModule {
                 fos = new FileOutputStream(file + "/" + resId + ".trig");
                 System.out.println("OUTPUT >>" + file + "/" + resId + ".trig");
                 modelToOutputStream(ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(c))), fos, resId);
-                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + userId + " for task:" + data.getTaskId());
+                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
                 System.out.println("COMMIT >>" + rev.getName());
                 data.addGitRevisionInfo(c, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
@@ -192,21 +191,6 @@ public class GitPatchModule implements BUDAEditModule {
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
         new STriGWriter().write(out, dsg, getPrefixMap(), graphUri.toString(m), writerContext);
-    }
-
-    private Model removeGitInfo(Model m) {
-        Triple tpl = Triple.create(Node.ANY, AdminData.GIT_PATH.asNode(), Node.ANY);
-        Triple tpl1 = Triple.create(Node.ANY, AdminData.GIT_REPO.asNode(), Node.ANY);
-        Graph g = m.getGraph();
-        List<Triple> list = g.find(tpl).toList();
-        for (Triple t : list) {
-            g.delete(t);
-        }
-        list = g.find(tpl1).toList();
-        for (Triple t : list) {
-            g.delete(t);
-        }
-        return ModelFactory.createModelForGraph(g);
     }
 
     private Context createWriterContext() {
@@ -275,18 +259,17 @@ public class GitPatchModule implements BUDAEditModule {
 
     @Override
     public String getId() {
-        return id;
+        return data.getTaskId();
     }
 
     @Override
     public String getName() {
-        return "GIT Service";
+        return name;
     }
 
     @Override
     public String getUserId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getUserId();
     }
 
     public static PrefixMap getPrefixMap() {

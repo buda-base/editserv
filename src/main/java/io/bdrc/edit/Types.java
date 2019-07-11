@@ -35,7 +35,7 @@ public class Types {
         TXN_STATUS.put(STATUS_PREPARED, "STATUS_PREPARED");
     }
 
-    public static String getTxnStatus(int st) {
+    public static String getStatus(int st) {
         return TXN_STATUS.get(st);
     }
 

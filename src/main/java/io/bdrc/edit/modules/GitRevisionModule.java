@@ -18,6 +18,7 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitRevisionException;
@@ -27,6 +28,9 @@ public class GitRevisionModule implements BUDAEditModule {
 
     HashMap<String, String> revMap;
     String patch;
+    String name;
+    String id;
+    int status;
     DataUpdate data;
     TransactionLog log;
 
@@ -34,8 +38,12 @@ public class GitRevisionModule implements BUDAEditModule {
         super();
         this.revMap = data.getGitRev();
         this.patch = buildRevisionPatch();
+        this.id = data.getTaskId();
         this.data = data;
         this.log = log;
+        this.name = "GIT_REV_MOD_" + data.getTaskId();
+        setStatus(Types.STATUS_PREPARED);
+        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     private String buildRevisionPatch() throws GitRevisionException {
@@ -53,7 +61,6 @@ public class GitRevisionModule implements BUDAEditModule {
             sb.append(System.lineSeparator());
             sb.append("TC .");
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             throw new GitRevisionException(e);
         }
@@ -94,32 +101,27 @@ public class GitRevisionModule implements BUDAEditModule {
 
     @Override
     public int getStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+        return status;
     }
 
     @Override
     public void setStatus(int st) {
-        // TODO Auto-generated method stub
-
+        status = st;
     }
 
     @Override
     public String getId() {
-        // TODO Auto-generated method stub
-        return null;
+        return id;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return name;
     }
 
     @Override
     public String getUserId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getUserId();
     }
 
 }

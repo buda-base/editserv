@@ -17,7 +17,7 @@ public class FinalizerModule implements BUDAEditModule {
 
     /*
      * This service takes care of finalizing the transaction and do the necessary
-     * cleanup It makes sure the queue is in a consistent state, give the
+     * cleanup. It makes sure the queue is in a consistent state, give the
      * transaction its final status and store the transaction log properly
      */
 

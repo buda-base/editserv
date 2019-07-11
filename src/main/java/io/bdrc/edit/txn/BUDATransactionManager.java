@@ -34,10 +34,10 @@ public class BUDATransactionManager implements Runnable {
     public static String getTxnStatus(String id) {
         BUDATransaction btx = PROCESSES.get(id);
         if (btx != null) {
-            return Types.getTxnStatus(btx.getStatus());
+            return Types.getStatus(btx.getStatus());
         }
         if (REQUESTS.contains(id)) {
-            return Types.getTxnStatus(Types.STATUS_QUEUED);
+            return Types.getStatus(Types.STATUS_QUEUED);
         }
         return "UNKNOWN";
     }

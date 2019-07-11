@@ -45,6 +45,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.jena.sttl.CompareComplex;
@@ -55,7 +56,7 @@ import io.bdrc.libraries.GitHelpers;
 
 public class GitPatchModule implements BUDAEditModule {
 
-    public final static Logger log = LoggerFactory.getLogger(GitPatchModule.class.getName());
+    public final static Logger logger = LoggerFactory.getLogger(GitPatchModule.class.getName());
 
     int status;
     String id;
@@ -67,8 +68,9 @@ public class GitPatchModule implements BUDAEditModule {
     Context writerContext;
     static Repository localRepo;
     static String remoteURL;
+    TransactionLog log;
 
-    public GitPatchModule(DataUpdate data) {
+    public GitPatchModule(DataUpdate data, TransactionLog log) {
         this.data = data;
         this.id = "GIT_" + data.getTaskId();
         this.userId = data.getUserId();
@@ -76,6 +78,7 @@ public class GitPatchModule implements BUDAEditModule {
         this.graphs = data.getGraphs();
         this.delete = data.getDelete();
         this.writerContext = createWriterContext();
+        this.log = log;
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -90,7 +93,7 @@ public class GitPatchModule implements BUDAEditModule {
      * @throws                        @throws IOException
      */
     public void run() throws GitServiceException {
-        log.info("Running Git Patch Service for task {}", data.getTaskId());
+        logger.info("Running Git Patch Service for task {}", data.getTaskId());
         String gitUser = EditConfig.getProperty("gitUser");
         String gitPass = EditConfig.getProperty("gitPass");
         // First: processing the existing graphs being updated

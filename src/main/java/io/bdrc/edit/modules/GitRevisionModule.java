@@ -19,6 +19,7 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitRevisionException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
@@ -27,12 +28,14 @@ public class GitRevisionModule implements BUDAEditModule {
     HashMap<String, String> revMap;
     String patch;
     DataUpdate data;
+    TransactionLog log;
 
-    public GitRevisionModule(DataUpdate data) throws GitRevisionException {
+    public GitRevisionModule(DataUpdate data, TransactionLog log) throws GitRevisionException {
         super();
         this.revMap = data.getGitRev();
         this.patch = buildRevisionPatch();
         this.data = data;
+        this.log = log;
     }
 
     private String buildRevisionPatch() throws GitRevisionException {

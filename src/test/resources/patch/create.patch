@@ -1,4 +1,4 @@
-H  id     uuid:abcdef-ghijk-lmnopq-rstuvwxyz . 
+H id "abcdef-ghijk-lmnopq-rstuvwxyz" . 
 H  create  "http://purl.bdrc.io/graph/P1524X" .
 H  mapping  "http://purl.bdrc.io/graph/P1524X-person" . 
 TX . 

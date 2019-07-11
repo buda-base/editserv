@@ -11,6 +11,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.BeforeClass;
@@ -30,6 +31,7 @@ import io.bdrc.edit.modules.GitPatchModule;
 import io.bdrc.edit.modules.GitRevisionModule;
 import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
 @RunWith(SpringRunner.class)
@@ -78,17 +80,15 @@ public class PostTaskTest {
     @Test
     public void putNewTask() throws ClientProtocolException, IOException {
         String patch = getResourceFileContent("patch/create.patch");
-        Task tk = new Task("saveMsg", "message", "uuid:abcdef-ghijk-lmnopq-rstuvwxyz", "shortName", patch, "marc");
+        Task tk = new Task("saveMsg", "message", "abcdef-ghijk-lmnopq-rstuvwxyz", "shortName", patch, "marc");
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPost put = new HttpPost("http://localhost:" + environment.getProperty("local.server.port") + "/tasks");
+        HttpPut put = new HttpPut("http://localhost:" + environment.getProperty("local.server.port") + "/tasks");
         ObjectMapper mapper = new ObjectMapper();
         StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
         put.setEntity(entity);
-        put.setHeader("Accept", "application/json");
+        // put.setHeader("Accept", "application/json");
         put.setHeader("Content-type", "application/json");
         HttpResponse response = client.execute(put);
-        // byte[] b = new byte[(int) response.getEntity().getContentLength()];
-        // response.getEntity().getContent().read(b);
         System.out.println(response);
         assert (response.getStatusLine().getStatusCode() == 204);
         assert (response.getFirstHeader("Location").getValue().equals("tasks/" + tk.getId()));
@@ -100,11 +100,11 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk1);
-        PatchModule tsvc = new PatchModule(new DataUpdate(tk1));
+        PatchModule tsvc = new PatchModule(new DataUpdate(tk1), new TransactionLog(tk1));
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data);
+        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk1));
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data);
+        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk1));
         grs.run();
     }
 
@@ -113,11 +113,11 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/mixed.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3bTTTT", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchModule tsvc = new PatchModule(data);
+        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk));
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data);
+        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk));
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data);
+        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk));
         grs.run();
     }
 
@@ -126,11 +126,11 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchModule tsvc = new PatchModule(data);
+        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk));
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data);
+        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk));
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data);
+        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk));
         grs.run();
     }
 

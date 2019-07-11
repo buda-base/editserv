@@ -17,6 +17,7 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.helpers.EditPatchHeaders;
+import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.PatchServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
@@ -28,13 +29,15 @@ public class PatchModule implements BUDAEditModule {
     String name;
     int status;
     EditPatchHeaders ph;
+    TransactionLog log;
 
-    public PatchModule(DataUpdate data) throws PatchServiceException {
+    public PatchModule(DataUpdate data, TransactionLog log) throws PatchServiceException {
         this.userId = data.getUserId();
         String time = Long.toString(System.currentTimeMillis());
         this.id = data.getTaskId();
         this.name = "TASK_SVC_" + time;
         this.data = data;
+        this.log = log;
     }
 
     @Override

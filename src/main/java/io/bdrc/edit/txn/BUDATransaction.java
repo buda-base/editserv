@@ -5,6 +5,7 @@ import java.util.TreeMap;
 import javax.transaction.Status;
 
 import io.bdrc.edit.modules.BUDAEditModule;
+import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
@@ -15,11 +16,17 @@ public class BUDATransaction {
     String id;
     String user;
     TreeMap<Integer, BUDAEditModule> modulesMap;
+    TransactionLog log;
 
-    public BUDATransaction(String id, String user) {
-        this.id = id;
-        this.user = user;
+    public BUDATransaction(Task t) {
+        this.id = t.getId();
+        this.user = t.getUser();
         this.modulesMap = new TreeMap<>();
+        log = new TransactionLog(t);
+    }
+
+    public TransactionLog getLog() {
+        return log;
     }
 
     /**

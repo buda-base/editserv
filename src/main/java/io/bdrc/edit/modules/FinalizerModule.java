@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
+import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.FinalizerModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceException;
 
@@ -19,13 +20,15 @@ public class FinalizerModule implements BUDAEditModule {
      * transaction its final status and store the transaction log properly
      */
 
-    public final static Logger log = LoggerFactory.getLogger(FinalizerModule.class.getName());
+    public final static Logger logger = LoggerFactory.getLogger(FinalizerModule.class.getName());
+    TransactionLog log;
 
     Task tsk;
 
-    public FinalizerModule(Task tsk) {
+    public FinalizerModule(Task tsk, TransactionLog log) {
         super();
         this.tsk = tsk;
+        this.log = log;
     }
 
     @Override
@@ -41,7 +44,7 @@ public class FinalizerModule implements BUDAEditModule {
             new File(EditConfig.getProperty("gitTaskRepo") + tsk.getUser() + "/" + tsk.getId() + ".patch").renameTo(new File(EditConfig.getProperty("gitTransactDir") + tsk.getId() + ".patch"));
             TaskGitManager.deleteTask(tsk.getUser(), tsk.getId());
             // 2) close and write transaction log
-            log.info("Running Txn Closer Service for task {}", tsk);
+            logger.info("Running Txn Closer Service for task {}", tsk);
         } catch (Exception e) {
             e.printStackTrace();
             throw new FinalizerModuleException(e);

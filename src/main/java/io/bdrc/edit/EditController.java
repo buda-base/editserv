@@ -153,6 +153,7 @@ public class EditController {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
+        System.out.println("IN PUT, task is " + t);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Location", "tasks/" + t.getId());
         return new ResponseEntity<>(responseHeaders, HttpStatus.NO_CONTENT);
@@ -177,11 +178,11 @@ public class EditController {
             }
             t = Task.create(jsonTask);
             DataUpdate data = new DataUpdate(t);
-            BUDATransaction btx = new BUDATransaction(t.getId(), userId);
-            btx.addModule(new PatchModule(data), 0);
-            btx.addModule(new GitPatchModule(data), 1);
-            btx.addModule(new GitRevisionModule(data), 2);
-            btx.addModule(new FinalizerModule(t), 3);
+            BUDATransaction btx = new BUDATransaction(t);
+            btx.addModule(new PatchModule(data, btx.getLog()), 0);
+            btx.addModule(new GitPatchModule(data, btx.getLog()), 1);
+            btx.addModule(new GitRevisionModule(data, btx.getLog()), 2);
+            btx.addModule(new FinalizerModule(t, btx.getLog()), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ServiceException | IOException | ServiceSequenceException e) {

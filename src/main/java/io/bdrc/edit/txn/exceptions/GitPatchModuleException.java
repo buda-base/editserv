@@ -1,28 +1,28 @@
 package io.bdrc.edit.txn.exceptions;
 
-public class GitServiceException extends ServiceException {
+public class GitPatchModuleException extends ModuleException {
 
-	public GitServiceException() {
+	public GitPatchModuleException() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public GitServiceException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+	public GitPatchModuleException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 		// TODO Auto-generated constructor stub
 	}
 
-	public GitServiceException(String message, Throwable cause) {
+	public GitPatchModuleException(String message, Throwable cause) {
 		super(message, cause);
 		// TODO Auto-generated constructor stub
 	}
 
-	public GitServiceException(String message) {
+	public GitPatchModuleException(String message) {
 		super(message);
 		// TODO Auto-generated constructor stub
 	}
 
-	public GitServiceException(Throwable cause) {
+	public GitPatchModuleException(Throwable cause) {
 		super(cause);
 		// TODO Auto-generated constructor stub
 	}

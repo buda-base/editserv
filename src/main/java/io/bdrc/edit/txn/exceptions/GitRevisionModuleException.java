@@ -1,33 +1,33 @@
 package io.bdrc.edit.txn.exceptions;
 
-public class PatchServiceException extends ServiceException {
+public class GitRevisionModuleException extends ModuleException {
 
     /**
      * 
      */
-    private static final long serialVersionUID = 578451960801536758L;
+    private static final long serialVersionUID = -5608978168779760912L;
 
-    public PatchServiceException() {
+    public GitRevisionModuleException() {
         super();
         // TODO Auto-generated constructor stub
     }
 
-    public PatchServiceException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public GitRevisionModuleException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
         // TODO Auto-generated constructor stub
     }
 
-    public PatchServiceException(String message, Throwable cause) {
+    public GitRevisionModuleException(String message, Throwable cause) {
         super(message, cause);
         // TODO Auto-generated constructor stub
     }
 
-    public PatchServiceException(String message) {
+    public GitRevisionModuleException(String message) {
         super(message);
         // TODO Auto-generated constructor stub
     }
 
-    public PatchServiceException(Throwable cause) {
+    public GitRevisionModuleException(Throwable cause) {
         super(cause);
         // TODO Auto-generated constructor stub
     }

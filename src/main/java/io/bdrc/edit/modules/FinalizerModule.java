@@ -11,7 +11,7 @@ import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.FinalizerModuleException;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class FinalizerModule implements BUDAEditModule {
 
@@ -35,25 +35,27 @@ public class FinalizerModule implements BUDAEditModule {
         this.log = log;
         this.name = "FINAL_MOD_" + data.getTaskId();
         setStatus(Types.STATUS_PREPARED);
-        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     @Override
-    public boolean rollback() throws ServiceException {
+    public boolean rollback() throws ModuleException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void run() throws ServiceException {
+    public void run() throws ModuleException {
         try {
             // 1) move task from user "stashed" to user "processed" directories
             new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + getId() + ".patch").renameTo(new File(EditConfig.getProperty("gitTransactDir") + getId() + ".patch"));
             TaskGitManager.deleteTask(getUserId(), getId());
             // 2) close and write transaction log
             logger.info("Running Txn Closer Service for task {}", data.getTaskId());
+            setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
             throw new FinalizerModuleException(e);
         }
     }
@@ -66,6 +68,7 @@ public class FinalizerModule implements BUDAEditModule {
     @Override
     public void setStatus(int st) {
         status = st;
+        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     @Override

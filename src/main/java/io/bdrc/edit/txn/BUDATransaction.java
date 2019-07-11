@@ -1,12 +1,20 @@
 package io.bdrc.edit.txn;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.TreeMap;
 
 import javax.transaction.Status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.Types;
+import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.modules.BUDAEditModule;
-import io.bdrc.edit.patch.Task;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
 public class BUDATransaction {
@@ -14,15 +22,19 @@ public class BUDATransaction {
     int status;
     int currentModule = -1;
     String id;
+    String name;
     String user;
     TreeMap<Integer, BUDAEditModule> modulesMap;
+    DataUpdate data;
     TransactionLog log;
 
-    public BUDATransaction(Task t) {
-        this.id = t.getId();
-        this.user = t.getUser();
+    public BUDATransaction(DataUpdate data) {
+        this.data = data;
+        this.id = data.getTaskId();
+        this.name = "TXN_" + data.getTaskId();
+        this.user = data.getUserId();
         this.modulesMap = new TreeMap<>();
-        log = new TransactionLog(t);
+        log = new TransactionLog(data.getTsk());
     }
 
     public TransactionLog getLog() {
@@ -47,7 +59,7 @@ public class BUDATransaction {
      * Complete the transaction represented by this Transaction object or forward
      * the exception to the TransactionManager
      * 
-     * @throws ServiceException
+     * @throws ModuleException
      */
     public void commit() throws Exception {
         setStatus(Status.STATUS_COMMITTED);
@@ -60,10 +72,25 @@ public class BUDATransaction {
                 // log.logMsg("Finished Running service ", servicesMap.get(svc).getName());
             } catch (Exception e) {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
-                // log.logMsg("[ERROR] in BUDA Transaction Commit ", e.getMessage());
+                log.addError(name, e.getMessage());
                 throw e;
             }
         }
+        setStatus(Types.STATUS_SUCCESS);
+        finalizeLog();
+    }
+
+    public boolean finalizeLog() throws JsonProcessingException, IOException {
+        String path = EditConfig.getProperty("logRootDir") + data.getUserId() + "/";
+        File f = new File(path);
+        if (!f.exists()) {
+            f.mkdir();
+        }
+        boolean ok = true;
+        BufferedWriter writer = new BufferedWriter(new FileWriter(path + name + ".log"));
+        writer.write(TransactionLog.asJson(log));
+        writer.close();
+        return ok;
     }
 
     public int getStatus() {
@@ -72,6 +99,7 @@ public class BUDATransaction {
 
     public void setStatus(int stat) {
         this.status = stat;
+        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
     }
 
     public int getCurrentModule() {

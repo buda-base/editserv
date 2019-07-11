@@ -1,6 +1,6 @@
 package io.bdrc.edit.txn.exceptions;
 
-public class FinalizerModuleException extends ServiceException {
+public class FinalizerModuleException extends ModuleException {
 
     /**
      * 

@@ -32,7 +32,7 @@ import io.bdrc.edit.modules.GitRevisionModule;
 import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EditApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -95,7 +95,7 @@ public class PostTaskTest {
     }
 
     // @Test
-    public void deletePatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
+    public void deletePatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
 
         String patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
@@ -109,7 +109,7 @@ public class PostTaskTest {
     }
 
     // @Test
-    public void createPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
+    public void createPatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/mixed.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3bTTTT", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
@@ -122,7 +122,7 @@ public class PostTaskTest {
     }
 
     // @Test OK
-    public void simpleAddPatch() throws ClientProtocolException, IOException, ServiceException, NoSuchAlgorithmException {
+    public void simpleAddPatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);

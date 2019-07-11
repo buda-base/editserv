@@ -42,6 +42,7 @@ public class BUDATransactionManager implements Runnable {
         return "UNKNOWN";
     }
 
+    @SuppressWarnings("unused")
     @Override
     public void run() {
         while (true) {

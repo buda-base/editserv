@@ -1,6 +1,6 @@
 package io.bdrc.edit.txn.exceptions;
 
-public class DataUpdateException extends ServiceException {
+public class DataUpdateException extends ModuleException {
 
     /**
      * 

@@ -164,6 +164,10 @@ public class DataUpdate {
         return graphs;
     }
 
+    public Task getTsk() {
+        return tsk;
+    }
+
     public String getUserId() {
         return tsk.getUser();
     }

@@ -19,8 +19,8 @@ import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.TransactionLog;
-import io.bdrc.edit.txn.exceptions.PatchServiceException;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.PatchModuleException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class PatchModule implements BUDAEditModule {
 
@@ -31,25 +31,25 @@ public class PatchModule implements BUDAEditModule {
     EditPatchHeaders ph;
     TransactionLog log;
 
-    public PatchModule(DataUpdate data, TransactionLog log) throws PatchServiceException {
+    public PatchModule(DataUpdate data, TransactionLog log) throws PatchModuleException {
         this.userId = data.getUserId();
         String time = Long.toString(System.currentTimeMillis());
         this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
-        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     @Override
-    public boolean rollback() throws ServiceException {
+    public boolean rollback() throws ModuleException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void run() throws ServiceException {
+    public void run() throws ModuleException {
         try {
+            setStatus(Types.STATUS_PROCESSING);
             InputStream patch = new ByteArrayInputStream(data.getPatch().getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
@@ -69,7 +69,7 @@ public class PatchModule implements BUDAEditModule {
                     putModel(fusConn, st, m);
                     data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {
-                    throw new PatchServiceException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
+                    throw new PatchModuleException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
                 }
             }
             // Adding created and populated graphs to the main fuseki dataset
@@ -80,9 +80,12 @@ public class PatchModule implements BUDAEditModule {
             }
             fusConn.close();
             patch.close();
+            setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new PatchServiceException(e);
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
+            throw new PatchModuleException(e);
         }
     }
 
@@ -105,6 +108,7 @@ public class PatchModule implements BUDAEditModule {
     @Override
     public void setStatus(int st) {
         this.status = st;
+        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
     }
 
     @Override

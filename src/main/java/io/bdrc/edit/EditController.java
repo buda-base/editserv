@@ -34,7 +34,7 @@ import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
 import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
 @Controller
@@ -54,7 +54,7 @@ public class EditController {
     /**
      * Returns all tasks of a given user
      * 
-     * @throws ServiceException
+     * @throws ModuleException
      * 
      */
     @RequestMapping(value = "/ping", produces = "text/html", method = RequestMethod.GET)
@@ -74,7 +74,7 @@ public class EditController {
         try {
             String userId = getUser(req);
             if (userId == null) {
-                throw new ServiceException("Cannot get the tasks : user is null");
+                throw new ModuleException("Cannot get the tasks : user is null");
             }
             Task task = TaskGitManager.getTask(taskId, userId);
             map.put("task", task);
@@ -83,7 +83,7 @@ public class EditController {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             mapper.writeValue(os, map);
             res = os.toString();
-        } catch (ServiceException | IOException | RevisionSyntaxException | GitAPIException e) {
+        } catch (ModuleException | IOException | RevisionSyntaxException | GitAPIException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
@@ -105,7 +105,7 @@ public class EditController {
     /**
      * Returns all tasks of a given user
      * 
-     * @throws ServiceException
+     * @throws ModuleException
      * 
      */
     @RequestMapping(value = "/tasks", produces = "application/json", method = RequestMethod.GET)
@@ -122,7 +122,7 @@ public class EditController {
                 test.add(mapper.readTree(TaskGitManager.getTaskAsJson(s, userId)));
             }
             res = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(test);
-        } catch (IOException | ServiceException e) {
+        } catch (IOException | ModuleException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -142,14 +142,14 @@ public class EditController {
         Task t = null;
         try {
             if (userId == null) {
-                throw new ServiceException("Cannot save the task : user is null");
+                throw new ModuleException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
             System.out.println("IN PUT, task is " + t);
             TaskGitManager.saveTask(t);
 
             // res = GitTaskService.getTaskAsJson(taskId, userId);
-        } catch (ServiceException | IOException | GitAPIException e) {
+        } catch (ModuleException | IOException | GitAPIException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
@@ -174,18 +174,18 @@ public class EditController {
         Task t = null;
         try {
             if (userId == null) {
-                throw new ServiceException("Cannot save the task : user is null");
+                throw new ModuleException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
             DataUpdate data = new DataUpdate(t);
-            BUDATransaction btx = new BUDATransaction(t);
+            BUDATransaction btx = new BUDATransaction(data);
             btx.addModule(new PatchModule(data, btx.getLog()), 0);
             btx.addModule(new GitPatchModule(data, btx.getLog()), 1);
             btx.addModule(new GitRevisionModule(data, btx.getLog()), 2);
-            btx.addModule(new FinalizerModule(t, btx.getLog()), 3);
+            btx.addModule(new FinalizerModule(data, btx.getLog()), 3);
             btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
-        } catch (ServiceException | IOException | ServiceSequenceException e) {
+        } catch (ModuleException | IOException | ServiceSequenceException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }

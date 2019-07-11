@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.modules.BUDAEditModule;
 import io.bdrc.edit.patch.Task;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class SPARQLService implements BUDAEditModule {
 
@@ -23,13 +23,13 @@ public class SPARQLService implements BUDAEditModule {
     }
 
     @Override
-    public boolean rollback() throws ServiceException {
+    public boolean rollback() throws ModuleException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void run() throws ServiceException {
+    public void run() throws ModuleException {
         // TODO Auto-generated method stub
         log.info("Running SPARQL Service for task {}", tsk);
     }

@@ -45,8 +45,8 @@ import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.TransactionLog;
-import io.bdrc.edit.txn.exceptions.GitServiceException;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.jena.sttl.CompareComplex;
 import io.bdrc.jena.sttl.ComparePredicates;
 import io.bdrc.jena.sttl.STTLWriter;
@@ -77,7 +77,6 @@ public class GitPatchModule implements BUDAEditModule {
         this.writerContext = createWriterContext();
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
-        log.addContent(name, name + " entered " + Types.getStatus(status));
         // log.logMsg("GIT Service " + id + " entered status ",
         // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
@@ -91,20 +90,29 @@ public class GitPatchModule implements BUDAEditModule {
      * 
      * @throws                        @throws IOException
      */
-    public void run() throws GitServiceException {
-        logger.info("Running Git Patch Service for task {}", data.getTaskId());
-        String gitUser = EditConfig.getProperty("gitUser");
-        String gitPass = EditConfig.getProperty("gitPass");
-        // First: processing the existing graphs being updated
-        processUpdates(gitUser, gitPass);
-        // second: graphs to be deleted
-        processDeletes(gitUser, gitPass);
-        // third: new resources, created graphs
-        processCreates(gitUser, gitPass);
+    public void run() throws GitPatchModuleException {
+        setStatus(Types.STATUS_PROCESSING);
+        try {
+            logger.info("Running Git Patch Service for task {}", data.getTaskId());
+            String gitUser = EditConfig.getProperty("gitUser");
+            String gitPass = EditConfig.getProperty("gitPass");
+            // First: processing the existing graphs being updated
+            processUpdates(gitUser, gitPass);
+            // second: graphs to be deleted
+            processDeletes(gitUser, gitPass);
+            // third: new resources, created graphs
+            processCreates(gitUser, gitPass);
+            setStatus(Types.STATUS_SUCCESS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
+            throw new GitPatchModuleException(e);
+        }
 
     }
 
-    private void processDeletes(String gitUser, String gitPass) throws GitServiceException {
+    private void processDeletes(String gitUser, String gitPass) throws GitPatchModuleException {
         try {
             for (String d : delete) {
                 String resId = d.substring(d.lastIndexOf("/") + 1);
@@ -123,11 +131,11 @@ public class GitPatchModule implements BUDAEditModule {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new GitServiceException(e);
+            throw new GitPatchModuleException(e);
         }
     }
 
-    private void processUpdates(String gitUser, String gitPass) throws GitServiceException {
+    private void processUpdates(String gitUser, String gitPass) throws GitPatchModuleException {
 
         for (String g : graphs) {
             System.out.println("GRAPH DATA >>" + g);
@@ -151,12 +159,12 @@ public class GitPatchModule implements BUDAEditModule {
             } catch (FileNotFoundException | GitAPIException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-                throw new GitServiceException(e);
+                throw new GitPatchModuleException(e);
             }
         }
     }
 
-    private void processCreates(String gitUser, String gitPass) throws GitServiceException {
+    private void processCreates(String gitUser, String gitPass) throws GitPatchModuleException {
         for (String c : create) {
             String resType = data.getResourceType(c);
             AdminData adm = data.getAdminData(c);
@@ -179,7 +187,7 @@ public class GitPatchModule implements BUDAEditModule {
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-                throw new GitServiceException(e);
+                throw new GitPatchModuleException(e);
             }
         }
     }
@@ -219,7 +227,7 @@ public class GitPatchModule implements BUDAEditModule {
         return ctx;
     }
 
-    public boolean rollback() throws ServiceException {
+    public boolean rollback() throws ModuleException {
         try {
             // 1) Pull remote directory
             Git git = new Git(localRepo);
@@ -242,7 +250,7 @@ public class GitPatchModule implements BUDAEditModule {
             git.close();
         } catch (GitAPIException e) {
             e.printStackTrace();
-            throw new GitServiceException(e);
+            throw new GitPatchModuleException(e);
         }
         return false;
     }
@@ -255,6 +263,7 @@ public class GitPatchModule implements BUDAEditModule {
     @Override
     public void setStatus(int st) {
         status = st;
+        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
     }
 
     @Override

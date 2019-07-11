@@ -1,18 +1,18 @@
 package io.bdrc.edit.modules;
 
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public interface BUDAEditModule {
 
     /**
      * Rollback to previous state, before service execution/failure
      */
-    public boolean rollback() throws ServiceException;
+    public boolean rollback() throws ModuleException;
 
     /**
      * Run the service and logs execution.
      */
-    public void run() throws ServiceException;
+    public void run() throws ModuleException;
 
     /**
      * Obtain the status of the service object.

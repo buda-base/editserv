@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class Task {
 
@@ -101,7 +101,7 @@ public class Task {
         return t.getPatch();
     }
 
-    public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException, NoFilepatternException, GitAPIException, ServiceException {
+    public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException, NoFilepatternException, GitAPIException, ModuleException {
         EditConfig.init();
         // Using constructor
         Task t = new Task("saveMsg", "message", "id", "shortName", "payload", "user");

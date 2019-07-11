@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class TaskGitManager {
 
@@ -127,10 +127,10 @@ public class TaskGitManager {
         return tasks;
     }
 
-    public static String getTaskAsJson(String taskId, String user) throws ServiceException {
+    public static String getTaskAsJson(String taskId, String user) throws ModuleException {
         StringBuilder contentBuilder = new StringBuilder();
         if (!new File(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch").exists()) {
-            throw new ServiceException("The task '" + taskId + "' was not found for user '" + user);
+            throw new ModuleException("The task '" + taskId + "' was not found for user '" + user);
         }
         try (Stream<String> stream = Files.lines(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch"), StandardCharsets.UTF_8)) {
             stream.forEach(s -> contentBuilder.append(s).append("\n"));

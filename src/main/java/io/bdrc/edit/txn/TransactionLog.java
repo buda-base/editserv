@@ -1,5 +1,6 @@
 package io.bdrc.edit.txn;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.Task;
 
 public class TransactionLog {
@@ -69,6 +71,10 @@ public class TransactionLog {
 
     }
 
+    public String getHeader(String key) {
+        return header.get(key);
+    }
+
     private boolean incrementLength(String section) {
         String key = "";
         switch (section) {
@@ -99,7 +105,8 @@ public class TransactionLog {
         return mapper.writeValueAsString(obj);
     }
 
-    public static void main(String[] args) throws JsonProcessingException {
+    public static void main(String[] args) throws IOException {
+        EditConfig.init();
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", "patch content", "marc");
         TransactionLog log = new TransactionLog(tk);
         log.addContent("test", "whatever");

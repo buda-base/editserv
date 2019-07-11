@@ -21,8 +21,8 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
-import io.bdrc.edit.txn.exceptions.GitRevisionException;
-import io.bdrc.edit.txn.exceptions.ServiceException;
+import io.bdrc.edit.txn.exceptions.GitRevisionModuleException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class GitRevisionModule implements BUDAEditModule {
 
@@ -34,7 +34,7 @@ public class GitRevisionModule implements BUDAEditModule {
     DataUpdate data;
     TransactionLog log;
 
-    public GitRevisionModule(DataUpdate data, TransactionLog log) throws GitRevisionException {
+    public GitRevisionModule(DataUpdate data, TransactionLog log) throws GitRevisionModuleException {
         super();
         this.revMap = data.getGitRev();
         this.patch = buildRevisionPatch();
@@ -43,10 +43,10 @@ public class GitRevisionModule implements BUDAEditModule {
         this.log = log;
         this.name = "GIT_REV_MOD_" + data.getTaskId();
         setStatus(Types.STATUS_PREPARED);
-        log.addContent(name, name + " entered " + Types.getStatus(status));
+
     }
 
-    private String buildRevisionPatch() throws GitRevisionException {
+    private String buildRevisionPatch() throws GitRevisionModuleException {
         Set<String> keys = revMap.keySet();
         StringBuffer sb = new StringBuffer();
         try {
@@ -62,7 +62,7 @@ public class GitRevisionModule implements BUDAEditModule {
             sb.append("TC .");
         } catch (Exception e) {
             e.printStackTrace();
-            throw new GitRevisionException(e);
+            throw new GitRevisionModuleException(e);
         }
         String s = sb.toString();
         System.out.println(s);
@@ -70,25 +70,33 @@ public class GitRevisionModule implements BUDAEditModule {
     }
 
     @Override
-    public boolean rollback() throws ServiceException {
+    public boolean rollback() throws ModuleException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void run() throws ServiceException {
-        InputStream ptc = new ByteArrayInputStream(patch.getBytes());
-        RDFPatchReaderText rdf = new RDFPatchReaderText(ptc);
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
-        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-        DatasetGraph dsg = data.getDatasetGraph();
-        // Applying changes
-        RDFChangesApply apply = new RDFChangesApply(dsg);
-        rdf.apply(apply);
-        List<String> allGraphs = data.getAllAffectedGraphs();
-        for (String g : allGraphs) {
-            Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(g)));
-            putModel(fusConn, g, m);
+    public void run() throws GitRevisionModuleException {
+        try {
+            InputStream ptc = new ByteArrayInputStream(patch.getBytes());
+            RDFPatchReaderText rdf = new RDFPatchReaderText(ptc);
+            RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+            RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+            DatasetGraph dsg = data.getDatasetGraph();
+            // Applying changes
+            RDFChangesApply apply = new RDFChangesApply(dsg);
+            rdf.apply(apply);
+            List<String> allGraphs = data.getAllAffectedGraphs();
+            for (String g : allGraphs) {
+                Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(g)));
+                putModel(fusConn, g, m);
+            }
+            setStatus(Types.STATUS_SUCCESS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
+            throw new GitRevisionModuleException(e);
         }
     }
 
@@ -107,6 +115,7 @@ public class GitRevisionModule implements BUDAEditModule {
     @Override
     public void setStatus(int st) {
         status = st;
+        log.addContent(name, name + " entered " + Types.getStatus(status));
     }
 
     @Override

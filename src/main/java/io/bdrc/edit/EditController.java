@@ -25,9 +25,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.helpers.DataUpdate;
-import io.bdrc.edit.modules.FinalizerModule;
-import io.bdrc.edit.modules.GitPatchModule;
-import io.bdrc.edit.modules.GitRevisionModule;
 import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Session;
 import io.bdrc.edit.patch.Task;
@@ -180,10 +177,10 @@ public class EditController {
             DataUpdate data = new DataUpdate(t);
             BUDATransaction btx = new BUDATransaction(data);
             btx.addModule(new PatchModule(data, btx.getLog()), 0);
-            btx.addModule(new GitPatchModule(data, btx.getLog()), 1);
-            btx.addModule(new GitRevisionModule(data, btx.getLog()), 2);
-            btx.addModule(new FinalizerModule(data, btx.getLog()), 3);
-            btx.setStatus(Types.STATUS_PREPARED);
+            // btx.addModule(new GitPatchModule(data, btx.getLog()), 1);
+            // btx.addModule(new GitRevisionModule(data, btx.getLog()), 2);
+            // btx.addModule(new FinalizerModule(data, btx.getLog()), 3);
+            // btx.setStatus(Types.STATUS_PREPARED);
             BUDATransactionManager.getInstance().queueTxn(btx);
         } catch (ModuleException | IOException | ServiceSequenceException e) {
             e.printStackTrace();

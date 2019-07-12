@@ -22,7 +22,7 @@ public interface BUDAEditModule {
     /**
      * Set the status of the service object.
      */
-    public void setStatus(int st);
+    public void setStatus(int st) throws ModuleException;
 
     /**
      * Obtain the id of the service object.

@@ -6,6 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,6 +33,8 @@ public class TransactionLog {
     static String CONTENT_LENGTH = "content_length";
     static String ERROR_LENGTH = "error_length";
 
+    public final static Logger logger = LoggerFactory.getLogger(TransactionLog.class.getName());
+
     public TransactionLog(Task tk) {
         header = new HashMap<>();
         content = new HashMap<>();
@@ -40,6 +45,10 @@ public class TransactionLog {
         addHeader(DATE, dateFormat.format(new Date()));
     }
 
+    public void setLastStatus(String value) {
+        header.put(TXN_LAST_STATUS, value);
+    }
+
     public void addHeader(String key, String value) {
         String tmp = header.get(key);
         if (tmp != null) {
@@ -47,17 +56,18 @@ public class TransactionLog {
         } else {
             header.put(key, value);
         }
+        logger.info("HEADER : " + key + ":" + value);
     }
 
-    public void addContent(String key, String value) {
+    public void addContent(String key, String value) throws IOException {
         String tmp = content.get(key);
         if (tmp != null) {
-            content.put(key, tmp + ";" + value);
+            content.put(key, tmp + System.lineSeparator() + value);
         } else {
             content.put(key, value);
             incrementLength("content");
         }
-
+        logger.info("CONTENT : " + key + ":" + value);
     }
 
     public void addError(String key, String value) {
@@ -68,7 +78,7 @@ public class TransactionLog {
             incrementLength("error");
             error.put(key, value);
         }
-
+        logger.info("ERROR : " + key + ":" + value);
     }
 
     public String getHeader(String key) {

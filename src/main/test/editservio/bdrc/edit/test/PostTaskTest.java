@@ -57,12 +57,14 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    // @Test
+    @Test
     public void postSimpleTask() throws ClientProtocolException, IOException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
-        Task tk = new Task("saveMsg", "message", "uuid:1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5r6", "shortName", patch, "marc");
+        Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-WWWWWWWWW", "shortName", patch, "marc");
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPost post = new HttpPost("http://localhost:" + environment.getProperty("local.server.port") + "/tasks");
+        HttpPost post = new HttpPost("http://localhost:8080/tasks");
+        // HttpPost post = new HttpPost("http://localhost:" +
+        // environment.getProperty("local.server.port") + "/tasks");
         ObjectMapper mapper = new ObjectMapper();
         StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
         post.setEntity(entity);
@@ -77,7 +79,7 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void putNewTask() throws ClientProtocolException, IOException {
         String patch = getResourceFileContent("patch/create.patch");
         Task tk = new Task("saveMsg", "message", "abcdef-ghijk-lmnopq-rstuvwxyz", "shortName", patch, "marc");

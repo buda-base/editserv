@@ -29,7 +29,7 @@ public class FinalizerModule implements BUDAEditModule {
     String name;
     DataUpdate data;
 
-    public FinalizerModule(DataUpdate data, TransactionLog log) {
+    public FinalizerModule(DataUpdate data, TransactionLog log) throws FinalizerModuleException {
         super();
         this.data = data;
         this.log = log;
@@ -66,9 +66,18 @@ public class FinalizerModule implements BUDAEditModule {
     }
 
     @Override
-    public void setStatus(int st) {
-        status = st;
-        log.addContent(name, name + " entered " + Types.getStatus(status));
+    public void setStatus(int st) throws FinalizerModuleException {
+        try {
+            status = st;
+            log.addContent(name, " entered " + Types.getStatus(status));
+            log.setLastStatus(Types.getStatus(status));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.setLastStatus(name + ": " + Types.getStatus(status));
+            log.addError(name, e.getMessage());
+            throw new FinalizerModuleException(e);
+        }
     }
 
     @Override

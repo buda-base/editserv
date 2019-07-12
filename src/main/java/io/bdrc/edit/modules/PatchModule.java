@@ -13,14 +13,16 @@ import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.TransactionLog;
-import io.bdrc.edit.txn.exceptions.PatchModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.PatchModuleException;
 
 public class PatchModule implements BUDAEditModule {
 
@@ -31,9 +33,10 @@ public class PatchModule implements BUDAEditModule {
     EditPatchHeaders ph;
     TransactionLog log;
 
+    public final static Logger logger = LoggerFactory.getLogger(PatchModule.class.getName());
+
     public PatchModule(DataUpdate data, TransactionLog log) throws PatchModuleException {
         this.userId = data.getUserId();
-        String time = Long.toString(System.currentTimeMillis());
         this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
@@ -54,7 +57,6 @@ public class PatchModule implements BUDAEditModule {
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-
             DatasetGraph dsg = data.getDatasetGraph();
             // Applying changes
             RDFChangesApply apply = new RDFChangesApply(dsg);
@@ -64,8 +66,6 @@ public class PatchModule implements BUDAEditModule {
             for (String st : data.getGraphs()) {
                 try {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                    System.out.println("Model after patching for ------>> " + st);
-                    // m.write(System.out, "TRIG");
                     putModel(fusConn, st, m);
                     data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {
@@ -106,9 +106,18 @@ public class PatchModule implements BUDAEditModule {
     }
 
     @Override
-    public void setStatus(int st) {
-        this.status = st;
-        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
+    public void setStatus(int st) throws PatchModuleException {
+        try {
+            this.status = st;
+            log.addContent(name, " entered " + Types.getStatus(status));
+            log.setLastStatus(Types.getStatus(status));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.setLastStatus(name + ": " + Types.getStatus(status));
+            log.addError(name, e.getMessage());
+            throw new PatchModuleException(e);
+        }
     }
 
     @Override

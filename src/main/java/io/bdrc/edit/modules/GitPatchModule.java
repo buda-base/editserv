@@ -68,7 +68,7 @@ public class GitPatchModule implements BUDAEditModule {
     static String remoteURL;
     TransactionLog log;
 
-    public GitPatchModule(DataUpdate data, TransactionLog log) {
+    public GitPatchModule(DataUpdate data, TransactionLog log) throws GitPatchModuleException {
         this.data = data;
         this.name = "GIT_PATCH_MOD" + data.getTaskId();
         this.create = data.getCreate();
@@ -77,8 +77,6 @@ public class GitPatchModule implements BUDAEditModule {
         this.writerContext = createWriterContext();
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
-        // log.logMsg("GIT Service " + id + " entered status ",
-        // Types.getSvcStatus(Types.SVC_STATUS_READY));
     }
 
     /**
@@ -121,7 +119,6 @@ public class GitPatchModule implements BUDAEditModule {
                 AdminData adm = data.getAdminData(d);
                 System.out.println("ADM Data >>" + adm);
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
-                File f = null;
                 String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
                 System.out.println("Delete path =" + deletePath);
                 boolean delete = new File(deletePath).delete();
@@ -131,6 +128,8 @@ public class GitPatchModule implements BUDAEditModule {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
             throw new GitPatchModuleException(e);
         }
     }
@@ -157,8 +156,9 @@ public class GitPatchModule implements BUDAEditModule {
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
 
             } catch (FileNotFoundException | GitAPIException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
+                setStatus(Types.STATUS_FAILED);
+                log.addError(name, e.getMessage());
                 throw new GitPatchModuleException(e);
             }
         }
@@ -185,8 +185,9 @@ public class GitPatchModule implements BUDAEditModule {
                 data.addGitRevisionInfo(c, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
+                setStatus(Types.STATUS_FAILED);
+                log.addError(name, e.getMessage());
                 throw new GitPatchModuleException(e);
             }
         }
@@ -250,6 +251,8 @@ public class GitPatchModule implements BUDAEditModule {
             git.close();
         } catch (GitAPIException e) {
             e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.addError(name, e.getMessage());
             throw new GitPatchModuleException(e);
         }
         return false;
@@ -261,9 +264,18 @@ public class GitPatchModule implements BUDAEditModule {
     }
 
     @Override
-    public void setStatus(int st) {
-        status = st;
-        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
+    public void setStatus(int st) throws GitPatchModuleException {
+        try {
+            status = st;
+            log.addContent(name, " entered " + Types.getStatus(status));
+            log.setLastStatus(name + ": " + Types.getStatus(status));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.setLastStatus(name + ": " + Types.getStatus(status));
+            log.addError(name, e.getMessage());
+            throw new GitPatchModuleException(e);
+        }
     }
 
     @Override

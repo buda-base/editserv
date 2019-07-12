@@ -1,14 +1,15 @@
 package io.bdrc.edit.txn;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.TreeMap;
 
 import javax.transaction.Status;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
@@ -65,15 +66,14 @@ public class BUDATransaction {
         setStatus(Status.STATUS_COMMITTED);
         for (int module : modulesMap.keySet()) {
             try {
-                // log.logMsg("Running service ", servicesMap.get(svc).getName() + " SVC =" +
-                // svc);
                 modulesMap.get(module).run();
                 currentModule = module;
-                // log.logMsg("Finished Running service ", servicesMap.get(svc).getName());
             } catch (Exception e) {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
                 throw e;
+            } finally {
+                finalizeLog();
             }
         }
         setStatus(Types.STATUS_SUCCESS);
@@ -87,9 +87,14 @@ public class BUDATransaction {
             f.mkdir();
         }
         boolean ok = true;
-        BufferedWriter writer = new BufferedWriter(new FileWriter(path + name + ".log"));
-        writer.write(TransactionLog.asJson(log));
-        writer.close();
+        HashMap<String, HashMap<String, String>> obj = new HashMap<>();
+        obj.put(TransactionLog.HEADER, log.header);
+        obj.put(TransactionLog.CONTENT, log.content);
+        obj.put(TransactionLog.ERROR, log.error);
+        ObjectMapper mapper = new ObjectMapper();
+        FileOutputStream fos = new FileOutputStream(new File(path + name + ".log"));
+        mapper.writerWithDefaultPrettyPrinter().writeValue(fos, obj);
+        fos.close();
         return ok;
     }
 
@@ -97,9 +102,9 @@ public class BUDATransaction {
         return status;
     }
 
-    public void setStatus(int stat) {
+    public void setStatus(int stat) throws IOException {
         this.status = stat;
-        log.addContent(name, System.lineSeparator() + name + " entered " + Types.getStatus(status));
+        log.addContent(name, " entered " + Types.getStatus(status));
     }
 
     public int getCurrentModule() {

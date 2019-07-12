@@ -37,12 +37,10 @@ public class AdminData {
     }
 
     public AdminData(String resId, String resourceType) {
-        System.out.println("fetching Admin Data for >>" + resId);
         this.resId = resId;
         this.resourceType = resourceType;
         this.gitRepo = GitRepositories.getRepo(resourceType);
         Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId);
-        adm.write(System.out, "Turtle");
         NodeIterator ni = adm.listObjectsOfProperty(GIT_PATH);
         if (ni.hasNext()) {
             this.gitPath = ni.next().asLiteral().getString();
@@ -87,13 +85,6 @@ public class AdminData {
     public void setGitPath(String gitPath) {
         this.gitPath = gitPath;
     }
-
-    /*
-     * public String getGitRevision() { return gitRevision; }
-     * 
-     * public void setGitRevision(String gitRevision) { this.gitRevision =
-     * gitRevision; }
-     */
 
     @Override
     public String toString() {

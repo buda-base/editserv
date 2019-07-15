@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
-import io.bdrc.edit.helpers.EditPatchHeaders;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
@@ -30,7 +29,6 @@ public class PatchModule implements BUDAEditModule {
     String userId;
     String name;
     int status;
-    EditPatchHeaders ph;
     TransactionLog log;
 
     public final static Logger logger = LoggerFactory.getLogger(PatchModule.class.getName());
@@ -69,7 +67,7 @@ public class PatchModule implements BUDAEditModule {
                     putModel(fusConn, st, m);
                     data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {
-                    throw new PatchModuleException("No graph could be uploaded to fuseki as " + st + " for patchId:" + ph.getPatchId());
+                    throw new PatchModuleException("No graph could be uploaded to fuseki as " + st + " for patchId:" + data.getTaskId());
                 }
             }
             // Adding created and populated graphs to the main fuseki dataset

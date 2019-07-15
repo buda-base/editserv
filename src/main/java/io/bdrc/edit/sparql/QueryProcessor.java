@@ -24,6 +24,15 @@ public class QueryProcessor {
         fusConn.delete(graphUri);
     }
 
+    public static boolean resourceExist(String fullUri) {
+        Model m = describeModel(fullUri);
+        if (m != null) {
+            return m.size() > 0;
+        } else {
+            return false;
+        }
+    }
+
     public static void main(String[] args) {
         EditConfig.init();
         // Model m =

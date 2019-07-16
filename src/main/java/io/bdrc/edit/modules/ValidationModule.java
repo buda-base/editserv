@@ -16,7 +16,6 @@ import io.bdrc.edit.txn.exceptions.ValidationModuleException;
 public class ValidationModule implements BUDAEditModule {
 
     public static final String PRE_VALIDATION = "pre_validation";
-    public static final String GIT_VERSION_VALIDATION = "git_version_validation";
 
     DataUpdate data;
     String userId;

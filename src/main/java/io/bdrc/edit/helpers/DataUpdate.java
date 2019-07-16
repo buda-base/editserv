@@ -20,6 +20,8 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -28,6 +30,7 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.patch.Task;
+import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 
 public class DataUpdate {
@@ -37,6 +40,7 @@ public class DataUpdate {
     private List<String> create;
     private List<String> graphs;
     private List<String> delete;
+    private List<String> replace;
     private DatasetGraph dsg;
     private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
@@ -48,6 +52,7 @@ public class DataUpdate {
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
         this.delete = ph.getDeleteUris();
+        this.delete = ph.getReplaceUrisPairs();
         this.admData = new HashMap<>();
         this.gitRev = new HashMap<>();
         prepareModels();
@@ -146,6 +151,24 @@ public class DataUpdate {
         md.update(resId.getBytes(Charset.forName("UTF8")));
         String hash = new String(Hex.encodeHex(md.digest())).substring(0, 2);
         return hash;
+    }
+
+    public static String buildReplacePatch(String uriToReplace, String newUri) {
+        StringBuffer sb = new StringBuffer();
+        String replaceResId = uriToReplace.substring(uriToReplace.lastIndexOf('/') + 1);
+        String newResId = newUri.substring(newUri.lastIndexOf('/') + 1);
+        sb.append("TX .");
+        Model m = QueryProcessor.getTriplesWithObject(uriToReplace);
+        StmtIterator it = m.listStatements();
+        while (it.hasNext()) {
+            Statement st = it.next();
+            String delCmd = "D <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + replaceResId + ">";
+            String addCmd = "A <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + newResId + ">";
+            sb.append(System.lineSeparator() + delCmd);
+            sb.append(System.lineSeparator() + addCmd);
+        }
+        sb.append("TC .");
+        return sb.toString();
     }
 
     public AdminData getAdminData(String graphUri) {

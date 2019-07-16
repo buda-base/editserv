@@ -24,6 +24,13 @@ public class QueryProcessor {
         fusConn.delete(graphUri);
     }
 
+    public static Model getTriplesWithObject(String fullUri) {
+        String query = "construct {?s ?p <" + fullUri + ">} where { { ?s ?p <" + fullUri + "> } }";
+        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        return qe.execConstruct();
+    }
+
     public static boolean resourceExist(String fullUri) {
         Model m = describeModel(fullUri);
         if (m != null) {
@@ -35,10 +42,9 @@ public class QueryProcessor {
 
     public static void main(String[] args) {
         EditConfig.init();
-        // Model m =
-        // QueryProcessor.describeModel("http://purl.bdrc.io/admindata/P1583");
-        // m.write(System.out, "TURTLE");
-        dropGraph("http://purl.bdrc.io/graph/P1524X");
+        Model m = QueryProcessor.getTriplesWithObject("http://purl.bdrc.io/resource/P1583");
+        m.write(System.out, "TURTLE");
+        // dropGraph("http://purl.bdrc.io/graph/P1524X");
     }
 
 }

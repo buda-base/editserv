@@ -163,7 +163,7 @@ public class DataUpdate {
         while (it.hasNext()) {
             Statement st = it.next();
             String delCmd = "D <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + replaceResId + ">";
-            String addCmd = "A <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + newResId + ">";
+            String addCmd = "A <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + newUri + "> <" + newResId + ">";
             sb.append(System.lineSeparator() + delCmd);
             sb.append(System.lineSeparator() + addCmd);
         }

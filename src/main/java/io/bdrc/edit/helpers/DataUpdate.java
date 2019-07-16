@@ -52,7 +52,7 @@ public class DataUpdate {
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
         this.delete = ph.getDeleteUris();
-        this.delete = ph.getReplaceUrisPairs();
+        this.replace = ph.getReplaceUrisPairs();
         this.admData = new HashMap<>();
         this.gitRev = new HashMap<>();
         prepareModels();
@@ -181,6 +181,10 @@ public class DataUpdate {
 
     public List<String> getDelete() {
         return delete;
+    }
+
+    public List<String> getReplace() {
+        return replace;
     }
 
     public List<String> getGraphs() {

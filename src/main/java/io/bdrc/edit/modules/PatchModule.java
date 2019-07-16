@@ -60,6 +60,15 @@ public class PatchModule implements BUDAEditModule {
             RDFChangesApply apply = new RDFChangesApply(dsg);
             rdf.apply(apply);
 
+            for (String s : data.getReplace()) {
+                String[] parts = s.split("-");
+                String ptc = DataUpdate.buildReplacePatch(parts[0], parts[1]);
+                InputStream replacePatch = new ByteArrayInputStream(ptc.getBytes());
+                RDFPatchReaderText replaceRdf = new RDFPatchReaderText(replacePatch);
+                RDFChangesApply applyReplace = new RDFChangesApply(dsg);
+                replaceRdf.apply(applyReplace);
+            }
+
             // Putting the graphs back into main fuseki dataset
             for (String st : data.getGraphs()) {
                 try {

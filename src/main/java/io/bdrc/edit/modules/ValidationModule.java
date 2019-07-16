@@ -43,21 +43,25 @@ public class ValidationModule implements BUDAEditModule {
 
     @Override
     public void run() throws ValidationModuleException {
-        // Make sure the resources we want to create don't already exist
+
         switch (validation) {
         case PRE_VALIDATION:
+            // Make sure the resources we want to create don't already exist
             List<String> create = data.getCreate();
             for (String uri : create) {
                 if (QueryProcessor.resourceExist(uri)) {
                     throw new ValidationModuleException("Cannot create the resource " + uri + " as it already exists in the main dataset");
                 }
             }
+            // Make sure the resources we want to update already exist
             List<String> graphs = data.getGraphs();
             for (String uri : graphs) {
                 if (!QueryProcessor.resourceExist(uri)) {
                     throw new ValidationModuleException("Cannot update the resource " + uri + " as it doesn't exist in the main dataset");
                 }
             }
+            // No need to process resources affected by the replace feature as this feature
+            // uses existing resources from the beginning
             break;
         }
     }

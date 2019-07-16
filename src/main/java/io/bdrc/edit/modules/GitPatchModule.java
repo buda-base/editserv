@@ -63,6 +63,7 @@ public class GitPatchModule implements BUDAEditModule {
     List<String> create;
     List<String> graphs;
     List<String> delete;
+    List<String> replace;
     Context writerContext;
     static Repository localRepo;
     static String remoteURL;
@@ -74,6 +75,7 @@ public class GitPatchModule implements BUDAEditModule {
         this.create = data.getCreate();
         this.graphs = data.getGraphs();
         this.delete = data.getDelete();
+        this.replace = data.getReplace();
         this.writerContext = createWriterContext();
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
@@ -100,6 +102,8 @@ public class GitPatchModule implements BUDAEditModule {
             processDeletes(gitUser, gitPass);
             // third: new resources, created graphs
             processCreates(gitUser, gitPass);
+            // fourth: updated resources graphs, through the replace feature
+            processReplaces(gitUser, gitPass);
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,7 +111,6 @@ public class GitPatchModule implements BUDAEditModule {
             log.addError(name, e.getMessage());
             throw new GitPatchModuleException(e);
         }
-
     }
 
     private void processDeletes(String gitUser, String gitPass) throws GitPatchModuleException {
@@ -135,12 +138,39 @@ public class GitPatchModule implements BUDAEditModule {
     }
 
     private void processUpdates(String gitUser, String gitPass) throws GitPatchModuleException {
-
         for (String g : graphs) {
             System.out.println("GRAPH DATA >>" + g);
             String resType = data.getResourceType(g);
             AdminData adm = data.getAdminData(g);
             System.out.println("ADM Data >>" + adm);
+            GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
+            FileOutputStream fos = null;
+            try {
+                String resId = g.substring(g.lastIndexOf("/") + 1);
+                fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
+                System.out.println("GIT WRITE PATH >>" + EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
+                Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
+                System.out.println("MODEL SIZE >>" + to_write.size());
+                // to_write.write(System.out, "TURTLE");
+                modelToOutputStream(to_write, fos, resId + ".trig");
+                RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
+                data.addGitRevisionInfo(g, rev.getName());
+                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+
+            } catch (FileNotFoundException | GitAPIException e) {
+                e.printStackTrace();
+                setStatus(Types.STATUS_FAILED);
+                log.addError(name, e.getMessage());
+                throw new GitPatchModuleException(e);
+            }
+        }
+    }
+
+    private void processReplaces(String gitUser, String gitPass) throws GitPatchModuleException {
+        for (String r : replace) {
+            String g = r.split("-")[0];
+            String resType = data.getResourceType(g);
+            AdminData adm = data.getAdminData(g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
             try {

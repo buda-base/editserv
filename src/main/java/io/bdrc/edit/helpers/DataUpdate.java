@@ -69,13 +69,27 @@ public class DataUpdate {
             Node graphUri = NodeFactory.createURI(st);
             try {
                 Graph gp = fusConn.fetch(st).getGraph();
-                fetchGitInfo(graphUri.getURI());
+                fetchAdminInfo(graphUri.getURI());
                 Model m = ModelFactory.createModelForGraph(gp);
                 m = removeGitRevisionInfo(st, m);
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
                 throw new DataUpdateException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
+            }
+        }
+
+        for (String rep : replace) {
+            Node graphUri = NodeFactory.createURI(rep);
+            try {
+                Graph gp = fusConn.fetch(rep).getGraph();
+                fetchAdminInfo(graphUri.getURI());
+                Model m = ModelFactory.createModelForGraph(gp);
+                m = removeGitRevisionInfo(rep, m);
+                dsg.addGraph(graphUri, m.getGraph());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                throw new DataUpdateException("No graph could be fetched as " + rep + " for patchId:" + ph.getPatchId());
             }
         }
         // Listing the graphs to create
@@ -87,7 +101,7 @@ public class DataUpdate {
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
             removeGitRevisionInfo(c, m);
-            createGitInfo(graphUri.getURI());
+            createAdminInfo(graphUri.getURI());
             dsg.addGraph(graphUri, m.getGraph());
         }
 
@@ -100,7 +114,7 @@ public class DataUpdate {
             Graph g = dsg.getGraph(graphUri);
             Model m = ModelFactory.createModelForGraph(g);
             removeGitRevisionInfo(d, m);
-            createGitInfo(graphUri.getURI());
+            createAdminInfo(graphUri.getURI());
             dsg.addGraph(graphUri, m.getGraph());
         }
     }
@@ -129,13 +143,13 @@ public class DataUpdate {
         return ph.getResourceType(resId);
     }
 
-    private Model fetchGitInfo(String graphUri) {
+    private Model fetchAdminInfo(String graphUri) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         admData.put(graphUri, new AdminData(resId, getResourceType(graphUri)));
         return admData.get(graphUri).asModel();
     }
 
-    private Model createGitInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private Model createAdminInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         admData.put(graphUri, new AdminData(resId, getResourceType(graphUri), getGitDir(resId)));
         return admData.get(graphUri).asModel();
@@ -155,15 +169,13 @@ public class DataUpdate {
 
     public static String buildReplacePatch(String uriToReplace, String newUri) {
         StringBuffer sb = new StringBuffer();
-        String replaceResId = uriToReplace.substring(uriToReplace.lastIndexOf('/') + 1);
-        String newResId = newUri.substring(newUri.lastIndexOf('/') + 1);
         sb.append("TX .");
         Model m = QueryProcessor.getTriplesWithObject(uriToReplace);
         StmtIterator it = m.listStatements();
         while (it.hasNext()) {
             Statement st = it.next();
-            String delCmd = "D <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + replaceResId + ">";
-            String addCmd = "A <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + newUri + "> <" + newResId + ">";
+            String delCmd = "D <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + uriToReplace + "> <" + st.getSubject().getURI() + ">";
+            String addCmd = "A <" + st.getSubject().getURI() + "> <" + st.getPredicate().getURI() + "> <" + newUri + "> <" + st.getSubject().getURI() + ">";
             sb.append(System.lineSeparator() + delCmd);
             sb.append(System.lineSeparator() + addCmd);
         }

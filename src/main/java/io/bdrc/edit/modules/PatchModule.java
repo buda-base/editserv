@@ -2,6 +2,7 @@ package io.bdrc.edit.modules;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.NodeFactory;
@@ -50,6 +51,7 @@ public class PatchModule implements BUDAEditModule {
     @Override
     public void run() throws ModuleException {
         try {
+            ArrayList<String> replaced = new ArrayList<>();
             setStatus(Types.STATUS_PROCESSING);
             InputStream patch = new ByteArrayInputStream(data.getPatch().getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
@@ -67,6 +69,7 @@ public class PatchModule implements BUDAEditModule {
                 RDFPatchReaderText replaceRdf = new RDFPatchReaderText(replacePatch);
                 RDFChangesApply applyReplace = new RDFChangesApply(dsg);
                 replaceRdf.apply(applyReplace);
+                replaced.add(parts[0]);
             }
 
             // Putting the graphs back into main fuseki dataset
@@ -84,6 +87,10 @@ public class PatchModule implements BUDAEditModule {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(c)));
                 putModel(fusConn, c, m);
                 data.getDatasetGraph().addGraph(NodeFactory.createURI(c), m.getGraph());
+            }
+            for (String st : replaced) {
+                Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
+                putModel(fusConn, st, m);
             }
             fusConn.close();
             patch.close();

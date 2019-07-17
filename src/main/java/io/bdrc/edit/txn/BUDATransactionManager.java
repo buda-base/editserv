@@ -2,14 +2,19 @@ package io.bdrc.edit.txn;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.bdrc.auth.AuthProps;
 import io.bdrc.edit.Types;
 
 public class BUDATransactionManager implements Runnable {
@@ -25,6 +30,9 @@ public class BUDATransactionManager implements Runnable {
         WAITING_QUEUE = new LinkedBlockingQueue<BUDATransaction>();
         PROCESSES = new HashMap<>();
         REQUESTS = new ArrayList<>();
+        TransactionCleaner cleaner = new TransactionCleaner();
+        final Timer timer = new Timer();
+        timer.schedule(cleaner, Integer.parseInt(AuthProps.getProperty("updatePeriod")));
     }
 
     public static BUDATransactionManager getInstance() {
@@ -52,7 +60,6 @@ public class BUDATransactionManager implements Runnable {
         return "UNKNOWN";
     }
 
-    @SuppressWarnings("unused")
     @Override
     public void run() {
         while (true) {
@@ -86,7 +93,24 @@ public class BUDATransactionManager implements Runnable {
                 }
             }
         }
+    }
 
+    public static void cleanProcesses() {
+        HashMap<String, BUDATransaction> copy = new HashMap<>();
+        Set<String> keys = PROCESSES.keySet();
+        for (String key : keys) {
+            copy.put(key, PROCESSES.get(key));
+        }
+        Set<String> skeys = copy.keySet();
+        for (String key : skeys) {
+            BUDATransaction btx = copy.get(key);
+            Date now = new Date();
+            long diffInMillies = Math.abs(now.getTime() - btx.getCommitTime().getTime());
+            long diff = TimeUnit.MINUTES.convert(diffInMillies, TimeUnit.MILLISECONDS);
+            if (diff > 10) {
+                PROCESSES.remove(key);
+            }
+        }
     }
 
 }

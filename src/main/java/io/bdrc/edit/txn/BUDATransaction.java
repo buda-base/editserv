@@ -3,6 +3,9 @@ package io.bdrc.edit.txn;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -28,6 +31,7 @@ public class BUDATransaction {
     TreeMap<Integer, BUDAEditModule> modulesMap;
     DataUpdate data;
     TransactionLog log;
+    Date commitTime;
 
     public BUDATransaction(DataUpdate data) {
         this.data = data;
@@ -64,6 +68,8 @@ public class BUDATransaction {
      */
     public void commit() throws Exception {
         setStatus(Status.STATUS_COMMITTED);
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        commitTime = new Date();
         for (int module : modulesMap.keySet()) {
             try {
                 modulesMap.get(module).run();
@@ -117,6 +123,10 @@ public class BUDATransaction {
 
     public String getUser() {
         return user;
+    }
+
+    public Date getCommitTime() {
+        return commitTime;
     }
 
 }

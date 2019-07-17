@@ -30,8 +30,8 @@ public class EditConfig {
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             prop.load(is);
             is.close();
+            AuthProps.init(prop);
             if ("true".equals(prop.getProperty("useAuth"))) {
-                AuthProps.init(prop);
                 RdfAuthModel.init();
             }
             HttpURLConnection connection = (HttpURLConnection) new URL(prop.getProperty("prefixesUrl")).openConnection();

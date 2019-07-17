@@ -18,6 +18,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.modules.BUDAEditModule;
+import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
@@ -33,13 +34,35 @@ public class BUDATransaction {
     TransactionLog log;
     Date commitTime;
 
-    public BUDATransaction(DataUpdate data) {
-        this.data = data;
-        this.id = data.getTaskId();
-        this.name = "TXN_" + data.getTaskId();
-        this.user = data.getUserId();
-        this.modulesMap = new TreeMap<>();
-        log = new TransactionLog(data.getTsk());
+    public BUDATransaction(Task t) throws Exception {
+        try {
+            log = new TransactionLog(t);
+            this.name = "TXN_" + t.getId();
+            setStatus(Types.STATUS_PREPARING);
+            this.id = t.getId();
+            this.user = t.getUser();
+            this.data = new DataUpdate(t);
+            this.modulesMap = new TreeMap<>();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.addError(name, e.getMessage());
+            setStatus(Types.STATUS_FAILED);
+            try {
+                finalizeLog();
+            } catch (Exception e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+                throw new Exception(e1);
+            }
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public DataUpdate getData() {
+        return data;
     }
 
     public TransactionLog getLog() {
@@ -87,7 +110,7 @@ public class BUDATransaction {
     }
 
     public boolean finalizeLog() throws JsonProcessingException, IOException {
-        String path = EditConfig.getProperty("logRootDir") + data.getUserId() + "/";
+        String path = EditConfig.getProperty("logRootDir") + user + "/";
         File f = new File(path);
         if (!f.exists()) {
             f.mkdir();

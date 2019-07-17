@@ -25,6 +25,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.modules.FinalizerModule;
+import io.bdrc.edit.modules.GitPatchModule;
+import io.bdrc.edit.modules.GitRevisionModule;
 import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.modules.ValidationModule;
 import io.bdrc.edit.patch.Session;
@@ -167,24 +170,31 @@ public class EditController {
      */
 
     @RequestMapping(value = "/tasks", consumes = "application/json", produces = "application/json", method = RequestMethod.POST)
-    public ResponseEntity<String> applyPatch(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) throws NoSuchAlgorithmException {
+    public ResponseEntity<String> applyPatch(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) {
         String userId = getUser(req);
         Task t = null;
+        BUDATransaction btx = null;
         try {
             if (userId == null) {
                 throw new ModuleException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
-            DataUpdate data = new DataUpdate(t);
-            BUDATransaction btx = new BUDATransaction(data);
-            btx.addModule(new ValidationModule(data, btx.getLog(), ValidationModule.PRE_VALIDATION), 0);
-            btx.addModule(new PatchModule(data, btx.getLog()), 1);
-            // btx.addModule(new GitPatchModule(data, btx.getLog()), 2);
-            // btx.addModule(new GitRevisionModule(data, btx.getLog()), 3);
-            // btx.addModule(new FinalizerModule(data, btx.getLog()), 4);
-            // btx.setStatus(Types.STATUS_PREPARED);
-            BUDATransactionManager.getInstance().queueTxn(btx);
-        } catch (ModuleException | IOException | ServiceSequenceException e) {
+
+            btx = new BUDATransaction(t);
+            btx.setStatus(Types.STATUS_PREPARING);
+            DataUpdate data = btx.getData();
+            if (data != null) {
+                btx.addModule(new ValidationModule(data, btx.getLog(), ValidationModule.PRE_VALIDATION), 0);
+                btx.addModule(new PatchModule(data, btx.getLog()), 1);
+                btx.addModule(new GitPatchModule(data, btx.getLog()), 2);
+                btx.addModule(new GitRevisionModule(data, btx.getLog()), 3);
+                btx.addModule(new FinalizerModule(data, btx.getLog()), 4);
+                btx.setStatus(Types.STATUS_PREPARED);
+                BUDATransactionManager.getInstance().queueTxn(btx);
+            } else {
+                return new ResponseEntity<>("Unknown issue while initializing the transaction for task " + t.getId(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }

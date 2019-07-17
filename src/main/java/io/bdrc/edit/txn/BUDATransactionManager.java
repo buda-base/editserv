@@ -43,9 +43,10 @@ public class BUDATransactionManager implements Runnable {
         return INSTANCE;
     }
 
-    public void queueTxn(BUDATransaction btx) {
+    public void queueTxn(BUDATransaction btx) throws IOException {
         logger.info(">> BUDATransactionManager queing " + btx);
         WAITING_QUEUE.add(btx);
+        btx.setStatus(Types.STATUS_QUEUED);
         REQUESTS.add(btx.getId());
     }
 
@@ -77,9 +78,8 @@ public class BUDATransactionManager implements Runnable {
                     btx.commit();
                     logger.info(">> BUDATransactionManager submitted " + btx);
                 }
-
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                btx.getLog().addError(btx.modulesMap.get(btx.getCurrentModule()).getName(), e.getMessage());
                 e.printStackTrace();
             } finally {
                 try {

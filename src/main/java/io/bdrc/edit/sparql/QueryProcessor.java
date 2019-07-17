@@ -31,8 +31,15 @@ public class QueryProcessor {
         return qe.execConstruct();
     }
 
+    public static Model getGraph(String fullUri) {
+        String query = "construct {?s ?p ?o} where { {<" + fullUri + "> { ?s ?p ?o } }}";
+        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        return qe.execConstruct();
+    }
+
     public static boolean resourceExist(String fullUri) {
-        Model m = describeModel(fullUri);
+        Model m = getGraph(fullUri);
         if (m != null) {
             return m.size() > 0;
         } else {

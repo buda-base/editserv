@@ -75,7 +75,8 @@ public class EditController {
         try {
             String userId = getUser(req);
             if (userId == null) {
-                throw new ModuleException("Cannot get the tasks : user is null");
+                return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot get the tasks : user is null")), HttpStatus.BAD_REQUEST);
+
             }
             Task task = TaskGitManager.getTask(taskId, userId);
             map.put("task", task);
@@ -84,7 +85,7 @@ public class EditController {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             mapper.writeValue(os, map);
             res = os.toString();
-        } catch (ModuleException | IOException | RevisionSyntaxException | GitAPIException e) {
+        } catch (IOException | RevisionSyntaxException | GitAPIException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
@@ -94,6 +95,10 @@ public class EditController {
     @RequestMapping(value = "/tasks/{taskId}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
+        if (userId == null) {
+            return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot delete the task : user is null")), HttpStatus.BAD_REQUEST);
+
+        }
         try {
             TaskGitManager.deleteTask(userId, taskId);
         } catch (Exception e) {
@@ -112,6 +117,9 @@ public class EditController {
     @RequestMapping(value = "/tasks", produces = "application/json", method = RequestMethod.GET)
     public ResponseEntity<String> getAllOngoingTask(HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
+        if (userId == null) {
+            return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot process the request : user is null")), HttpStatus.BAD_REQUEST);
+        }
         String res = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -142,19 +150,16 @@ public class EditController {
         String userId = getUser(req);
         Task t = null;
         try {
-            if (userId == null) {
-                throw new ModuleException("Cannot save the task : user is null");
+            if (userId == null || jsonTask == null) {
+                return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot process the task : user is null")), HttpStatus.BAD_REQUEST);
             }
             t = Task.create(jsonTask);
-            System.out.println("IN PUT, task is " + t);
             TaskGitManager.saveTask(t);
 
-            // res = GitTaskService.getTaskAsJson(taskId, userId);
-        } catch (ModuleException | IOException | GitAPIException e) {
+        } catch (IOException | GitAPIException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
-        System.out.println("IN PUT, task is " + t);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Location", "tasks/" + t.getId());
         return new ResponseEntity<>(responseHeaders, HttpStatus.NO_CONTENT);

@@ -55,12 +55,7 @@ public class ValidationModule implements BUDAEditModule {
             }
             // Checking for the existence of updated graphs is already done in DataUpdate
             // preprocessing
-            /*
-             * List<String> graphs = data.getGraphs(); for (String uri : graphs) { if
-             * (!QueryProcessor.resourceExist(uri)) { throw new
-             * ValidationModuleException("Cannot update the resource " + uri +
-             * " as it doesn't exist in the main dataset"); } }
-             */
+
             // No need to process resources affected by the replace feature as this feature
             // uses existing resources from the beginning
             break;

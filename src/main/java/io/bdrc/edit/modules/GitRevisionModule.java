@@ -65,7 +65,6 @@ public class GitRevisionModule implements BUDAEditModule {
             throw new GitRevisionModuleException(e);
         }
         String s = sb.toString();
-        System.out.println(s);
         return s;
     }
 

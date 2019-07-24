@@ -56,8 +56,4 @@ public class GitRepositories {
         return repos.get(resType);
     }
 
-    public static void main(String[] args) {
-        // System.out.println("repo >> " + GitRepositories.getRepo("role"));
-    }
-
 }

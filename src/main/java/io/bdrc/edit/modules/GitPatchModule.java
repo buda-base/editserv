@@ -144,7 +144,7 @@ public class GitPatchModule implements BUDAEditModule {
                 String resId = g.substring(g.lastIndexOf("/") + 1);
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
-                modelToOutputStream(to_write, fos, resId + ".trig");
+                modelToOutputStream(to_write, fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
@@ -169,7 +169,7 @@ public class GitPatchModule implements BUDAEditModule {
                 String resId = g.substring(g.lastIndexOf("/") + 1);
                 fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath());
                 Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
-                modelToOutputStream(to_write, fos, resId + ".trig");
+                modelToOutputStream(to_write, fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
                 data.addGitRevisionInfo(g, rev.getName());
                 GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));

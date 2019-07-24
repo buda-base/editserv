@@ -57,7 +57,7 @@ public class PostTaskTest {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void postSimpleTask() throws ClientProtocolException, IOException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-WWWWWWWWW", "shortName", patch, "marc");
@@ -123,16 +123,17 @@ public class PostTaskTest {
         grs.run();
     }
 
-    // @Test OK
+    @Test
     public void simpleAddPatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
-        Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", patch, "marc");
+        Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-XXXWWWWWW", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk));
+        TransactionLog lg = new TransactionLog(tk);
+        PatchModule tsvc = new PatchModule(data, lg);
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk));
+        GitPatchModule gps = new GitPatchModule(data, lg);
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk));
+        GitRevisionModule grs = new GitRevisionModule(data, lg);
         grs.run();
     }
 

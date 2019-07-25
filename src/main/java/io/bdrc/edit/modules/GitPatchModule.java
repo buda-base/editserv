@@ -123,8 +123,10 @@ public class GitPatchModule implements BUDAEditModule {
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
                 String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
                 new File(deletePath).delete();
-                GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId());
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                RevCommit rev = GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId(), true);
+                if (rev != null) {
+                    GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -146,8 +148,10 @@ public class GitPatchModule implements BUDAEditModule {
                 Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
                 modelToOutputStream(to_write, fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
-                data.addGitRevisionInfo(g, rev.getName());
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                if (rev != null) {
+                    data.addGitRevisionInfo(g, rev.getName());
+                    GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                }
 
             } catch (FileNotFoundException | GitAPIException e) {
                 e.printStackTrace();
@@ -171,8 +175,10 @@ public class GitPatchModule implements BUDAEditModule {
                 Model to_write = ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(g)));
                 modelToOutputStream(to_write, fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
-                data.addGitRevisionInfo(g, rev.getName());
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                if (rev != null) {
+                    data.addGitRevisionInfo(g, rev.getName());
+                    GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                }
 
             } catch (FileNotFoundException | GitAPIException e) {
                 e.printStackTrace();
@@ -198,8 +204,10 @@ public class GitPatchModule implements BUDAEditModule {
                 fos = new FileOutputStream(file + "/" + resId + ".trig");
                 modelToOutputStream(ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI(c))), fos, resId);
                 RevCommit rev = GitHelpers.commitChanges(resType, "Committed by " + getUserId() + " for task:" + data.getTaskId());
-                data.addGitRevisionInfo(c, rev.getName());
-                GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                if (rev != null) {
+                    data.addGitRevisionInfo(c, rev.getName());
+                    GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 setStatus(Types.STATUS_FAILED);

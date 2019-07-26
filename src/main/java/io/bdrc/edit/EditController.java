@@ -10,7 +10,15 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jgit.api.errors.CanceledException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidConfigurationException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -37,6 +45,7 @@ import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
+import io.bdrc.libraries.GitHelpers;
 
 @Controller
 @RequestMapping("/")
@@ -217,6 +226,12 @@ public class EditController {
 
     public String getJsonErrorString(Exception e) {
         return "{ \"exception\": \"" + e.getClass().getCanonicalName() + "\",\n" + "    \"error\": \"" + e.getMessage() + "\"}";
+    }
+
+    @RequestMapping(value = "/pull/{type}", method = RequestMethod.POST)
+    public String pullRepo(@PathVariable("type") String type, HttpServletRequest req, HttpServletResponse response)
+            throws WrongRepositoryStateException, InvalidConfigurationException, InvalidRemoteException, CanceledException, RefNotFoundException, RefNotAdvertisedException, NoHeadException, TransportException, GitAPIException {
+        return GitHelpers.pull(type);
     }
 
 }

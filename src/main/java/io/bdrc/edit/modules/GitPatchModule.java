@@ -123,7 +123,7 @@ public class GitPatchModule implements BUDAEditModule {
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
                 String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
                 new File(deletePath).delete();
-                RevCommit rev = GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId(), true);
+                RevCommit rev = GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId());
                 if (rev != null) {
                     GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
                 }

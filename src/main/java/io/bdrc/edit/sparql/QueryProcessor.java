@@ -4,6 +4,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
@@ -36,6 +37,12 @@ public class QueryProcessor {
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
         return qe.execConstruct();
+    }
+
+    public static ResultSet getSelectResultSet(String query) {
+        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        return qe.execSelect();
     }
 
     public static boolean resourceExist(String fullUri) {

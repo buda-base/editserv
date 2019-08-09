@@ -1,0 +1,7 @@
+H  id     <uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqiiq3b4c5r6> . 
+H  graph  "http://purl.bdrc.io/graph/P1524X" .
+H  mapping  "http://purl.bdrc.io/graph/P1524X-person" . 
+TX . 
+D <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personGender> <http://purl.bdrc.io/resource/GenderMale> <http://purl.bdrc.io/graph/P1524X> .
+D <http://purl.bdrc.io/resource/P1524X> <http://purl.bdrc.io/ontology/core/personTeacherOf> <http://purl.bdrc.io/resource/P1584> <http://purl.bdrc.io/graph/P1524X> .
+TC .

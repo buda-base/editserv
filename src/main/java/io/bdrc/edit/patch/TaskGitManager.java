@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -159,7 +160,8 @@ public class TaskGitManager {
                     }
                     canonicalTreeParser.next(1);
                 }
-                Session s = new Session(new Date(rvc.getCommitTime() * 1000L), rvc.getId().toString(), new String(bytes));
+                SimpleDateFormat format = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+                Session s = new Session(format.format(new Date(rvc.getCommitTime() * 1000L)), rvc.getId().toString(), new String(bytes));
                 sessions.add(s);
             }
         }

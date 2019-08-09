@@ -24,10 +24,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,7 +70,7 @@ public class EditController {
      * @throws ModuleException
      * 
      */
-    @RequestMapping(value = "/ping", produces = "text/html", method = RequestMethod.GET)
+    @GetMapping(value = "/ping", produces = "text/html")
     public ResponseEntity<String> ping(HttpServletRequest req, HttpServletResponse response) {
         return new ResponseEntity<>(req.getRemoteAddr(), HttpStatus.OK);
     }
@@ -76,7 +79,7 @@ public class EditController {
      * Returns a task for a given user
      * 
      */
-    @RequestMapping(value = "/tasks/{taskId}", produces = "application/json", method = RequestMethod.GET)
+    @GetMapping(value = "/tasks/{taskId}", produces = "application/json")
     public ResponseEntity<String> getTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
         String res = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -101,7 +104,7 @@ public class EditController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/tasks/{taskId}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/tasks/{taskId}")
     public ResponseEntity<String> deleteTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
         if (userId == null) {
@@ -123,7 +126,7 @@ public class EditController {
      * @throws ModuleException
      * 
      */
-    @RequestMapping(value = "/tasks", produces = "application/json", method = RequestMethod.GET)
+    @GetMapping(value = "/tasks", produces = "application/json")
     public ResponseEntity<String> getAllOngoingTask(HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
         if (userId == null) {
@@ -154,7 +157,7 @@ public class EditController {
      * @throws ServiceSequenceException
      */
 
-    @RequestMapping(value = "/tasks", consumes = "application/json", produces = "application/json", method = RequestMethod.PUT)
+    @PutMapping(value = "/tasks", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> putTask(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) {
         String userId = getUser(req);
         Task t = null;
@@ -183,7 +186,7 @@ public class EditController {
      * @throws ServiceSequenceException
      */
 
-    @RequestMapping(value = "/tasks", consumes = "application/json", produces = "application/json", method = RequestMethod.POST)
+    @PostMapping(value = "/tasks", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> applyPatch(HttpServletRequest req, HttpServletResponse response, @RequestBody String jsonTask) {
         String userId = getUser(req);
         Task t = null;
@@ -217,7 +220,7 @@ public class EditController {
         return new ResponseEntity<>(responseHeaders, HttpStatus.NO_CONTENT);
     }
 
-    @RequestMapping(value = "/queuejob/{id}", method = RequestMethod.GET)
+    @GetMapping(value = "/queuejob/{id}")
     public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {
         String status = BUDATransactionManager.getTxnStatus(id);
         System.out.println("Status >>" + status);
@@ -228,7 +231,7 @@ public class EditController {
         return "{ \"exception\": \"" + e.getClass().getCanonicalName() + "\",\n" + "    \"error\": \"" + e.getMessage() + "\"}";
     }
 
-    @RequestMapping(value = "/pull/{type}", method = RequestMethod.POST)
+    @PostMapping(value = "/pull/{type}")
     public String pullRepo(@PathVariable("type") String type, HttpServletRequest req, HttpServletResponse response)
             throws WrongRepositoryStateException, InvalidConfigurationException, InvalidRemoteException, CanceledException, RefNotFoundException, RefNotAdvertisedException, NoHeadException, TransportException, GitAPIException {
         return GitHelpers.pull(type);

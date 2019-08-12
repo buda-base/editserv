@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,9 +15,11 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import io.bdrc.edit.patch.Task;
@@ -45,11 +48,14 @@ public class JspClientController {
     }
 
     @GetMapping(value = "/taskEdit/{taskId}")
-    public ModelAndView taskEdit(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+    public ModelAndView taskEdit(@PathVariable("taskId") String taskId, @RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
         Task tk = TaskGitManager.getTask(taskId, "marc");
-        HashMap<String, Object> model = new HashMap<>();
-        model.put("task", tk);
-        return new ModelAndView("task", model);
+        ModelMap mod = new ModelMap();
+        mod.put("task", tk);
+        mod.addAllAttributes(params);
+        mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
+        System.out.println("MODEL MAP >>" + mod);
+        return new ModelAndView("editTask", mod);
     }
 
     public static String getResourceFileContent(String file) throws IOException {

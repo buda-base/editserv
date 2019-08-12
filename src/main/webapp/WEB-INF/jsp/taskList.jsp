@@ -49,7 +49,7 @@ function showHide(id) {
 	        <tbody>
 	           <tr>
 	           <th><b>Task Id:</b> ${task.getId()}</th>
-	           <th><input name="Edit" value="Edit" onClick="location.href='/taskView/${task.getId()}'" type="button"></th>
+	           <th><input name="Edit" value="Edit" onClick="location.href='/taskEdit/${task.getId()}'" type="button"></th>
 	           </tr>
 		        <tr>
 		          <td style="width: 25%"><b>Message:</b></td>

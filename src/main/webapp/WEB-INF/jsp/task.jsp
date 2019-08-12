@@ -54,7 +54,7 @@ function showHide(id) {
         </tr>
         <tr>
           <td><b>Patch:</b></td>
-          <td>${task.getPatch()}</td>
+          <td><textarea rows=5 cols="100" readonly>${task.getPatch()}</textarea></td>
         </tr>
         <tr>
           <td><b>User:</b></td>
@@ -96,7 +96,7 @@ function showHide(id) {
 		        </tr>
 		        <tr>
 		          <td><b>Patch:</b></td>
-		          <td>${sess.getTask().getPatch()}</td>
+		          <td><textarea rows=5 cols="100" readonly>${sess.getTask().getPatch()}</textarea></td>
 		        </tr>
 		        <tr>
 		          <td><b>User:</b></td>

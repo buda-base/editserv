@@ -25,6 +25,10 @@ public class EditPatchHeaders {
         mappings = getResTypeMapping();
     }
 
+    public PatchHeader getPatchHeader() {
+        return ph;
+    }
+
     public List<String> getGraphUris() {
         List<String> gph = new ArrayList<>();
         Node graphs = ph.get(KEY_GRAPH);

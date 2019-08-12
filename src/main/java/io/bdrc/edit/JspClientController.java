@@ -3,6 +3,7 @@ package io.bdrc.edit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,10 +29,26 @@ public class JspClientController {
     @GetMapping(value = "/taskView/{taskId}")
     public ModelAndView taskView(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
-        Task tk = new Task("saveMsg", "message", "2531329f-fb09-4ef7-887e-84e648214436", "shortName", patch, "marc");
+        Task tk = TaskGitManager.getTask(taskId, "marc");
         HashMap<String, Object> model = new HashMap<>();
         model.put("task", tk);
         model.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
+        return new ModelAndView("task", model);
+    }
+
+    @GetMapping(value = "/taskList")
+    public ModelAndView taskList(HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        ArrayList<Task> tsk = TaskGitManager.getAllOngoingTask("marc");
+        HashMap<String, Object> model = new HashMap<>();
+        model.put("tasks", tsk);
+        return new ModelAndView("taskList", model);
+    }
+
+    @GetMapping(value = "/taskEdit/{taskId}")
+    public ModelAndView taskEdit(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        Task tk = TaskGitManager.getTask(taskId, "marc");
+        HashMap<String, Object> model = new HashMap<>();
+        model.put("task", tk);
         return new ModelAndView("task", model);
     }
 

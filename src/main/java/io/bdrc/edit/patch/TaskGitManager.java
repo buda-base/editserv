@@ -103,10 +103,12 @@ public class TaskGitManager {
 
     public static ArrayList<String> getAllOngoingTaskId(String user) throws IOException {
         Stream<Path> walk = Files.walk(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/"));
-        List<String> result = walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
+        List<String> result = walk.map(x -> x.toString()).filter(f -> f.endsWith(".patch")).collect(Collectors.toList());
 
         ArrayList<String> files = new ArrayList<>();
+        System.out.println("FILES >> " + result);
         for (String s : result) {
+            System.out.println("FILE >> " + s);
             String tmp = s.substring(s.lastIndexOf('/') + 1);
             files.add(tmp.substring(0, tmp.lastIndexOf('.')));
         }
@@ -116,7 +118,7 @@ public class TaskGitManager {
 
     public static ArrayList<Task> getAllOngoingTask(String user) throws IOException {
         Stream<Path> walk = Files.walk(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/"));
-        List<String> result = walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
+        List<String> result = walk.map(x -> x.toString()).filter(f -> f.endsWith(".patch")).collect(Collectors.toList());
         ArrayList<Task> tasks = new ArrayList<>();
         for (String s : result) {
             String tmp = s.substring(s.lastIndexOf('/') + 1);

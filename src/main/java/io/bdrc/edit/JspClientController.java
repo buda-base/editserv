@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import io.bdrc.edit.patch.PatchContent;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.patch.TaskGitManager;
 
@@ -55,6 +56,7 @@ public class JspClientController {
         mod.addAllAttributes(params);
         mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
         System.out.println("MODEL MAP >>" + mod);
+        System.out.println("PATCH CONTENT >>" + new PatchContent(tk.getPatch()).getContent());
         return new ModelAndView("editTask", mod);
     }
 

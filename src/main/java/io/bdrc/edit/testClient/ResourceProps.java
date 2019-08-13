@@ -18,6 +18,7 @@ public class ResourceProps {
     public static String TOPIC = "topic";
 
     public static HashMap<String, String> map;
+    public static HashMap<String, ArrayList<String>> allprops;
 
     static {
         map = new HashMap<>();
@@ -25,6 +26,7 @@ public class ResourceProps {
         map.put(PERSON, "P264");
         map.put(PLACE, "G37");
         map.put(TOPIC, "T808");
+
     }
 
     public static ArrayList<String> getProps(String resType) {
@@ -40,9 +42,21 @@ public class ResourceProps {
         return values;
     }
 
+    public static HashMap<String, ArrayList<String>> getAllProps() {
+        if (allprops == null) {
+            allprops = new HashMap<>();
+            allprops.put(WORK, getProps(WORK));
+            allprops.put(PERSON, getProps(PERSON));
+            allprops.put(PLACE, getProps(PLACE));
+            allprops.put(TOPIC, getProps(TOPIC));
+        }
+        return allprops;
+    }
+
     public static void main(String[] args) {
         EditConfig.init();
         System.out.println(ResourceProps.getProps("topic"));
+        System.out.println(ResourceProps.getAllProps());
     }
 
 }

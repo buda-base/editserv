@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@page import="io.bdrc.edit.testClient.*"%>
 <html lang="en">
 <head>
 <style>
@@ -74,7 +75,7 @@ function showHide(id) {
     </table>
     <div id="quad" style="display:block">
     <span><b>Add a quad:</b></span>
-    <table style="width: 80%" border="0">
+    <table style="width: 40%" border="0">
     <tbody>
         <tr>
           <td style="text-align:right;width: 10%"><b>Command:</b></td>
@@ -83,28 +84,70 @@ function showHide(id) {
 		    <option value="D">Delete</option>		    
 		</select>
           </td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
-          <td style="text-align:right;width: 10%"><b>Subject:</b></td>
-          <td style="text-align:left"><input type="text" name="subj" placeholder="subject"></td>
+          <td style="text-align:right;width: 6%"><b>Subject:</b></td>
+          <td style="text-align:left;width: 10%"><input type="text" name="subj" placeholder="subject"></td>
+          <td style="text-align:right;width: 8%"><b>Subject type:</b></td>
+          <td style="text-align:left;width: 10%">
+	          <select id="type">
+	            <option value="place">Place</option>
+                <option value="topic">Topic</option>
+	            <option value="work">Work</option>
+	            <option value="person">Person</option>           
+	          </select>
+          </td>
         </tr>
         <tr>
           <td style="text-align:right;width: 10%"><b>Predicate:</b></td>
-          <td style="text-align:left"><input type="text" name="pred" placeholder="predicate"></td>
+          <td style="text-align:left">
+          <select id="predicate">
+              <optgroup label="PLACE">
+              <c:forEach items="${ResourceProps.getProps(ResourceProps.PLACE)}" var="pl_props">
+			    <option value="${pl_props}">${pl_props}</option>
+			  </c:forEach>			    
+			  </optgroup> 
+			  <optgroup label="TOPIC">
+                <c:forEach items="${ResourceProps.getProps(ResourceProps.TOPIC)}" var="tp_props">
+                <option value="${tp_props}">${tp_props}</option>
+              </c:forEach>  
+              </optgroup> 
+              <optgroup label="WORK">
+                <c:forEach items="${ResourceProps.getProps(ResourceProps.WORK)}" var="w_props">
+                <option value="${w_props}">${w_props}</option>
+              </c:forEach>  
+              </optgroup> 
+              <optgroup label="PERSON">
+                <c:forEach items="${ResourceProps.getProps(ResourceProps.PERSON)}" var="p_props">
+                <option value="${p_props}">${p_props}</option>
+              </c:forEach>  
+              </optgroup>          
+          </select>
+          </td>
+          <td></td>
+          <td></td>
         </tr>
         <tr>
           <td style="text-align:right;width: 10%"><b>Object:</b></td>
           <td style="text-align:left"><input type="text" name="obj" placeholder="object"></td>
+          <td><input type="checkbox" id="literal" name="literal">
+                <label for="horns">Is literal</label></td>
+          <td></td>
         </tr>
         <tr>
           <td style="text-align:right;width: 10%"><b>Graph:</b></td>
           <td style="text-align:left"><input type="text" name="graph" placeholder="graph"></td>
+          <td><input type="checkbox" id="create" name="create">
+                <label for="horns">to create</label></td>
+          <td></td>
         </tr>
         </tbody>
     </table>
     </div>
     <br>
-    <input name="add" value="Add quad" onClick="showHide('quad')" type="button">&nbsp;<input name="Edit" value="Save task" type="submit">
+    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" value="Save task" type="button">
     <hr>
     <p><b>History (all sessions):</b></p>
     <table id="specs" style="width: 80%" border="0">

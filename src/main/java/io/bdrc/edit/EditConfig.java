@@ -27,6 +27,7 @@ public class EditConfig {
             InputStream input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
             prop.load(input);
             input.close();
+            System.out.println("PROPS >> " + prop);
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             prop.load(is);
             is.close();
@@ -41,6 +42,7 @@ public class EditConfig {
                 PREFIXES = PREFIXES + inputLine + System.lineSeparator();
             }
             in.close();
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

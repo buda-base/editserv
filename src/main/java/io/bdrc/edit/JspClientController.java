@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.sparql.core.Quad;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
@@ -56,7 +58,15 @@ public class JspClientController {
         mod.addAllAttributes(params);
         mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
         System.out.println("MODEL MAP >>" + mod);
-        System.out.println("PATCH CONTENT >>" + new PatchContent(tk.getPatch()).getContent());
+        if (!params.isEmpty()) {
+            PatchContent pc = new PatchContent((String) mod.get("patch"));
+            Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
+                    NodeFactory.createURI((String) mod.get("obj")));
+            String ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), ((String) mod.get("create")).contentEquals("on"));
+            tk = (Task) mod.get("task");
+            tk.setPatch(ptc);
+            mod.put("task", tk);
+        }
         return new ModelAndView("editTask", mod);
     }
 

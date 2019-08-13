@@ -79,7 +79,7 @@ function showHide(id) {
     <tbody>
         <tr>
           <td style="text-align:right;width: 10%"><b>Command:</b></td>
-          <td style="text-align:left"><select id="command">
+          <td style="text-align:left"><select name="command" id="command">
 		    <option value="A">Add</option>
 		    <option value="D">Delete</option>		    
 		</select>
@@ -92,7 +92,7 @@ function showHide(id) {
           <td style="text-align:left;width: 10%"><input type="text" name="subj" placeholder="subject"></td>
           <td style="text-align:right;width: 8%"><b>Subject type:</b></td>
           <td style="text-align:left;width: 10%">
-	          <select id="type">
+	          <select name="type" id="type">
 	            <option value="place">Place</option>
                 <option value="topic">Topic</option>
 	            <option value="work">Work</option>
@@ -103,7 +103,7 @@ function showHide(id) {
         <tr>
           <td style="text-align:right;width: 10%"><b>Predicate:</b></td>
           <td style="text-align:left">
-          <select id="predicate">
+          <select name="predicate" id="predicate">
               <optgroup label="PLACE">
               <c:forEach items="${ResourceProps.getProps(ResourceProps.PLACE)}" var="pl_props">
 			    <option value="${pl_props}">${pl_props}</option>

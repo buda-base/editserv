@@ -36,12 +36,12 @@ public class PatchContent {
         this.content = content;
     }
 
-    public void appendQuad(String command, Quad q, String type, boolean create) throws IOException {
+    public String appendQuad(String command, Quad q, String type, boolean create) throws IOException {
+
         String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + PatchContent.tag(q.asTriple().getObject().getURI()) + " "
-                + PatchContent.tag(q.getGraph().getURI());
+                + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
-        String end = content.substring(content.lastIndexOf("TC .") + 1);
-        setContent(normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + end));
+        setContent(normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC ."));
         if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_MAPPING)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
             String replace = mapping.substring(mapping.lastIndexOf('"') + 1).trim() + ";" + q.getGraph().getURI() + "-" + type + "\"";
@@ -53,6 +53,7 @@ public class PatchContent {
             content.replace(cr, replace);
         }
         content = normalizeContent(content);
+        return content;
     }
 
     public boolean headerContains(String uri, String headerType) {
@@ -90,8 +91,14 @@ public class PatchContent {
             if (line.startsWith("H") && line.contains(" " + key + " ")) {
                 return line;
             }
+            line = br.readLine();
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return "PatchContent [content=" + content + ", ph=" + ph + "]";
     }
 
     public static void main(String[] args) throws IOException {

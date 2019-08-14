@@ -58,6 +58,19 @@ public class JspClientController {
         return new ModelAndView("taskList", model);
     }
 
+    @GetMapping(value = "/taskDelete/{taskId}")
+    public ModelAndView taskDelete(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        try {
+            TaskGitManager.deleteTask("marc", taskId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ArrayList<Task> tsk = TaskGitManager.getAllOngoingTask("marc");
+        HashMap<String, Object> model = new HashMap<>();
+        model.put("tasks", tsk);
+        return new ModelAndView("taskList", model);
+    }
+
     @GetMapping(value = "/taskEdit/{taskId}")
     public ModelAndView taskEdit(@PathVariable("taskId") String taskId, @RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
         String put = params.get("put");

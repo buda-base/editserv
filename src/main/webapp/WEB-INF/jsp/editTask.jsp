@@ -36,31 +36,39 @@ function showHide(id) {
     } else {
         x.style.display = "none";    
     }
-}   
+}  
+function submitForm()
+{
+	document.getElementById("put").value = "save";
+	alert(document.getElementById("put").value);
+	alert(document.myform);
+	document.myform.submit();
+}
+
 </script>
 </head>
 <body>
-<form action="" method="GET">
+<form id="myform" name="myform" action="" method="GET">
     <div>
     <p><b>Task Id:</b> ${task.getId()}</p>
     <p><b>Current version:</b></p>
     <p><table style="width: 80%" border="0">
       <tbody>
         <tr>
-          <td><b>Message:</b></td>
-          <td><input type="text" name="msg" value="${task.getMessage()}"></td>
+          <td style="width: 10%;text-align:right"><b>Message:</b></td>
+          <td style="text-align:left"><input type="text" name="msg" value="${task.getMessage()}"></td>
         </tr>
         <tr>
-          <td><b>Short name:</b></td>
-          <td><input type="text" name="shortName" value="${task.getShortName()}"></td>
+          <td style="width: 10%;text-align:right"><b>Short name:</b></td>
+          <td style="text-align:left"><input type="text" name="shortName" value="${task.getShortName()}"></td>
         </tr>        
         <tr>
-          <td><b>User:</b></td>
-          <td>${task.getUser()}</td>
+          <td style="width: 10%;text-align:right"><b>User:</b></td>
+          <td style="text-align:left">${task.getUser()}</td>
         </tr>
         <tr>
-          <td><b>Save message:</b></td>
-          <td><input type="text" name="saveMsg" placeholder="version message"></td>
+          <td style="width: 10%;text-align:right"><b>Save message:</b></td>
+          <td style="text-align:left"><input type="text" name="saveMsg" placeholder="version message" value="${task.getSaveMsg()}"></td>
         </tr>
       </tbody>
     </table>
@@ -147,7 +155,7 @@ function showHide(id) {
     </table>
     </div>
     <br>
-    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" value="Save task" type="button">
+    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm()" value="Save task" type="button">
     <hr>
     <p><b>History (all sessions):</b></p>
     <table id="specs" style="width: 80%" border="0">
@@ -197,6 +205,7 @@ function showHide(id) {
       </tbody>
     </table>       
     </div>
+    <input type="hidden" name="put" id="put" value="">
     </form>
 </body>
 </html>

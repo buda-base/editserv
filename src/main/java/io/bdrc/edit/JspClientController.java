@@ -11,6 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.core.Quad;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -23,6 +29,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.patch.PatchContent;
 import io.bdrc.edit.patch.Task;
@@ -52,22 +60,51 @@ public class JspClientController {
 
     @GetMapping(value = "/taskEdit/{taskId}")
     public ModelAndView taskEdit(@PathVariable("taskId") String taskId, @RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        String put = params.get("put");
+        boolean save = false;
+        if (null != put) {
+            if ("save".equals(put)) {
+                save = true;
+            }
+        }
         Task tk = TaskGitManager.getTask(taskId, "marc");
         ModelMap mod = new ModelMap();
         mod.put("task", tk);
         mod.addAllAttributes(params);
         mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
         System.out.println("MODEL MAP >>" + mod);
+        String ptc = null;
         if (!params.isEmpty()) {
             PatchContent pc = new PatchContent((String) mod.get("patch"));
             Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                     NodeFactory.createURI((String) mod.get("obj")));
-            String ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), ((String) mod.get("create")).equals("on"));
-            tk = (Task) mod.get("task");
-            tk.setPatch(ptc);
+            if (!save) {
+                boolean create = false;
+                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
+                    create = true;
+                }
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), create);
+            } else {
+                ptc = params.get("patch");
+            }
+            tk = new Task(params.get("saveMsg"), params.get("msg"), "abcdef-ghijk-lmnopq-rstuvwxyz", params.get("shortName"), ptc, "marc");
             mod.put("task", tk);
+            if (save) {
+                saveTask(tk);
+            }
         }
         return new ModelAndView("editTask", mod);
+    }
+
+    private void saveTask(Task tk) throws ClientProtocolException, IOException {
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPut put = new HttpPut("http://localhost:8080/tasks");
+        ObjectMapper mapper = new ObjectMapper();
+        StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
+        put.setEntity(entity);
+        put.setHeader("Content-type", "application/json");
+        HttpResponse response = client.execute(put);
+        System.out.println(response);
     }
 
     public static String getResourceFileContent(String file) throws IOException {

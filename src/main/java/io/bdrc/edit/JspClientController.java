@@ -62,7 +62,7 @@ public class JspClientController {
             PatchContent pc = new PatchContent((String) mod.get("patch"));
             Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                     NodeFactory.createURI((String) mod.get("obj")));
-            String ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), ((String) mod.get("create")).contentEquals("on"));
+            String ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), ((String) mod.get("create")).equals("on"));
             tk = (Task) mod.get("task");
             tk.setPatch(ptc);
             mod.put("task", tk);

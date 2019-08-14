@@ -44,13 +44,13 @@ public class PatchContent {
         setContent(normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC ."));
         if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_MAPPING)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
-            String replace = mapping.substring(mapping.lastIndexOf('"') + 1).trim() + ";" + q.getGraph().getURI() + "-" + type + "\"";
-            content.replace(mapping, replace);
+            String replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "-" + type + "\" .";
+            content = content.replace(mapping, replace);
         }
         if (create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
             String cr = getHeaderLine(EditPatchHeaders.KEY_CREATE);
-            String replace = cr.substring(cr.lastIndexOf('"') + 1).trim() + ";" + q.getGraph().getURI() + "\"";
-            content.replace(cr, replace);
+            String replace = cr.substring(0, cr.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" .";
+            content = content.replace(cr, replace);
         }
         content = normalizeContent(content);
         return content;

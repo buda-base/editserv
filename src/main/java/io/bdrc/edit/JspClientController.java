@@ -42,7 +42,6 @@ public class JspClientController {
 
     @GetMapping(value = "/taskView/{taskId}")
     public ModelAndView taskView(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
-        String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = TaskGitManager.getTask(taskId, "marc");
         HashMap<String, Object> model = new HashMap<>();
         model.put("task", tk);
@@ -104,6 +103,10 @@ public class JspClientController {
             mod.put("task", tk);
             if (save) {
                 saveTask(tk);
+                HashMap<String, Object> model = new HashMap<>();
+                model.put("task", tk);
+                model.put("sessions", TaskGitManager.getAllSessions(tk.getId(), "marc"));
+                return new ModelAndView("task", model);
             }
         }
         return new ModelAndView("editTask", mod);

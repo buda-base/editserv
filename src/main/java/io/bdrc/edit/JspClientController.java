@@ -102,7 +102,7 @@ public class JspClientController {
             tk = new Task(params.get("saveMsg"), params.get("msg"), "abcdef-ghijk-lmnopq-rstuvwxyz", params.get("shortName"), ptc, "marc");
             mod.put("task", tk);
             if (save) {
-                saveTask(tk);
+                saveTask(tk, req);
                 HashMap<String, Object> model = new HashMap<>();
                 model.put("task", tk);
                 model.put("sessions", TaskGitManager.getAllSessions(tk.getId(), "marc"));
@@ -112,9 +112,9 @@ public class JspClientController {
         return new ModelAndView("editTask", mod);
     }
 
-    private void saveTask(Task tk) throws ClientProtocolException, IOException {
+    private void saveTask(Task tk, HttpServletRequest req) throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPut put = new HttpPut("http://localhost:8080/tasks");
+        HttpPut put = new HttpPut("http://" + req.getServerName() + ":" + req.getServerPort() + "/tasks");
         ObjectMapper mapper = new ObjectMapper();
         StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
         put.setEntity(entity);

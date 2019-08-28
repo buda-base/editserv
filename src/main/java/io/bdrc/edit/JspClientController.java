@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -99,8 +100,7 @@ public class JspClientController {
             } else {
                 ptc = params.get("patch");
             }
-            tk = new Task(params.get("saveMsg"), params.get("msg"), "abcdef-ghijk-lmnopq-rstuvwxyz", params.get("shortName"), ptc, "marc");
-            mod.put("task", tk);
+            tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
             if (save) {
                 saveTask(tk, req);
                 HashMap<String, Object> model = new HashMap<>();
@@ -108,6 +108,49 @@ public class JspClientController {
                 model.put("sessions", TaskGitManager.getAllSessions(tk.getId(), "marc"));
                 return new ModelAndView("task", model);
             }
+        }
+        return new ModelAndView("editTask", mod);
+    }
+
+    @GetMapping(value = "/createTask")
+    public ModelAndView taskCreate(@RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        String put = params.get("put");
+        boolean save = false;
+        if (null != put) {
+            if ("save".equals(put)) {
+                save = true;
+            }
+        }
+        ModelMap mod = new ModelMap();
+        if (!save) {
+            String patchId = Integer.toString(Objects.hash(System.currentTimeMillis()));
+            Task tk = new Task("", "new task", patchId, "", PatchContent.getEmptyPatchContent(patchId), "marc");
+            mod = new ModelMap();
+            mod.put("task", tk);
+            mod.addAllAttributes(params);
+            mod.put("sessions", TaskGitManager.getAllSessions(patchId, "marc"));
+            System.out.println("MODEL MAP >>" + mod);
+            String ptc = null;
+            if (!params.isEmpty()) {
+                PatchContent pc = new PatchContent((String) mod.get("patch"));
+                Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
+                        NodeFactory.createURI((String) mod.get("obj")));
+
+                boolean create = false;
+                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
+                    create = true;
+                }
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), create);
+                tk = new Task(params.get("saveMsg"), params.get("msg"), "abcdef-ghijk-lmnopq-rstuvwxyz", params.get("shortName"), ptc, "marc");
+                mod.put("task", tk);
+            }
+        } else {
+            Task tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), params.get("patch"), "marc");
+            saveTask(tk, req);
+            HashMap<String, Object> model = new HashMap<>();
+            model.put("task", tk);
+            model.put("sessions", TaskGitManager.getAllSessions(tk.getId(), "marc"));
+            return new ModelAndView("task", model);
         }
         return new ModelAndView("editTask", mod);
     }

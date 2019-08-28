@@ -50,7 +50,7 @@ function submitForm()
 <body>
 <form id="myform" name="myform" action="" method="GET">
     <div>
-    <p><b>Task Id:</b> ${task.getId()}</p>
+    <p><b>Task Id:</b> <input type="text" name="tskid" value="${task.getId()}" disabled></p>
     <p><b>Current version:</b></p>
     <p><table style="width: 80%" border="0">
       <tbody>

@@ -23,9 +23,15 @@ public class PatchContent {
     private EditPatchHeaders ph;
 
     public PatchContent(String content) {
-        super();
         setContent(normalizeContent(content));
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(content.getBytes())));
+    }
+
+    public static String getEmptyPatchContent(String patchId) {
+        String st = "H id \"" + patchId + "\" ." + System.lineSeparator();
+        st = st + "TX ." + System.lineSeparator();
+        st = st + "TC ." + System.lineSeparator();
+        return st;
     }
 
     public String getContent() {
@@ -37,20 +43,26 @@ public class PatchContent {
     }
 
     public String appendQuad(String command, Quad q, String type, boolean create) throws IOException {
-
         String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + PatchContent.tag(q.asTriple().getObject().getURI()) + " "
                 + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
         setContent(normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC ."));
         if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_MAPPING)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
-            String replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "-" + type + "\" .";
-            content = content.replace(mapping, replace);
+            String replace = "";
+            if (mapping != null) {
+                replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "-" + type + "\" .";
+                content = content.replace(mapping, replace);
+            }
+
         }
         if (create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
             String cr = getHeaderLine(EditPatchHeaders.KEY_CREATE);
-            String replace = cr.substring(0, cr.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" .";
-            content = content.replace(cr, replace);
+            String replace = "";
+            if (cr != null) {
+                replace = cr.substring(0, cr.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" .";
+                content = content.replace(cr, replace);
+            }
         }
         content = normalizeContent(content);
         return content;
@@ -58,7 +70,10 @@ public class PatchContent {
 
     public boolean headerContains(String uri, String headerType) {
         Node graphs = ph.getPatchHeader().get(headerType);
-        return graphs.getLiteral().toString().contains(uri);
+        if (graphs != null) {
+            return graphs.getLiteral().toString().contains(uri);
+        }
+        return false;
     }
 
     public static String tag(String s) {

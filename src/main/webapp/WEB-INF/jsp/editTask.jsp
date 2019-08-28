@@ -39,9 +39,7 @@ function showHide(id) {
 }  
 function submitForm()
 {
-	document.getElementById("put").value = "save";
-	alert(document.getElementById("put").value);
-	alert(document.myform);
+	document.getElementById("put").value = "save";	
 	document.myform.submit();
 }
 
@@ -50,7 +48,7 @@ function submitForm()
 <body>
 <form id="myform" name="myform" action="" method="GET">
     <div>
-    <p><b>Task Id:</b> <input type="text" name="tskid" value="${task.getId()}" disabled></p>
+    <p><b>Task Id:</b> <input type="text" name="tskid" value="${task.getId()}" readonly></p>
     <p><b>Current version:</b></p>
     <p><table style="width: 80%" border="0">
       <tbody>
@@ -147,8 +145,7 @@ function submitForm()
         <tr>
           <td style="text-align:right;width: 10%"><b>Graph:</b></td>
           <td style="text-align:left"><input type="text" name="graph" placeholder="graph"></td>
-          <td><input type="checkbox" id="create" name="create">
-                <label for="horns">to create</label></td>
+          <td></td>
           <td></td>
         </tr>
         </tbody>

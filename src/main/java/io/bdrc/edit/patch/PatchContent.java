@@ -42,7 +42,7 @@ public class PatchContent {
         this.content = content;
     }
 
-    public String appendQuad(String command, Quad q, String type, boolean create) throws IOException {
+    public String appendQuad(String command, Quad q, String type) throws IOException {
         String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + PatchContent.tag(q.asTriple().getObject().getURI()) + " "
                 + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
@@ -51,17 +51,23 @@ public class PatchContent {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
             String replace = "";
             if (mapping != null) {
-                replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "-" + type + "\" .";
+                replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "-" + type + "\" . ";
                 content = content.replace(mapping, replace);
+            } else {
+                replace = "H mapping \"" + q.getGraph().getURI() + "-" + type + "\" . " + System.lineSeparator();
+                content = content.substring(0, content.indexOf(".") + 1) + replace + content.substring(content.indexOf(".") + 1);
             }
 
         }
-        if (create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
+        if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
             String cr = getHeaderLine(EditPatchHeaders.KEY_CREATE);
             String replace = "";
             if (cr != null) {
-                replace = cr.substring(0, cr.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" .";
+                replace = cr.substring(0, cr.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" . ";
                 content = content.replace(cr, replace);
+            } else {
+                replace = "H create \"" + q.getGraph().getURI() + "\" . " + System.lineSeparator();
+                content = content.substring(0, content.indexOf(".") + 1) + replace + content.substring(content.indexOf(".") + 1);
             }
         }
         content = normalizeContent(content);
@@ -87,8 +93,10 @@ public class PatchContent {
         BufferedWriter bw = new BufferedWriter(sw);
         try {
             for (Object o : chunks) {
-                bw.write(((String) o).trim() + " .");
-                bw.newLine();
+                if (!((String) o).trim().equals("")) {
+                    bw.write(((String) o).trim() + " .");
+                    bw.newLine();
+                }
             }
             bw.flush();
             ret = sw.getBuffer().toString();

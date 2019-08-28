@@ -88,6 +88,7 @@ public class JspClientController {
         System.out.println("MODEL MAP >>" + mod);
         String ptc = null;
         if (!params.isEmpty()) {
+            System.out.println("REQUEST PARAMS >>" + params);
             PatchContent pc = new PatchContent((String) mod.get("patch"));
             Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                     NodeFactory.createURI((String) mod.get("obj")));
@@ -96,7 +97,7 @@ public class JspClientController {
                 if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
                     create = true;
                 }
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), create);
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"));
             } else {
                 ptc = params.get("patch");
             }
@@ -132,16 +133,12 @@ public class JspClientController {
             System.out.println("MODEL MAP >>" + mod);
             String ptc = null;
             if (!params.isEmpty()) {
+                System.out.println("REQUEST PARAMS >>" + params);
                 PatchContent pc = new PatchContent((String) mod.get("patch"));
                 Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                         NodeFactory.createURI((String) mod.get("obj")));
-
-                boolean create = false;
-                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
-                    create = true;
-                }
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), create);
-                tk = new Task(params.get("saveMsg"), params.get("msg"), "abcdef-ghijk-lmnopq-rstuvwxyz", params.get("shortName"), ptc, "marc");
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"));
+                tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
                 mod.put("task", tk);
             }
         } else {

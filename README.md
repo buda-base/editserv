@@ -1,3 +1,5 @@
 # editserv
 
-Editing services of the buda platform
+
+
+Editing services of the buda platform.

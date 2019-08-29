@@ -42,11 +42,17 @@ public class PatchContent {
         this.content = content;
     }
 
-    public String appendQuad(String command, Quad q, String type) throws IOException {
-        String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + PatchContent.tag(q.asTriple().getObject().getURI()) + " "
-                + PatchContent.tag(q.getGraph().getURI()) + " .";
+    public String appendQuad(String command, Quad q, String type, boolean literal) throws IOException {
+        String obj = "";
+        if (!literal) {
+            obj = PatchContent.tag(q.asTriple().getObject().getURI());
+        } else {
+            obj = q.asTriple().getObject().getURI();
+        }
+        String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + obj + " " + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
-        setContent(normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC ."));
+        content = normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC .");
+        System.out.println("New CONTENT >>" + content);
         if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_MAPPING)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
             String replace = "";
@@ -71,6 +77,7 @@ public class PatchContent {
             }
         }
         content = normalizeContent(content);
+        System.out.println("New CONTENT returned>>" + content);
         return content;
     }
 

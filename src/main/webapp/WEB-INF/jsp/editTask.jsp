@@ -154,6 +154,7 @@ function submitForm()
     <br>
     <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm()" value="Save task" type="button">
     <hr>
+    <c:if test = "${sessions.size()>0}">
     <p><b>History (all sessions):</b></p>
     <table id="specs" style="width: 80%" border="0">
       <tbody>
@@ -200,7 +201,8 @@ function submitForm()
         </tr>
         </c:forEach>
       </tbody>
-    </table>       
+    </table> 
+    </c:if>      
     </div>
     <input type="hidden" name="put" id="put" value="">
     </form>

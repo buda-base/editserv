@@ -6,7 +6,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -93,15 +93,17 @@ public class JspClientController {
             Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                     NodeFactory.createURI((String) mod.get("obj")));
             if (!save) {
-                boolean create = false;
-                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
-                    create = true;
+                boolean literal = false;
+                if (mod.get("literal") != null && ((String) mod.get("literal")).equals("on")) {
+                    literal = true;
                 }
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"));
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal);
+                System.out.println("New CONTENT in controller >>" + pc.getContent());
             } else {
                 ptc = params.get("patch");
             }
             tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
+            mod.put("task", tk);
             if (save) {
                 saveTask(tk, req);
                 HashMap<String, Object> model = new HashMap<>();
@@ -124,7 +126,8 @@ public class JspClientController {
         }
         ModelMap mod = new ModelMap();
         if (!save) {
-            String patchId = Integer.toString(Objects.hash(System.currentTimeMillis()));
+            String patchId = UUID.randomUUID().toString();
+            // String patchId = Integer.toString(Objects.hash(System.currentTimeMillis()));
             Task tk = new Task("", "new task", patchId, "", PatchContent.getEmptyPatchContent(patchId), "marc");
             mod = new ModelMap();
             mod.put("task", tk);
@@ -134,10 +137,15 @@ public class JspClientController {
             String ptc = null;
             if (!params.isEmpty()) {
                 System.out.println("REQUEST PARAMS >>" + params);
+                boolean literal = false;
+                if (mod.get("literal") != null && ((String) mod.get("literal")).equals("on")) {
+                    literal = true;
+                }
                 PatchContent pc = new PatchContent((String) mod.get("patch"));
                 Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                         NodeFactory.createURI((String) mod.get("obj")));
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"));
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal);
+                System.out.println("New CONTENT in controller >>" + pc.getContent());
                 tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
                 mod.put("task", tk);
             }

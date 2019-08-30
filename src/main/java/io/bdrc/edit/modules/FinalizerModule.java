@@ -2,6 +2,7 @@ package io.bdrc.edit.modules;
 
 import java.io.File;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public class FinalizerModule implements BUDAEditModule {
     public void run() throws ModuleException {
         try {
             // 1) move task from user "stashed" to user "processed" directories
-            new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + getId() + ".patch").renameTo(new File(EditConfig.getProperty("gitTransactDir") + getId() + ".patch"));
+            FileUtils.copyFile(new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + getId() + ".patch"), new File(EditConfig.getProperty("gitTransactDir") + getId() + ".patch"));
             TaskGitManager.deleteTask(getUserId(), getId());
             // 2) close and write transaction log
             logger.info("Running Txn Closer Service for task {}", data.getTaskId());

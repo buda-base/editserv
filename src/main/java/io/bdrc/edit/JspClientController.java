@@ -15,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -97,7 +98,11 @@ public class JspClientController {
                 if (mod.get("literal") != null && ((String) mod.get("literal")).equals("on")) {
                     literal = true;
                 }
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal);
+                boolean create = false;
+                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
+                    create = true;
+                }
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal, create);
                 System.out.println("New CONTENT in controller >>" + pc.getContent());
             } else {
                 ptc = params.get("patch");
@@ -112,6 +117,27 @@ public class JspClientController {
                 return new ModelAndView("task", model);
             }
         }
+        return new ModelAndView("editTask", mod);
+    }
+
+    @GetMapping(value = "/taskSubmit/{taskId}")
+    public ModelAndView taskSubmit(@PathVariable("taskId") String taskId, @RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        Task tk = TaskGitManager.getTask(taskId, "marc");
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost post = new HttpPost("http://" + req.getServerName() + ":" + req.getServerPort() + "/tasks");
+        ObjectMapper mapper = new ObjectMapper();
+        StringEntity entity = new StringEntity(mapper.writeValueAsString(tk));
+        post.setEntity(entity);
+        post.setHeader("Accept", "application/json");
+        post.setHeader("Content-type", "application/json");
+        HttpResponse resp = client.execute(post);
+        if (resp.getStatusLine().getStatusCode() == 204) {
+            response.sendRedirect("http://" + req.getServerName() + ":" + req.getServerPort() + "/queuejob/" + tk.getId());
+        }
+        ModelMap mod = new ModelMap();
+        mod.put("task", tk);
+        mod.addAllAttributes(params);
+        mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
         return new ModelAndView("editTask", mod);
     }
 
@@ -141,10 +167,14 @@ public class JspClientController {
                 if (mod.get("literal") != null && ((String) mod.get("literal")).equals("on")) {
                     literal = true;
                 }
+                boolean create = false;
+                if (mod.get("create") != null && ((String) mod.get("create")).equals("on")) {
+                    create = true;
+                }
                 PatchContent pc = new PatchContent((String) mod.get("patch"));
                 Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                         NodeFactory.createURI((String) mod.get("obj")));
-                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal);
+                ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal, create);
                 System.out.println("New CONTENT in controller >>" + pc.getContent());
                 tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
                 mod.put("task", tk);

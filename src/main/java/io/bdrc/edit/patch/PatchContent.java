@@ -42,7 +42,7 @@ public class PatchContent {
         this.content = content;
     }
 
-    public String appendQuad(String command, Quad q, String type, boolean literal) throws IOException {
+    public String appendQuad(String command, Quad q, String type, boolean literal, boolean create) throws IOException {
         String obj = "";
         if (!literal) {
             obj = PatchContent.tag(q.asTriple().getObject().getURI());
@@ -53,6 +53,18 @@ public class PatchContent {
         String deb = content.substring(0, content.lastIndexOf("TC ."));
         content = normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC .");
         System.out.println("New CONTENT >>" + content);
+        if (!create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_GRAPH)) {
+            String mapping = getHeaderLine(EditPatchHeaders.KEY_GRAPH);
+            String replace = "";
+            if (mapping != null) {
+                replace = mapping.substring(0, mapping.lastIndexOf('"')).trim() + ";" + q.getGraph().getURI() + "\" . ";
+                content = content.replace(mapping, replace);
+            } else {
+                replace = "H graph \"" + q.getGraph().getURI() + "\" . " + System.lineSeparator();
+                content = content.substring(0, content.indexOf(".") + 1) + replace + content.substring(content.indexOf(".") + 1);
+            }
+
+        }
         if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_MAPPING)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_MAPPING);
             String replace = "";
@@ -65,7 +77,7 @@ public class PatchContent {
             }
 
         }
-        if (!headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
+        if (create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_CREATE)) {
             String cr = getHeaderLine(EditPatchHeaders.KEY_CREATE);
             String replace = "";
             if (cr != null) {

@@ -37,9 +37,9 @@ function showHide(id) {
         x.style.display = "none";    
     }
 }  
-function submitForm()
+function submitForm(name)
 {
-	document.getElementById("put").value = "save";	
+	document.getElementById("put").value = name;		
 	document.myform.submit();
 }
 
@@ -47,6 +47,7 @@ function submitForm()
 </head>
 <body>
 <form id="myform" name="myform" action="" method="GET">
+<h1>Task edition</h1>
     <div>
     <p><b>Task Id:</b> <input type="text" name="tskid" value="${task.getId()}" readonly></p>
     <p><b>Current version:</b></p>
@@ -71,7 +72,7 @@ function submitForm()
       </tbody>
     </table>
      <hr>
-    <p><table style="width: 80%" border="0">
+    <p><table style="width: 80%" border=0>
     <tbody>
         <tr>
           <td><b>Patch:</b></td>
@@ -81,7 +82,7 @@ function submitForm()
     </table>
     <div id="quad" style="display:block">
     <span><b>Add a quad:</b></span>
-    <table style="width: 40%" border="0">
+    <table style="width: 40%" border=0>
     <tbody>
         <tr>
           <td style="text-align:right;width: 10%"><b>Command:</b></td>
@@ -145,18 +146,19 @@ function submitForm()
         <tr>
           <td style="text-align:right;width: 10%"><b>Graph:</b></td>
           <td style="text-align:left"><input type="text" name="graph" placeholder="graph"></td>
-          <td></td>
+          <td><input type="checkbox" id="create" name="create">
+                <label for="horns">to create</label></td>
           <td></td>
         </tr>
         </tbody>
     </table>
     </div>
     <br>
-    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm()" value="Save task" type="button">
+    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm('save')" value="Save task" type="button">
     <hr>
     <c:if test = "${sessions.size()>0}">
     <p><b>History (all sessions):</b></p>
-    <table id="specs" style="width: 80%" border="0">
+    <table id="specs" style="width: 80%" border=0>
       <tbody>
         <tr>
           <th>Date</th>
@@ -173,7 +175,7 @@ function submitForm()
         </tr>
         <tr id="${sess.getShortGitVersion()}" style="display:none">
           <td colspan="4">
-          <table id="specs" border="0">          
+          <table id="specs" border=0>          
               <tbody>
                 <tr>
                   <td><b>Message:</b></td>

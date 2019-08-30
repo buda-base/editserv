@@ -39,6 +39,7 @@ function showHide(id) {
 </script>
 </head>
 <body>
+<h1>Task view</h1>
     <div>
     <p><b>Task Id:</b> ${task.getId()}</p>
     <p><b>Current version:</b></p>

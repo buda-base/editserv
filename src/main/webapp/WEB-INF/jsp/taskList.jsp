@@ -39,6 +39,7 @@ function showHide(id) {
 </script>
 </head>
 <body>
+<h1>Tasks list</h1>
 <c:if test = "${tasks.size()>0}">
     <h2>Tasks list for user: ${tasks.get(0).getUser()}</h2>
 </c:if>
@@ -51,7 +52,7 @@ function showHide(id) {
 	           <th><b>Task Id:</b> ${task.getId()}</th>
 	           <th><input name="Edit" value="Edit" onClick="location.href='/taskEdit/${task.getId()}'" type="button">
 	           <input name="Delete" value="Delete" onClick="location.href='/taskDelete/${task.getId()}'" type="button">
-	           <input name="update" value="Submit" onClick="location.href='/taskEdit/${task.getId()}'" type="button"></th>
+	           <input name="update" value="Submit" onClick="location.href='/taskSubmit/${task.getId()}'" type="button"></th>
 	           </tr>
 		        <tr>
 		          <td style="width: 25%"><b>Message:</b></td>

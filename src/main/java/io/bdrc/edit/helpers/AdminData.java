@@ -48,6 +48,7 @@ public class AdminData {
     }
 
     public Model asModel() {
+        System.out.println("GIT REPO" + gitRepo);
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
         m.add(ResourceFactory.createStatement(r, RDF.type, ADMIN_DATA));

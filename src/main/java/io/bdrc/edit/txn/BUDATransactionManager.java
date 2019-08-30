@@ -51,6 +51,7 @@ public class BUDATransactionManager implements Runnable {
     }
 
     public static String getTxnStatus(String id) {
+        logger.info(">> BUDATransactionManager getting status of " + id);
         BUDATransaction btx = PROCESSES.get(id);
         if (btx != null) {
             return Types.getStatus(btx.getStatus());

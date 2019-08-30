@@ -150,6 +150,7 @@ public class DataUpdate {
     }
 
     private Model createAdminInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        System.out.println("ADMIN INFO for URI" + graphUri);
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         admData.put(graphUri, new AdminData(resId, getResourceType(graphUri), getGitDir(resId)));
         return admData.get(graphUri).asModel();

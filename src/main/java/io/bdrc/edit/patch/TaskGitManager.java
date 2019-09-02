@@ -143,28 +143,36 @@ public class TaskGitManager {
         return contentBuilder.toString();
     }
 
-    public static List<Session> getAllSessions(String taskId, String user) throws NoHeadException, GitAPIException, RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
+    public static List<Session> getAllSessions(String taskId, String user) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException, GitAPIException {
         ArrayList<Session> sessions = new ArrayList<>();
         Git git = new Git(taskRepo);
-        Iterable<RevCommit> rc = git.log().addPath(user + "/" + taskId + ".patch").call();
-        for (RevCommit rvc : rc) {
-            System.out.println("REV COMMIT >>" + rvc.getCommitterIdent().getWhen());
-            TreeWalk treeWalk = TreeWalk.forPath(taskRepo, user + "/" + taskId + ".patch", rvc.getTree());
-            byte[] bytes = null;
-            if (treeWalk != null) {
-                treeWalk.setRecursive(true);
-                CanonicalTreeParser canonicalTreeParser = treeWalk.getTree(0, CanonicalTreeParser.class);
-                while (!canonicalTreeParser.eof()) {
-                    // if the filename matches, we have a match
-                    if (canonicalTreeParser.getEntryPathString().equals(user + "/" + taskId + ".patch")) {
-                        ObjectLoader objectLoader = taskRepo.open(canonicalTreeParser.getEntryObjectId());
-                        bytes = objectLoader.getBytes();
+        Iterable<RevCommit> rc = null;
+        try {
+            rc = git.log().addPath(user + "/" + taskId + ".patch").call();
+        } catch (NoHeadException e) {
+            System.out.println("Empty repo, nothing to log");
+            e.printStackTrace();
+        }
+        if (rc != null) {
+            for (RevCommit rvc : rc) {
+                System.out.println("REV COMMIT >>" + rvc.getCommitterIdent().getWhen());
+                TreeWalk treeWalk = TreeWalk.forPath(taskRepo, user + "/" + taskId + ".patch", rvc.getTree());
+                byte[] bytes = null;
+                if (treeWalk != null) {
+                    treeWalk.setRecursive(true);
+                    CanonicalTreeParser canonicalTreeParser = treeWalk.getTree(0, CanonicalTreeParser.class);
+                    while (!canonicalTreeParser.eof()) {
+                        // if the filename matches, we have a match
+                        if (canonicalTreeParser.getEntryPathString().equals(user + "/" + taskId + ".patch")) {
+                            ObjectLoader objectLoader = taskRepo.open(canonicalTreeParser.getEntryObjectId());
+                            bytes = objectLoader.getBytes();
+                        }
+                        canonicalTreeParser.next(1);
                     }
-                    canonicalTreeParser.next(1);
+                    SimpleDateFormat format = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+                    Session s = new Session(format.format(new Date(rvc.getCommitTime() * 1000L)), rvc.getId().toString(), new String(bytes));
+                    sessions.add(s);
                 }
-                SimpleDateFormat format = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
-                Session s = new Session(format.format(new Date(rvc.getCommitTime() * 1000L)), rvc.getId().toString(), new String(bytes));
-                sessions.add(s);
             }
         }
         git.close();

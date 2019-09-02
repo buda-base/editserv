@@ -37,12 +37,28 @@ function showHide(id) {
     }
 }   
 </script>
+<style>
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  margin: 6px 3px;
+  cursor: pointer;
+}
+h1 { color: #d04764; font-size: 38px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
+h2 { color: #e6b035; font-size: 28px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
+</style>
 </head>
 <body>
 <h1>Task view</h1>
     <div>
     <p><b>Task Id:</b> ${task.getId()}</p>
-    <p><b>Current version:</b></p>
+    <p><b>Current version:</b><input name="Edit" value="Edit" class="button" onClick="location.href='/taskEdit/${task.getId()}'" type="button"></p>
     <p><table id="specs" style="width: 80%" border="0">
       <tbody>
         <tr>

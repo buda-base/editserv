@@ -44,6 +44,7 @@ public class BUDATransactionManager implements Runnable {
     }
 
     public void queueTxn(BUDATransaction btx) throws IOException {
+        System.out.println(">> BUDATransactionManager queing " + btx);
         logger.info(">> BUDATransactionManager queing " + btx);
         WAITING_QUEUE.add(btx);
         btx.setStatus(Types.STATUS_QUEUED);
@@ -52,6 +53,7 @@ public class BUDATransactionManager implements Runnable {
 
     public static String getTxnStatus(String id) {
         logger.info(">> BUDATransactionManager getting status of " + id);
+        System.out.println(">> BUDATransactionManager getting status of " + id);
         BUDATransaction btx = PROCESSES.get(id);
         if (btx != null) {
             return Types.getStatus(btx.getStatus());

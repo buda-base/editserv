@@ -27,6 +27,20 @@
     background-color: #4e7F50;
     color: white;
 }
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  margin: 6px 3px;
+  cursor: pointer;
+}
+h1 { color: #d04764; font-size: 38px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
+h2 { color: #e6b035; font-size: 28px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
 </style>
 <script type="text/javascript"> 
 function showHide(id) {    
@@ -154,7 +168,7 @@ function submitForm(name)
     </table>
     </div>
     <br>
-    <input name="add" value="Add quad" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm('save')" value="Save task" type="button">
+    <input name="add" value="Add quad" class="button" type="submit">&nbsp;<input name="Edit" onClick="javascript:submitForm('save')" value="Save task" class="button" type="button">
     <hr>
     <c:if test = "${sessions.size()>0}">
     <p><b>History (all sessions):</b></p>

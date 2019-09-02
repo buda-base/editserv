@@ -37,11 +37,27 @@ function showHide(id) {
     }
 }   
 </script>
+<style>
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  margin: 6px 3px;
+  cursor: pointer;
+}
+h1 { color: #d04764; font-size: 38px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
+h2 { color: #e6b035; font-size: 28px; font-family: 'Signika', sans-serif; padding-bottom: 10px; }
+</style>
 </head>
 <body>
 <h1>Tasks list</h1>
 <c:if test = "${tasks.size()>0}">
-    <h2>Tasks list for user: ${tasks.get(0).getUser()}</h2>
+    <h2>for user: ${tasks.get(0).getUser()}</h2>
 </c:if>
     <div>
         <c:forEach items="${tasks}" var="task"> 
@@ -50,9 +66,9 @@ function showHide(id) {
 	        <tbody>
 	           <tr>
 	           <th><b>Task Id:</b> ${task.getId()}</th>
-	           <th><input name="Edit" value="Edit" onClick="location.href='/taskEdit/${task.getId()}'" type="button">
-	           <input name="Delete" value="Delete" onClick="location.href='/taskDelete/${task.getId()}'" type="button">
-	           <input name="update" value="Submit" onClick="location.href='/taskSubmit/${task.getId()}'" type="button"></th>
+	           <th><input name="Edit" value="Edit" onClick="location.href='/taskEdit/${task.getId()}'" class="button" type="button">
+	           <input name="Delete" value="Delete" onClick="location.href='/taskDelete/${task.getId()}'" class="button" type="button">
+	           <input name="update" value="Submit" onClick="location.href='/taskSubmit/${task.getId()}'" class="button" type="button"></th>
 	           </tr>
 		        <tr>
 		          <td style="width: 25%"><b>Message:</b></td>

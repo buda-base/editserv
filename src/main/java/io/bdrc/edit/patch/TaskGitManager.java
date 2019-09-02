@@ -29,6 +29,8 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.util.FS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -40,6 +42,7 @@ import io.bdrc.edit.txn.exceptions.ModuleException;
 public class TaskGitManager {
 
     static Repository taskRepo;
+    public final static Logger log = LoggerFactory.getLogger(TaskGitManager.class.getName());
 
     static {
         try {
@@ -106,9 +109,9 @@ public class TaskGitManager {
         List<String> result = walk.map(x -> x.toString()).filter(f -> f.endsWith(".patch")).collect(Collectors.toList());
 
         ArrayList<String> files = new ArrayList<>();
-        System.out.println("FILES >> " + result);
+        log.info("FILES >> {}", result);
         for (String s : result) {
-            System.out.println("FILE >> " + s);
+            log.info("FILE >> {}", s);
             String tmp = s.substring(s.lastIndexOf('/') + 1);
             files.add(tmp.substring(0, tmp.lastIndexOf('.')));
         }
@@ -150,12 +153,12 @@ public class TaskGitManager {
         try {
             rc = git.log().addPath(user + "/" + taskId + ".patch").call();
         } catch (NoHeadException e) {
-            System.out.println("Empty repo, nothing to log");
+            log.warn("Empty repo, nothing to log");
             e.printStackTrace();
         }
         if (rc != null) {
             for (RevCommit rvc : rc) {
-                System.out.println("REV COMMIT >>" + rvc.getCommitterIdent().getWhen());
+                log.info("REV COMMIT >> {}", rvc.getCommitterIdent().getWhen());
                 TreeWalk treeWalk = TreeWalk.forPath(taskRepo, user + "/" + taskId + ".patch", rvc.getTree());
                 byte[] bytes = null;
                 if (treeWalk != null) {

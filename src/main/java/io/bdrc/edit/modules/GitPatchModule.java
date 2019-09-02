@@ -257,21 +257,6 @@ public class GitPatchModule implements BUDAEditModule {
             // 1) Pull remote directory
             Git git = new Git(localRepo);
             git.pull().setProgressMonitor(new TextProgressMonitor()).setRemote("origin").call();
-            /*
-             * switch (type) { case Types.GIT_CREATE_SVC: // 2) delete the resource ttl file
-             * thats was created before String dir = EditConfig.getProperty("gitLocalRoot")
-             * + resType + "s/";
-             * System.out.println("Running GitService... in create SVC with dir : " + dir);
-             * String sub = getDir(data.getResId());
-             * System.out.println("Running GitService... dir is.. " + dir + " and sub is: "
-             * + sub); dir = dir + sub + "/"; File f = new File(dir + data.getResId() +
-             * ".ttl"); boolean del = f.delete(); // 3) add and commit to local
-             * git.add().addFilepattern(sub + "/").call();
-             * git.commit().setMessage("Rolling back resource " + data.getResId()).call();
-             * // 4) push to remote git.push().setCredentialsProvider(new
-             * UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"),
-             * EditConfig.getProperty("gitPassword"))).setRemote(remoteURL).call(); break; }
-             */
             git.close();
         } catch (GitAPIException e) {
             e.printStackTrace();

@@ -24,6 +24,8 @@ import org.apache.jena.sparql.core.Quad;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +43,8 @@ import io.bdrc.edit.patch.TaskGitManager;
 @Controller
 @RequestMapping("/")
 public class JspClientController {
+
+    public final static Logger log = LoggerFactory.getLogger(JspClientController.class.getName());
 
     @GetMapping(value = "/taskView/{taskId}")
     public ModelAndView taskView(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
@@ -86,10 +90,10 @@ public class JspClientController {
         mod.put("task", tk);
         mod.addAllAttributes(params);
         mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
-        System.out.println("MODEL MAP >>" + mod);
+        log.info("MODEL MAP >> {} ", mod);
         String ptc = null;
         if (!params.isEmpty()) {
-            System.out.println("REQUEST PARAMS >>" + params);
+            log.info("REQUEST PARAMS >> {} ", params);
             PatchContent pc = new PatchContent((String) mod.get("patch"));
             Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                     NodeFactory.createURI((String) mod.get("obj")));
@@ -103,7 +107,7 @@ public class JspClientController {
                     create = true;
                 }
                 ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal, create);
-                System.out.println("New CONTENT in controller >>" + pc.getContent());
+                log.info("New CONTENT in controller >> {} ", pc.getContent());
             } else {
                 ptc = params.get("patch");
             }
@@ -159,10 +163,10 @@ public class JspClientController {
             mod.put("task", tk);
             mod.addAllAttributes(params);
             mod.put("sessions", TaskGitManager.getAllSessions(patchId, "marc"));
-            System.out.println("MODEL MAP >>" + mod);
+            log.info("MODEL MAP >> {} ", mod);
             String ptc = null;
             if (!params.isEmpty()) {
-                System.out.println("REQUEST PARAMS >>" + params);
+                log.info("REQUEST PARAMS >> {} ", params);
                 boolean literal = false;
                 if (mod.get("literal") != null && ((String) mod.get("literal")).equals("on")) {
                     literal = true;
@@ -175,7 +179,7 @@ public class JspClientController {
                 Quad q = new Quad(NodeFactory.createURI((String) mod.get("graph")), NodeFactory.createURI((String) mod.get("subj")), NodeFactory.createURI("http://purl.bdrc.io/ontology/core/" + (String) mod.get("predicate")),
                         NodeFactory.createURI((String) mod.get("obj")));
                 ptc = pc.appendQuad((String) mod.get("command"), q, (String) mod.get("type"), literal, create);
-                System.out.println("New CONTENT in controller >>" + pc.getContent());
+                log.info("New CONTENT in controller >> {} ", pc.getContent());
                 tk = new Task(params.get("saveMsg"), params.get("msg"), params.get("tskid"), params.get("shortName"), ptc, "marc");
                 mod.put("task", tk);
             }
@@ -198,7 +202,7 @@ public class JspClientController {
         put.setEntity(entity);
         put.setHeader("Content-type", "application/json");
         HttpResponse response = client.execute(put);
-        System.out.println(response);
+        log.info(response.toString());
     }
 
     public static String getResourceFileContent(String file) throws IOException {

@@ -20,6 +20,8 @@ import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,8 @@ import io.bdrc.libraries.GitHelpers;
 @Controller
 @RequestMapping("/")
 public class EditController {
+
+    public final static Logger log = LoggerFactory.getLogger(EditController.class.getName());
 
     public String getUser(HttpServletRequest req) {
         // User prof = ((Access) req.getAttribute("access")).getUser();
@@ -223,7 +227,7 @@ public class EditController {
     @GetMapping(value = "/queuejob/{id}")
     public ResponseEntity<String> getTxnInfo(HttpServletRequest req, HttpServletResponse response, @PathVariable("id") String id) {
         String status = BUDATransactionManager.getTxnStatus(id);
-        System.out.println("Status >>" + status);
+        log.info("Status for /queuejob endpoint >> {} ", status);
         return new ResponseEntity<>(status, HttpStatus.OK);
     }
 

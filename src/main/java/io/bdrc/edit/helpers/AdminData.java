@@ -7,6 +7,8 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.vocabulary.RDF;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -29,6 +31,8 @@ public class AdminData {
     public String gitPath;
     public String resourceType;
 
+    public final static Logger log = LoggerFactory.getLogger(AdminData.class.getName());
+
     public AdminData(String resId, String resourceType, String gitPath) {
         this.resId = resId;
         this.resourceType = resourceType;
@@ -48,7 +52,7 @@ public class AdminData {
     }
 
     public Model asModel() {
-        System.out.println("GIT REPO" + gitRepo);
+        log.info("GIT REPO = {}", gitRepo);
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
         m.add(ResourceFactory.createStatement(r, RDF.type, ADMIN_DATA));

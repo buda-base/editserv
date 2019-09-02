@@ -26,6 +26,8 @@ import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.text.RDFPatchReaderText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -44,6 +46,8 @@ public class DataUpdate {
     private DatasetGraph dsg;
     private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
+
+    public final static Logger log = LoggerFactory.getLogger(DataUpdate.class.getName());
 
     public DataUpdate(Task tsk) throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
         super();
@@ -150,7 +154,7 @@ public class DataUpdate {
     }
 
     private Model createAdminInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        System.out.println("ADMIN INFO for URI" + graphUri);
+        log.info("ADMIN INFO for URI : {}", graphUri);
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         admData.put(graphUri, new AdminData(resId, getResourceType(graphUri), getGitDir(resId)));
         return admData.get(graphUri).asModel();

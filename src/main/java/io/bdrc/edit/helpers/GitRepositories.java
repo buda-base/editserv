@@ -52,7 +52,6 @@ public class GitRepositories {
     }
 
     public static GitRepo getRepo(String resType) {
-        // System.out.println(repos);
         return repos.get(resType);
     }
 

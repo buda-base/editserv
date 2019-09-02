@@ -13,6 +13,8 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.Quad;
 import org.assertj.core.util.Arrays;
 import org.seaborne.patch.text.RDFPatchReaderText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.EditPatchHeaders;
@@ -21,6 +23,8 @@ public class PatchContent {
 
     private String content;
     private EditPatchHeaders ph;
+
+    public final static Logger log = LoggerFactory.getLogger(PatchContent.class.getName());
 
     public PatchContent(String content) {
         setContent(normalizeContent(content));
@@ -52,7 +56,7 @@ public class PatchContent {
         String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + obj + " " + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
         content = normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC .");
-        System.out.println("New CONTENT >>" + content);
+        log.info("New CONTENT >> {}", content);
         if (!create && !headerContains(q.getGraph().getURI(), EditPatchHeaders.KEY_GRAPH)) {
             String mapping = getHeaderLine(EditPatchHeaders.KEY_GRAPH);
             String replace = "";
@@ -89,7 +93,7 @@ public class PatchContent {
             }
         }
         content = normalizeContent(content);
-        System.out.println("New CONTENT returned>>" + content);
+        log.info("New CONTENT returned >> {}", content);
         return content;
     }
 

@@ -101,7 +101,7 @@ public class EditController {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             mapper.writeValue(os, map);
             res = os.toString();
-        } catch (IOException | RevisionSyntaxException | GitAPIException e) {
+        } catch (IOException | RevisionSyntaxException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }

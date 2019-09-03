@@ -58,7 +58,7 @@ h2 { color: #e6b035; font-size: 28px; font-family: 'Signika', sans-serif; paddin
 <h1>Task view</h1>
     <div>
     <p><b>Task Id:</b> ${task.getId()}</p>
-    <p><b>Current version:</b><input name="Edit" value="Edit" class="button" onClick="location.href='/taskEdit/${task.getId()}'" type="button"></p>
+    <p><b>Current version:</b><input name="Edit" value="Edit" class="button" onClick="location.href='/taskEdit/${task.getId()}'" type="button">&nbsp;<input name="update" value="Task List" onClick="location.href='/taskList'" class="button" type="button">&nbsp;<input name="update" value="Submit" onClick="location.href='/taskSubmit/${task.getId()}'" class="button" type="button"></p>
     <p><table id="specs" style="width: 80%" border="0">
       <tbody>
         <tr>

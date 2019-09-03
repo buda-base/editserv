@@ -17,9 +17,9 @@ import io.bdrc.edit.patch.Task;
 
 public class TransactionLog {
 
-    HashMap<String, String> header;
-    HashMap<String, String> content;
-    HashMap<String, String> error;
+    public HashMap<String, String> header;
+    public HashMap<String, String> content;
+    public HashMap<String, String> error;
 
     public static final String HEADER = "header";
     public static final String CONTENT = "content";
@@ -34,6 +34,10 @@ public class TransactionLog {
     static String ERROR_LENGTH = "error_length";
 
     public final static Logger logger = LoggerFactory.getLogger(TransactionLog.class.getName());
+
+    public TransactionLog() {
+
+    }
 
     public TransactionLog(Task tk) {
         header = new HashMap<>();
@@ -115,13 +119,22 @@ public class TransactionLog {
         return mapper.writeValueAsString(obj);
     }
 
+    public static TransactionLog create(String json) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, TransactionLog.class);
+    }
+
     public static void main(String[] args) throws IOException {
         EditConfig.init();
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", "patch content", "marc");
         TransactionLog log = new TransactionLog(tk);
         log.addContent("test", "whatever");
         log.addContent("test", "whatever");
-        System.out.println(TransactionLog.asJson(log));
+        String json = TransactionLog.asJson(log);
+        System.out.println(json);
+        TransactionLog log1 = TransactionLog.create(json);
+        System.out.println(log1);
+        System.out.println(TransactionLog.asJson(log1));
     }
 
 }

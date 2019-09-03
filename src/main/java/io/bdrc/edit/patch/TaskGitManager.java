@@ -146,7 +146,7 @@ public class TaskGitManager {
         return contentBuilder.toString();
     }
 
-    public static List<Session> getAllSessions(String taskId, String user) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException, GitAPIException {
+    public static List<Session> getAllSessions(String taskId, String user) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
         ArrayList<Session> sessions = new ArrayList<>();
         Git git = new Git(taskRepo);
         Iterable<RevCommit> rc = null;
@@ -154,6 +154,9 @@ public class TaskGitManager {
             rc = git.log().addPath(user + "/" + taskId + ".patch").call();
         } catch (NoHeadException e) {
             log.warn("Empty repo, nothing to log");
+            e.printStackTrace();
+        } catch (GitAPIException e) {
+            log.warn("Unexpected exception >> " + e.getMessage());
             e.printStackTrace();
         }
         if (rc != null) {

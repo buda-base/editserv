@@ -90,7 +90,7 @@ function submitForm(name)
     <tbody>
         <tr>
           <td><b>Patch:</b></td>
-          <td><textarea name="patch" rows=5 cols="100" readonly>${task.getPatch()}</textarea></td>
+          <td><textarea name="patch" rows=5 cols="100">${task.getPatch()}</textarea></td>
         </tr>
         </tbody>
     </table>

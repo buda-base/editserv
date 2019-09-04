@@ -22,6 +22,7 @@ public class Helpers {
         Path dpath = Paths.get(dir);
         Stream<Path> walk = Files.walk(dpath);
         files = walk.map(x -> x.toString()).filter(f -> f.endsWith(ext)).collect(Collectors.toList());
+        walk.close();
         return files;
     }
 
@@ -31,14 +32,9 @@ public class Helpers {
         TreeMap<Long, TransactionLog> map = new TreeMap<>();
         for (String s : list) {
             if (s.contains(EditConfig.getProperty("logRootDir") + user + "/")) {
-                File f = new File(s);
-                FileInputStream fis = new FileInputStream(f);
-                byte[] b = new byte[(int) f.length()];
-                fis.read(b);
-                fis.close();
-                String content = new String(b, "UTF-8");
+                String content = readFileContent(s);
                 TransactionLog log = TransactionLog.create(content);
-                map.put(new Long(f.lastModified()), log);
+                map.put(new Long(new File(s).lastModified()), log);
                 // System.out.println(TransactionLog.asJson(log));
             }
         }
@@ -50,14 +46,9 @@ public class Helpers {
         List<String> list = Helpers.getFileList(EditConfig.getProperty("gitTransactDir"), ".patch");
         TreeMap<Long, Task> map = new TreeMap<>();
         for (String s : list) {
-            File f = new File(s);
-            FileInputStream fis = new FileInputStream(f);
-            byte[] b = new byte[(int) f.length()];
-            fis.read(b);
-            fis.close();
-            String content = new String(b, "UTF-8");
+            String content = readFileContent(s);
             Task tk = Task.create(content);
-            map.put(new Long(f.lastModified()), tk);
+            map.put(new Long(new File(s).lastModified()), tk);
             // System.out.println(tk);
 
         }
@@ -69,18 +60,22 @@ public class Helpers {
         List<String> list = Helpers.getFileList(EditConfig.getProperty("gitTransactDir"), ".patch");
         TreeMap<Long, Task> map = new TreeMap<>();
         for (String s : list) {
-            File f = new File(s);
-            FileInputStream fis = new FileInputStream(f);
-            byte[] b = new byte[(int) f.length()];
-            fis.read(b);
-            fis.close();
-            String content = new String(b, "UTF-8");
+            String content = readFileContent(s);
             Task tk = Task.create(content);
             if (tk.getUser().equals(user)) {
-                map.put(new Long(f.lastModified()), tk);
+                map.put(new Long(new File(s).lastModified()), tk);
             }
         }
         return map;
+    }
+
+    public static String readFileContent(String filename) throws IOException {
+        File f = new File(filename);
+        FileInputStream fis = new FileInputStream(f);
+        byte[] b = new byte[(int) f.length()];
+        fis.read(b);
+        fis.close();
+        return new String(b, "UTF-8");
     }
 
     public static void main(String[] args) throws IOException {
@@ -88,7 +83,7 @@ public class Helpers {
         System.out.println(Helpers.getFileList(EditConfig.getProperty("logRootDir"), ".log"));
         System.out.println(Helpers.getLogsForUser("marc"));
         System.out.println(Helpers.getAllTransactions());
-        System.out.println(Helpers.getUserTransactions("marc1"));
+        System.out.println(Helpers.getUserTransactions("marc"));
     }
 
 }

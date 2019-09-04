@@ -15,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -135,14 +136,42 @@ public class JspClientController {
         post.setHeader("Accept", "application/json");
         post.setHeader("Content-type", "application/json");
         HttpResponse resp = client.execute(post);
-        if (resp.getStatusLine().getStatusCode() == 204) {
-            response.sendRedirect("http://" + req.getServerName() + ":" + req.getServerPort() + "/queuejob/" + tk.getId());
-        }
         ModelMap mod = new ModelMap();
+        if (resp.getStatusLine().getStatusCode() == 204) {
+            client = HttpClientBuilder.create().build();
+            String loc = resp.getFirstHeader("Location").getValue();
+            System.out.println("LOC =" + loc);
+            HttpGet get = new HttpGet("http://" + req.getServerName() + ":" + req.getServerPort() + "/queuejob/" + tk.getId());
+            // HttpGet get = new HttpGet(loc);
+            resp = client.execute(get);
+            byte[] b = new byte[(int) resp.getEntity().getContentLength()];
+            resp.getEntity().getContent().read(b);
+            mod.put("status", new String(b));
+        } else {
+            mod.put("status", "Something wrong happened");
+        }
         mod.put("task", tk);
-        mod.addAllAttributes(params);
-        mod.put("sessions", TaskGitManager.getAllSessions(taskId, "marc"));
-        return new ModelAndView("editTask", mod);
+        return new ModelAndView("queue", mod);
+    }
+
+    @GetMapping(value = "/taskStatus/{taskId}")
+    public ModelAndView taskStatus(@PathVariable("taskId") String taskId, @RequestParam Map<String, String> params, HttpServletRequest req, HttpServletResponse response) throws IOException, RevisionSyntaxException, NoHeadException, GitAPIException {
+        // Task tk = TaskGitManager.getTask(taskId, "marc");
+        HttpClient client = HttpClientBuilder.create().build();
+        String loc = "http://" + req.getServerName() + ":" + req.getServerPort() + "/queuejob/" + taskId;
+        ModelMap mod = new ModelMap();
+        mod.put("taskId", taskId);
+        HttpGet get = new HttpGet(loc);
+        HttpResponse resp = client.execute(get);
+        if (resp.getStatusLine().getStatusCode() == 200) {
+            byte[] b = new byte[(int) resp.getEntity().getContentLength()];
+            resp.getEntity().getContent().read(b);
+            mod.put("status", new String(b));
+        } else {
+            mod.put("status", "Something wrong happened");
+        }
+        // mod.put("task", tk);
+        return new ModelAndView("queue", mod);
     }
 
     @GetMapping(value = "/createTask")

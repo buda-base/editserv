@@ -12,33 +12,72 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
 
 public class Helpers {
 
-    public static List<String> getLogsFiles() throws IOException {
+    public static List<String> getFileList(String dir, String ext) throws IOException {
         List<String> files = new ArrayList<>();
-        Path dpath = Paths.get(EditConfig.getProperty("logRootDir"));
+        Path dpath = Paths.get(dir);
         Stream<Path> walk = Files.walk(dpath);
-        files = walk.map(x -> x.toString()).filter(f -> f.endsWith(".log")).collect(Collectors.toList());
+        files = walk.map(x -> x.toString()).filter(f -> f.endsWith(ext)).collect(Collectors.toList());
         return files;
     }
 
     public static TreeMap<Long, TransactionLog> getLogsForUser(String user) throws IOException {
         // This tree map is ordered by last modified (as long)
-        List<String> list = Helpers.getLogsFiles();
+        List<String> list = Helpers.getFileList(EditConfig.getProperty("logRootDir"), ".log");
         TreeMap<Long, TransactionLog> map = new TreeMap<>();
         for (String s : list) {
             if (s.contains(EditConfig.getProperty("logRootDir") + user + "/")) {
                 File f = new File(s);
-                FileInputStream fileInputStream = new FileInputStream(f);
+                FileInputStream fis = new FileInputStream(f);
                 byte[] b = new byte[(int) f.length()];
-                fileInputStream.read(b);
-                fileInputStream.close();
+                fis.read(b);
+                fis.close();
                 String content = new String(b, "UTF-8");
                 TransactionLog log = TransactionLog.create(content);
                 map.put(new Long(f.lastModified()), log);
-                System.out.println(TransactionLog.asJson(log));
+                // System.out.println(TransactionLog.asJson(log));
+            }
+        }
+        return map;
+    }
+
+    public static TreeMap<Long, Task> getAllTransactions() throws IOException {
+        // This tree map is ordered by last modified (as long)
+        List<String> list = Helpers.getFileList(EditConfig.getProperty("gitTransactDir"), ".patch");
+        TreeMap<Long, Task> map = new TreeMap<>();
+        for (String s : list) {
+            File f = new File(s);
+            FileInputStream fis = new FileInputStream(f);
+            byte[] b = new byte[(int) f.length()];
+            fis.read(b);
+            fis.close();
+            String content = new String(b, "UTF-8");
+            Task tk = Task.create(content);
+            map.put(new Long(f.lastModified()), tk);
+            // System.out.println(tk);
+
+        }
+        return map;
+    }
+
+    public static TreeMap<Long, Task> getUserTransactions(String user) throws IOException {
+        // This tree map is ordered by last modified (as long)
+        List<String> list = Helpers.getFileList(EditConfig.getProperty("gitTransactDir"), ".patch");
+        TreeMap<Long, Task> map = new TreeMap<>();
+        for (String s : list) {
+            File f = new File(s);
+            FileInputStream fis = new FileInputStream(f);
+            byte[] b = new byte[(int) f.length()];
+            fis.read(b);
+            fis.close();
+            String content = new String(b, "UTF-8");
+            Task tk = Task.create(content);
+            if (tk.getUser().equals(user)) {
+                map.put(new Long(f.lastModified()), tk);
             }
         }
         return map;
@@ -46,8 +85,10 @@ public class Helpers {
 
     public static void main(String[] args) throws IOException {
         EditConfig.init();
-        System.out.println(Helpers.getLogsFiles());
+        System.out.println(Helpers.getFileList(EditConfig.getProperty("logRootDir"), ".log"));
         System.out.println(Helpers.getLogsForUser("marc"));
+        System.out.println(Helpers.getAllTransactions());
+        System.out.println(Helpers.getUserTransactions("marc1"));
     }
 
 }

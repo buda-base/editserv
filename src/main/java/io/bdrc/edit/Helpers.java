@@ -12,6 +12,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.reasoner.rulesys.RDFSRuleReasonerFactory;
+import org.apache.jena.vocabulary.ReasonerVocabulary;
+
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
 
@@ -78,12 +84,21 @@ public class Helpers {
         return new String(b, "UTF-8");
     }
 
+    public static Reasoner getRDFSRuleReasoner() {
+        Resource config = ModelFactory.createDefaultModel().createResource().addProperty(ReasonerVocabulary.PROPsetRDFSLevel, "default");
+        config.addProperty(ReasonerVocabulary.PROPruleMode, "hybrid");
+        Reasoner reasoner = RDFSRuleReasonerFactory.theInstance().create(config);
+        // reasoner.getReasonerCapabilities().write(System.out, "TURTLE");
+        return reasoner;
+    }
+
     public static void main(String[] args) throws IOException {
         EditConfig.init();
         System.out.println(Helpers.getFileList(EditConfig.getProperty("logRootDir"), ".log"));
         System.out.println(Helpers.getLogsForUser("marc"));
         System.out.println(Helpers.getAllTransactions());
         System.out.println(Helpers.getUserTransactions("marc"));
+        Helpers.getRDFSRuleReasoner();
     }
 
 }

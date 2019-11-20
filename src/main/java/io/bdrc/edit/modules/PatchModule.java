@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
+import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.Helpers;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
@@ -32,6 +34,7 @@ public class PatchModule implements BUDAEditModule {
     int status;
     TransactionLog log;
 
+    public static Reasoner RDFSReasoner = Helpers.getRDFSRuleReasoner();
     public final static Logger logger = LoggerFactory.getLogger(PatchModule.class.getName());
 
     public PatchModule(DataUpdate data, TransactionLog log) throws PatchModuleException {
@@ -105,7 +108,8 @@ public class PatchModule implements BUDAEditModule {
 
     private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
         fusConn.begin(ReadWrite.WRITE);
-        fusConn.put(graph, m);
+        // fusConn.put(graph, m);
+        fusConn.put(graph, ModelFactory.createInfModel(RDFSReasoner, m));
         fusConn.commit();
         fusConn.end();
     }

@@ -25,6 +25,7 @@ import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
+import io.bdrc.libraries.BDRCReasoner;
 
 public class PatchModule implements BUDAEditModule {
 
@@ -34,7 +35,7 @@ public class PatchModule implements BUDAEditModule {
     int status;
     TransactionLog log;
 
-    public static Reasoner RDFSReasoner = Helpers.getRDFSRuleReasoner();
+    public static Reasoner reasoner;
     public final static Logger logger = LoggerFactory.getLogger(PatchModule.class.getName());
 
     public PatchModule(DataUpdate data, TransactionLog log) throws PatchModuleException {
@@ -42,6 +43,7 @@ public class PatchModule implements BUDAEditModule {
         this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
+        reasoner = BDRCReasoner.getReasoner(Helpers.getOntologyModel());
         setStatus(Types.STATUS_PREPARED);
     }
 
@@ -109,7 +111,7 @@ public class PatchModule implements BUDAEditModule {
     private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
         fusConn.begin(ReadWrite.WRITE);
         // fusConn.put(graph, m);
-        fusConn.put(graph, ModelFactory.createInfModel(RDFSReasoner, m));
+        fusConn.put(graph, ModelFactory.createInfModel(reasoner, m));
         fusConn.commit();
         fusConn.end();
     }

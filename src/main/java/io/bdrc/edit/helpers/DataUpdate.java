@@ -244,5 +244,4 @@ public class DataUpdate {
     public DatasetGraph getDatasetGraph() {
         return dsg;
     }
-
 }

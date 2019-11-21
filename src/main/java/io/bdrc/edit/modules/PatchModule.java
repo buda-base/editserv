@@ -19,13 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.Helpers;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
-import io.bdrc.libraries.BDRCReasoner;
 
 public class PatchModule implements BUDAEditModule {
 
@@ -34,16 +32,16 @@ public class PatchModule implements BUDAEditModule {
     String name;
     int status;
     TransactionLog log;
+    Reasoner reasoner;
 
-    public static Reasoner reasoner;
     public final static Logger logger = LoggerFactory.getLogger(PatchModule.class.getName());
 
-    public PatchModule(DataUpdate data, TransactionLog log) throws PatchModuleException {
+    public PatchModule(DataUpdate data, TransactionLog log, Reasoner reasoner) throws PatchModuleException {
         this.userId = data.getUserId();
         this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
-        reasoner = BDRCReasoner.getReasoner(Helpers.getOntologyModel());
+        this.reasoner = reasoner;
         setStatus(Types.STATUS_PREPARED);
     }
 

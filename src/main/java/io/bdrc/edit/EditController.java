@@ -10,6 +10,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.reasoner.Reasoner;
 import org.eclipse.jgit.api.errors.CanceledException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidConfigurationException;
@@ -50,6 +51,7 @@ import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
+import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.GitHelpers;
 
 @Controller
@@ -57,6 +59,7 @@ import io.bdrc.libraries.GitHelpers;
 public class EditController {
 
     public final static Logger log = LoggerFactory.getLogger(EditController.class.getName());
+    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner(Helpers.getOntologyModel());
 
     public String getUser(HttpServletRequest req) {
         // User prof = ((Access) req.getAttribute("access")).getUser();
@@ -206,7 +209,7 @@ public class EditController {
             DataUpdate data = btx.getData();
             if (data != null) {
                 btx.addModule(new ValidationModule(data, btx.getLog(), ValidationModule.PRE_VALIDATION), 0);
-                btx.addModule(new PatchModule(data, btx.getLog()), 1);
+                btx.addModule(new PatchModule(data, btx.getLog(), bdrcReasoner), 1);
                 btx.addModule(new GitPatchModule(data, btx.getLog()), 2);
                 btx.addModule(new GitRevisionModule(data, btx.getLog()), 3);
                 btx.addModule(new FinalizerModule(data, btx.getLog()), 4);

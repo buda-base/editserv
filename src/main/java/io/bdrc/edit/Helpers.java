@@ -15,6 +15,16 @@ import java.util.stream.Stream;
 import org.apache.jena.ontology.OntDocumentManager;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
+import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
@@ -91,6 +101,37 @@ public class Helpers {
         ontSpec.setDocumentManager(ontManager);
         OntModel ontModel = ontManager.getOntology("http://purl.bdrc.io/ontology/admin/", ontSpec);
         return ontModel;
+    }
+
+    public static String getGitHeadFileContent(String repo, String filepath) throws Exception {
+
+        Repository repository = new FileRepository(repo + "/.git");
+        ObjectId lastCommitId = repository.resolve(Constants.HEAD);
+
+        // a RevWalk allows to walk over commits based on some filtering that is defined
+        RevWalk revWalk = new RevWalk(repository);
+        RevCommit commit = revWalk.parseCommit(lastCommitId);
+        // and using commit's tree find the path
+        RevTree tree = commit.getTree();
+        // now try to find a specific file
+        TreeWalk treeWalk = new TreeWalk(repository);
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+        treeWalk.setFilter(PathFilter.create(filepath));
+        if (!treeWalk.next()) {
+            throw new IllegalStateException("Unable to download file.");
+        }
+        ObjectLoader loader = repository.open(treeWalk.getObjectId(0));
+        System.out.println("File Size : " + loader.getSize() + "bytes");
+
+        // and then one can the loader to read the file
+        // loader.copyTo(System.out);
+
+        revWalk.dispose();
+        String content = new String(loader.getBytes());
+        System.out.println("FILE >>> ");
+        System.out.println(content);
+        return content;
     }
 
     public static void main(String[] args) throws IOException {

@@ -3,6 +3,8 @@ package editservio.bdrc.edit.test;
 import java.io.StringReader;
 
 import org.apache.jena.graph.Graph;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
@@ -20,10 +22,9 @@ public class RDFDataMgrCheck {
                 + "        :noteText           \"the three black deities (nag po skor gsum) of the padma gling pa gter ma are:\\nthe nag po skor gsum are:\\ngshin rje ka thun\\nmu stegs gu lang\\nphra men phag sha\"@en .\n" + "    \n"
                 + "    bdr:T1642  a            :Topic ;\n" + "        skos:prefLabel      \"nag po skor gsum ( pad+ma gling pa)\"@bo-x-ewts ;\n" + "        :isRoot             true ;\n" + "        :note               bdr:NTF91434BA90B2 .\n" + "}\n"
                 + "";
-        Graph g = ModelFactory.createDefaultModel().getGraph();
-        RDFDataMgr.read(g, new StringReader(testTrig), "", Lang.TRIG);
-        Model m = ModelFactory.createModelForGraph(g);
-        m.write(System.out, Lang.TRIG.getLabel());
+        Dataset ds = DatasetFactory.create();
+        RDFDataMgr.read(ds, new StringReader(testTrig), "", Lang.TRIG);
+        ds.getUnionModel().write(System.out, Lang.TRIG.getLabel());
     }
 
     public static void CheckModel() {
@@ -39,6 +40,7 @@ public class RDFDataMgrCheck {
                 + "        skos:altLabel       \"mgo log 'bos pa dgon/\"@bo-x-ewts ;\n" + "        skos:prefLabel      \"'bos pa dgon/\"@bo-x-ewts ;\n" + "        :isRoot             true ;\n" + "        :note               bdr:NT9BED02606C5E ;\n"
                 + "        :placeLocatedIn     bdr:G1752 , bdr:G1787 ;\n" + "        :placeType          bdr:PT0037 .\n" + "    \n" + "    bdr:NT9BED02606C5E\n" + "        a                   :Note ;\n"
                 + "        :noteLocationStatement  \"p. 191\" ;\n" + "        :noteWork           bdr:W20140 .\n" + "}";
+
         Model m = ModelFactory.createDefaultModel();
         m.read(new StringReader(testTrig), "", Lang.TRIG.getLabel());
         m.write(System.out, Lang.TRIG.getLabel());
@@ -63,6 +65,7 @@ public class RDFDataMgrCheck {
                 + "   bdo:noteText  \"Old TSD Schools table tree: \\n\\n-- Other transmissions\\n\\n-- Specialized Exoteric lineages\\n\\n-- the Vinaya transmissions of the Smad-'dul\"@en .\n" + "\n" + "bdr:P1525  a     bdo:Person ;\n"
                 + "   skos:prefLabel  \"'phan grags/\"@bo-x-ewts ;\n" + "   bdo:isRoot    true ;\n" + "   bdo:note      bdr:NT640DD344824B , bdr:NT8D9C070E54CF ;\n" + "   bdo:personEvent  bdr:EV4C0248DD5B2C ;\n"
                 + "   bdo:personGender  bdr:GenderMale ;\n" + "   bdo:personName  bdr:NM47BB639E0C2F , bdr:NMB7CE05D057A9 ;\n" + "   bdo:personStudentOf  bdr:P1522 .";
+
         Graph g = ModelFactory.createDefaultModel().getGraph();
         RDFDataMgr.read(g, new StringReader(testTTL), "", Lang.TURTLE);
         Model m = ModelFactory.createModelForGraph(g);
@@ -96,11 +99,11 @@ public class RDFDataMgrCheck {
     public static void main(String[] args) {
         RDFDataMgrCheck.CheckGraph();
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        RDFDataMgrCheck.CheckGraphTTL();
+        // RDFDataMgrCheck.CheckGraphTTL();
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        RDFDataMgrCheck.CheckModel();
+        // RDFDataMgrCheck.CheckModel();
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        RDFDataMgrCheck.CheckModelTTL();
+        // RDFDataMgrCheck.CheckModelTTL();
     }
 
 }

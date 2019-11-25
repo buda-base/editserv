@@ -1,6 +1,7 @@
 package io.bdrc.edit.helpers;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -36,6 +37,7 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
+import io.bdrc.libraries.GitHelpers;
 
 public class DataUpdate {
 
@@ -55,6 +57,7 @@ public class DataUpdate {
         super();
         this.tsk = tsk;
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
+        System.out.println("PATCH >> " + ph);
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
         this.delete = ph.getDeleteUris();
@@ -76,10 +79,11 @@ public class DataUpdate {
             Node graphUri = NodeFactory.createURI(st);
             try {
                 AdminData ad = fetchAdminInfo(graphUri.getURI());
-                // Graph gp = fusConn.fetch(st).getGraph();
-                Graph gp = RDFDataMgr.loadGraph(getResourceRawGitUrl(graphUri.getURI(), ad), Lang.TRIG);
+                String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
+                // System.out.println("LOCAL REPO NAME >> " + repoName + " gitPath >> " +
+                // ad.getGitPath());
+                Graph gp = buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
                 Model m = ModelFactory.createModelForGraph(gp);
-                m = removeGitRevisionInfo(st, m);
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -91,10 +95,11 @@ public class DataUpdate {
             Node graphUri = NodeFactory.createURI(rep);
             try {
                 AdminData ad = fetchAdminInfo(graphUri.getURI());
-                // Graph gp = fusConn.fetch(rep).getGraph();
-                Graph gp = RDFDataMgr.loadGraph(getResourceRawGitUrl(graphUri.getURI(), ad), Lang.TRIG);
+                String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
+                // System.out.println("LOCAL REPO NAME >> " + repoName + " gitPath >> " +
+                // ad.getGitPath());
+                Graph gp = buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
                 Model m = ModelFactory.createModelForGraph(gp);
-                m = removeGitRevisionInfo(rep, m);
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -128,9 +133,10 @@ public class DataUpdate {
         }
     }
 
-    private String getResourceRawGitUrl(String resURI, AdminData ad) {
-        String resId = resURI.substring(resURI.lastIndexOf("/") + 1);
-        return EditConfig.getProperty("gitRemoteBase") + ad.getGitRepo().getGitRepoName() + "/raw/master/" + ad.getGitPath() + "/" + resId + ".trig";
+    private Graph buildGraphFromTrig(String data) {
+        Dataset ds = DatasetFactory.create();
+        RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
+        return ds.asDatasetGraph().getUnionGraph();
     }
 
     private Model removeGitRevisionInfo(String graphUri, Model m) {
@@ -161,7 +167,6 @@ public class DataUpdate {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         AdminData ad = new AdminData(resId, getResourceType(graphUri));
         admData.put(graphUri, ad);
-        // return admData.get(graphUri).asModel();
         return ad;
     }
 

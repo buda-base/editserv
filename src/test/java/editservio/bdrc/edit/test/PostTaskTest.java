@@ -14,6 +14,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.jena.rdf.model.InfModel;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdfconnection.RDFConnectionFuseki;
+import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
+import org.apache.jena.reasoner.Reasoner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditApplication;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.Helpers;
 import io.bdrc.edit.helpers.DataUpdate;
 import io.bdrc.edit.modules.GitPatchModule;
 import io.bdrc.edit.modules.GitRevisionModule;
@@ -33,6 +40,7 @@ import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.libraries.BDRCReasoner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EditApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -40,6 +48,8 @@ public class PostTaskTest {
 
     @Autowired
     Environment environment;
+
+    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner(Helpers.getOntologyModel());
 
     @BeforeClass
     public static void init() {
@@ -102,7 +112,7 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk1);
-        PatchModule tsvc = new PatchModule(new DataUpdate(tk1), new TransactionLog(tk1));
+        PatchModule tsvc = new PatchModule(new DataUpdate(tk1), new TransactionLog(tk1), bdrcReasoner);
         tsvc.run();
         GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk1));
         gps.run();
@@ -115,7 +125,7 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/mixed.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3bTTTT", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk));
+        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk), bdrcReasoner);
         tsvc.run();
         GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk));
         gps.run();
@@ -123,13 +133,13 @@ public class PostTaskTest {
         grs.run();
     }
 
-    // @Test
+    @Test
     public void simpleAddPatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-XXXWWWWWW", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
         TransactionLog lg = new TransactionLog(tk);
-        PatchModule tsvc = new PatchModule(data, lg);
+        PatchModule tsvc = new PatchModule(data, lg, bdrcReasoner);
         tsvc.run();
         GitPatchModule gps = new GitPatchModule(data, lg);
         gps.run();
@@ -137,9 +147,21 @@ public class PostTaskTest {
         grs.run();
     }
 
-    @Test
+    // @Test
     public void dummy() {
         System.out.println("Disabling all tests and running this dummy one for now...");
+    }
+
+    // @Test
+    public void testBDRCReasoner() {
+        Reasoner bdrcReasoner = BDRCReasoner.getReasonerWithSymetry(Helpers.getOntologyModel());
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+        Model gp = fusConn.fetch("http://purl.bdrc.io/graph/P1525");
+        gp.write(System.out, "TURTLE");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        InfModel inf = ModelFactory.createInfModel(bdrcReasoner, gp);
+        inf.write(System.out, "TURTLE");
     }
 
     public static String getResourceFileContent(String file) throws IOException {

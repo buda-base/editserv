@@ -108,8 +108,8 @@ public class PatchModule implements BUDAEditModule {
 
     private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
         fusConn.begin(ReadWrite.WRITE);
-        // fusConn.put(graph, m);
-        fusConn.put(graph, ModelFactory.createInfModel(reasoner, m));
+        Model mi = ModelFactory.createInfModel(reasoner, m);
+        fusConn.put(graph, ModelFactory.createInfModel(reasoner, mi));
         fusConn.commit();
         fusConn.end();
     }

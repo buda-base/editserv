@@ -49,7 +49,6 @@ public class Helpers {
                 String content = readFileContent(s);
                 TransactionLog log = TransactionLog.create(content);
                 map.put(new Long(new File(s).lastModified()), log);
-                // System.out.println(TransactionLog.asJson(log));
             }
         }
         return map;
@@ -63,8 +62,6 @@ public class Helpers {
             String content = readFileContent(s);
             Task tk = Task.create(content);
             map.put(new Long(new File(s).lastModified()), tk);
-            // System.out.println(tk);
-
         }
         return map;
     }
@@ -122,16 +119,12 @@ public class Helpers {
             throw new IllegalStateException("Unable to download file.");
         }
         ObjectLoader loader = repository.open(treeWalk.getObjectId(0));
-        System.out.println("File Size : " + loader.getSize() + "bytes");
 
         // and then one can the loader to read the file
         // loader.copyTo(System.out);
 
         revWalk.dispose();
-        String content = new String(loader.getBytes());
-        System.out.println("FILE >>> ");
-        System.out.println(content);
-        return content;
+        return new String(loader.getBytes());
     }
 
     public static void main(String[] args) throws IOException {

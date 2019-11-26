@@ -140,9 +140,7 @@ public class JspClientController {
         if (resp.getStatusLine().getStatusCode() == 204) {
             client = HttpClientBuilder.create().build();
             String loc = resp.getFirstHeader("Location").getValue();
-            System.out.println("LOC =" + loc);
             HttpGet get = new HttpGet("http://" + req.getServerName() + ":" + req.getServerPort() + "/queuejob/" + tk.getId());
-            // HttpGet get = new HttpGet(loc);
             resp = client.execute(get);
             byte[] b = new byte[(int) resp.getEntity().getContentLength()];
             resp.getEntity().getContent().read(b);

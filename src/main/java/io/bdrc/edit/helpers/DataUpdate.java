@@ -57,7 +57,6 @@ public class DataUpdate {
         super();
         this.tsk = tsk;
         this.ph = new EditPatchHeaders(RDFPatchReaderText.readerHeader(new ByteArrayInputStream(tsk.getPatch().getBytes())));
-        System.out.println("PATCH >> " + ph);
         this.create = ph.getCreateUris();
         this.graphs = ph.getGraphUris();
         this.delete = ph.getDeleteUris();
@@ -80,10 +79,7 @@ public class DataUpdate {
             try {
                 AdminData ad = fetchAdminInfo(graphUri.getURI());
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                // System.out.println("LOCAL REPO NAME >> " + repoName + " gitPath >> " +
-                // ad.getGitPath());
-                Graph gp = buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
-                Model m = ModelFactory.createModelForGraph(gp);
+                Model m = ModelFactory.createModelForGraph(buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -96,10 +92,7 @@ public class DataUpdate {
             try {
                 AdminData ad = fetchAdminInfo(graphUri.getURI());
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                // System.out.println("LOCAL REPO NAME >> " + repoName + " gitPath >> " +
-                // ad.getGitPath());
-                Graph gp = buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
-                Model m = ModelFactory.createModelForGraph(gp);
+                Model m = ModelFactory.createModelForGraph(buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();

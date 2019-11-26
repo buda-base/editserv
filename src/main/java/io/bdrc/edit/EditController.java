@@ -111,15 +111,16 @@ public class EditController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "/tasks/{taskId}")
-    public ResponseEntity<String> deleteTask(@PathVariable("taskId") String taskId, HttpServletRequest req, HttpServletResponse response) {
+    @DeleteMapping(value = "/tasks", consumes = "application/json")
+    public ResponseEntity<String> deleteTask(@RequestBody String jsonTask, String taskId, HttpServletRequest req, HttpServletResponse response) {
         String userId = getUser(req);
         if (userId == null) {
             return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot delete the task : user is null")), HttpStatus.BAD_REQUEST);
 
         }
         try {
-            TaskGitManager.deleteTask(userId, taskId);
+            Task tk = Task.create(jsonTask);
+            TaskGitManager.deleteTask(userId, tk.getId());
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);

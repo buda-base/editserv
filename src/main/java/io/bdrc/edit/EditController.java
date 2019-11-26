@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -243,6 +244,42 @@ public class EditController {
     public String pullRepo(@PathVariable("type") String type, HttpServletRequest req, HttpServletResponse response)
             throws WrongRepositoryStateException, InvalidConfigurationException, InvalidRemoteException, CanceledException, RefNotFoundException, RefNotAdvertisedException, NoHeadException, TransportException, GitAPIException {
         return GitHelpers.pull(type);
+    }
+
+    /**
+     * Returns a task for a given user
+     * 
+     */
+    @GetMapping(value = "/gitGraphs/{resType}/{path}/{commit}", produces = "text/trig")
+    public ResponseEntity<String> getGitGraphCommits(@PathVariable("resType") String resType, @PathVariable("path") String path, @PathVariable("commit") String commit, HttpServletRequest req, HttpServletResponse response) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(new MediaType("text", "trig"));
+        String trig = "";
+        try {
+            trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", path, commit);
+        } catch (IOException | RevisionSyntaxException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(trig, responseHeaders, HttpStatus.OK);
+    }
+
+    /**
+     * Returns a task for a given user
+     * 
+     */
+    @GetMapping(value = "/gitGraphs/{resType}/{path}", produces = "text/trig")
+    public ResponseEntity<String> getGitGraphs(@PathVariable("resType") String resType, @PathVariable("path") String path, HttpServletRequest req, HttpServletResponse response) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(new MediaType("text", "trig"));
+        String trig = "";
+        try {
+            trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", path);
+        } catch (IOException | RevisionSyntaxException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(trig, responseHeaders, HttpStatus.OK);
     }
 
 }

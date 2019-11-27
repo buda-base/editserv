@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -247,34 +248,29 @@ public class EditController {
     }
 
     /**
-     * Returns a task for a given user
-     * 
+     * Returns the trig serialization of a resource from the local git repo, either
+     * for a given or the last commit
      */
-    @GetMapping(value = "/gitGraphs/{resType}/{path}/{commit}", produces = "text/trig")
-    public ResponseEntity<String> getGitGraphCommits(@PathVariable("resType") String resType, @PathVariable("path") String path, @PathVariable("commit") String commit, HttpServletRequest req, HttpServletResponse response) {
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(new MediaType("text", "trig"));
-        String trig = "";
-        try {
-            trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", path, commit);
-        } catch (IOException | RevisionSyntaxException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
+    @GetMapping(value = "/gitGraphs/{resType:.+}/**", produces = "text/trig")
+    @ResponseBody
+    public ResponseEntity<String> getGitGraphCommits(@PathVariable("resType") String resType, HttpServletRequest req, HttpServletResponse response) {
+        String info = req.getRequestURL().toString().split("/gitGraphs/")[1];
+        if (info.endsWith("/")) {
+            info = info.substring(0, info.length() - 1);
         }
-        return new ResponseEntity<>(trig, responseHeaders, HttpStatus.OK);
-    }
-
-    /**
-     * Returns a task for a given user
-     * 
-     */
-    @GetMapping(value = "/gitGraphs/{resType}/{path}", produces = "text/trig")
-    public ResponseEntity<String> getGitGraphs(@PathVariable("resType") String resType, @PathVariable("path") String path, HttpServletRequest req, HttpServletResponse response) {
+        String[] parts = info.split("/");
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setContentType(new MediaType("text", "trig"));
         String trig = "";
         try {
-            trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", path);
+            if (parts.length == 3) {
+                // last commit
+                trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", parts[1] + "/" + parts[2]);
+
+            } else {
+                // specific commit
+                trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", parts[1] + "/" + parts[2], parts[3]);
+            }
         } catch (IOException | RevisionSyntaxException e) {
             e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);

@@ -56,7 +56,7 @@ public class PostTaskTest {
         EditConfig.init();
     }
 
-    // @Test
+    @Test
     public void ping() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/ping");
@@ -133,7 +133,7 @@ public class PostTaskTest {
         grs.run();
     }
 
-    @Test
+    // @Test
     public void simpleAddPatch() throws ClientProtocolException, IOException, ModuleException, NoSuchAlgorithmException {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-XXXWWWWWW", "shortName", patch, "marc");

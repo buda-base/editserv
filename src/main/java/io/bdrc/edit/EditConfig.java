@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.users.UsersCache;
 
 public class EditConfig {
 
@@ -21,10 +22,16 @@ public class EditConfig {
     public static String FUSEKI_URL = "fusekiUrl";
     public static String FUSEKI_DATA = "fusekiData";
     private static String PREFIXES = "";
+    public final static String QUERY_TIMEOUT = "timeout";
 
     public static void init() {
         try {
-            InputStream input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
+            InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
+            prop.load(input);
+            input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
+            prop.load(input);
+            input.close();
+            input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
             prop.load(input);
             input.close();
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
@@ -34,6 +41,7 @@ public class EditConfig {
             if ("true".equals(prop.getProperty("useAuth"))) {
                 RdfAuthModel.init();
             }
+            UsersCache.init();
             HttpURLConnection connection = (HttpURLConnection) new URL(prop.getProperty("prefixesUrl")).openConnection();
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String inputLine;

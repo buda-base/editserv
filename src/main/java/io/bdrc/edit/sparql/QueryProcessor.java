@@ -4,6 +4,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.ReadWrite;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
@@ -52,6 +53,22 @@ public class QueryProcessor {
         } else {
             return false;
         }
+    }
+
+    public static QueryExecution getResultSet(String query, String fusekiUrl) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+        }
+        QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, QueryFactory.create(query));
+        qe.setTimeout(Long.parseLong(EditConfig.getProperty(EditConfig.QUERY_TIMEOUT)));
+        return qe;
+    }
+
+    public static void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
+        fusConn.begin(ReadWrite.WRITE);
+        fusConn.put(graph, m);
+        fusConn.commit();
+        fusConn.end();
     }
 
     public static void main(String[] args) {

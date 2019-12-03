@@ -53,6 +53,7 @@ import io.bdrc.edit.txn.BUDATransaction;
 import io.bdrc.edit.txn.BUDATransactionManager;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
+import io.bdrc.edit.users.BudaUser;
 import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.GitHelpers;
 
@@ -61,7 +62,7 @@ import io.bdrc.libraries.GitHelpers;
 public class EditController {
 
     public final static Logger log = LoggerFactory.getLogger(EditController.class.getName());
-    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner(Helpers.getOntologyModel());
+    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner(BudaUser.getOntologyModel());
 
     public String getUser(HttpServletRequest req) {
         // User prof = ((Access) req.getAttribute("access")).getUser();

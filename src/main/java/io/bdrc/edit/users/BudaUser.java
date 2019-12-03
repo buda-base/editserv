@@ -11,6 +11,9 @@ import java.util.List;
 
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.ontology.OntDocumentManager;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QueryExecution;
@@ -252,6 +255,17 @@ public class BudaUser {
             propsPolicies.put(BudaUser.USER_PROPS_KEY, Arrays.asList(EditConfig.getProperty(BudaUser.USER_PROPS_KEY).split(",")));
         }
         return propsPolicies;
+    }
+
+    public static OntModel getOntologyModel() {
+        OntDocumentManager ontManager = new OntDocumentManager("owl-schema/ont-policy.rdf;https://raw.githubusercontent.com/buda-base/owl-schema/master/ont-policy.rdf");
+        // not really needed since ont-policy sets it, but what if someone changes the
+        // policy
+        ontManager.setProcessImports(true);
+        OntModelSpec ontSpec = new OntModelSpec(OntModelSpec.OWL_DL_MEM);
+        ontSpec.setDocumentManager(ontManager);
+        OntModel ontModel = ontManager.getOntology("http://purl.bdrc.io/ontology/admin/", ontSpec);
+        return ontModel;
     }
 
     public static void main(String[] args) throws IOException {

@@ -61,7 +61,7 @@
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
       </exclusions>
-	  <version>0.6.3</version>
+	  <version>0.6.4</version>
 	</dependency>
     <!-- https://mvnrepository.com/artifact/io.bdrc/jena-stable-turtle -->
     <dependency>
@@ -128,7 +128,7 @@
 	<dependency>
         <groupId>io.bdrc</groupId>
         <artifactId>bdrc-auth-lib</artifactId>
-        <version>1.0.0</version>
+        <version>1.6.0</version>
         <!-- exclusions>
         	<exclusion>
         		<groupId>org.slf4j</groupId>

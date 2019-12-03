@@ -56,12 +56,20 @@ public class EditConfig {
         }
     }
 
+    public static boolean useAuth() {
+        return Boolean.parseBoolean(prop.getProperty("useAuth"));
+    }
+
     public static String getProperty(String key) {
         return prop.getProperty(key);
     }
 
     public static String getSPARQLPrefixes() {
         return PREFIXES;
+    }
+
+    public static Properties getProperties() {
+        return prop;
     }
 
 }

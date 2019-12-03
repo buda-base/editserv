@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.Helpers;
 import io.bdrc.edit.sparql.Prefixes;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.jena.sttl.STriGWriter;
+import io.bdrc.libraries.GlobalHelpers;
 
 public class UserDataService {
 
@@ -64,13 +64,13 @@ public class UserDataService {
         }
         FileOutputStream fos = null;
         try {
-            String bucket = Helpers.getTwoLettersBucket(userId);
+            String bucket = GlobalHelpers.getTwoLettersBucket(userId);
             createDirIfNotExists(dirpath + bucket + "/");
             fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
             DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
-            new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", Helpers.createWriterContext());
+            new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
             if (r == null) {
                 r = ensureUserGitRepo();
             }
@@ -100,13 +100,13 @@ public class UserDataService {
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         RevCommit rev = null;
         String dirpath = System.getProperty("user.dir") + "/users/";
-        String bucket = Helpers.getTwoLettersBucket(userId);
+        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
         createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
-        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", Helpers.createWriterContext());
+        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
         Repository r = null;
         if (r == null) {
             r = ensureUserGitRepo();

@@ -26,12 +26,12 @@
     <dependency>    
 	    <groupId>org.springframework.boot</groupId>
 	    <artifactId>spring-boot-starter-web</artifactId> 
-        <exclusions>
+        <!-- exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
         </exclusion>
-      </exclusions>       	    
+      </exclusions-->       	    
 	</dependency>
     <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
     <dependency>
@@ -143,10 +143,10 @@
       </exclusions>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
-    <dependency>
+    <!-- dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId> 
-    </dependency>    
+    </dependency-->    
     <!-- https://mvnrepository.com/artifact/org.seaborne.rdf-delta/rdf-patch -->
     <dependency>
         <groupId>org.seaborne.rdf-delta</groupId>

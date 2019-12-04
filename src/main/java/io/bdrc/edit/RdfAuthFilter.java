@@ -22,7 +22,7 @@ import io.bdrc.auth.model.Endpoint;
 import io.bdrc.auth.rdf.RdfAuthModel;
 
 @Component
-@Order(3)
+@Order(2)
 public class RdfAuthFilter implements Filter {
 
     public final static Logger log = LoggerFactory.getLogger(RdfAuthFilter.class);

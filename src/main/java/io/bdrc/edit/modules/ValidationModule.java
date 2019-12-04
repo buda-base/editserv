@@ -49,7 +49,7 @@ public class ValidationModule implements BUDAEditModule {
             // Make sure the resources we want to create don't already exist
             List<String> create = data.getCreate();
             for (String uri : create) {
-                if (QueryProcessor.resourceExist(uri)) {
+                if (QueryProcessor.resourceExist(uri, null)) {
                     throw new ValidationModuleException("Cannot create the resource " + uri + " as it already exists in the main dataset");
                 }
             }

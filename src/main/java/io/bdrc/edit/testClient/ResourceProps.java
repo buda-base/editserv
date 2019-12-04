@@ -32,7 +32,7 @@ public class ResourceProps {
     public static ArrayList<String> getProps(String resType) {
         String res = map.get(resType);
         String query = "select distinct ?p where { {graph <http://purl.bdrc.io/graph/" + res + "> { bdr:" + res + " ?p ?o } }}";
-        ResultSet rs = QueryProcessor.getSelectResultSet(query);
+        ResultSet rs = QueryProcessor.getSelectResultSet(query, null);
         ArrayList<String> values = new ArrayList<>();
         while (rs.hasNext()) {
             QuerySolution qs = rs.next();

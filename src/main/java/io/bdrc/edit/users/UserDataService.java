@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.sparql.Prefixes;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
+import io.bdrc.libraries.Prefixes;
 
 public class UserDataService {
 

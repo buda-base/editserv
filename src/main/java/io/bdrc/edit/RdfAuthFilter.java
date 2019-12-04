@@ -54,6 +54,7 @@ public class RdfAuthFilter implements Filter {
                 // Getting his profile
                 validation = new TokenValidation(token);
                 prof = validation.getUser();
+                log.info("validation >>>> " + validation);
             }
             if (isSecuredEndpoint) {
                 // Endpoint is secure
@@ -63,9 +64,9 @@ public class RdfAuthFilter implements Filter {
                     return;
                 } else {
                     Access access = new Access(prof, end);
-                    log.debug("FILTER Access matchGroup >> {}", access.matchGroup());
-                    log.debug("FILTER Access matchRole >> {}", access.matchRole());
-                    log.debug("FILTER Access matchPerm >> {}", access.matchPermissions());
+                    log.info("FILTER Access matchGroup >> {}", access.matchGroup());
+                    log.info("FILTER Access matchRole >> {}", access.matchRole());
+                    log.info("FILTER Access matchPerm >> {}", access.matchPermissions());
                     if (!access.hasEndpointAccess()) {
                         ((HttpServletResponse) response).setStatus(403);
                         return;

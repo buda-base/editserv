@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.sparql.Prefixes;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.libraries.Prefixes;
 
 public class AdminData {
 
@@ -44,7 +44,7 @@ public class AdminData {
         this.resId = resId;
         this.resourceType = resourceType;
         this.gitRepo = GitRepositories.getRepo(resourceType);
-        Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId);
+        Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
         NodeIterator ni = adm.listObjectsOfProperty(GIT_PATH);
         if (ni.hasNext()) {
             this.gitPath = ni.next().asLiteral().getString();

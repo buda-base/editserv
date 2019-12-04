@@ -15,9 +15,9 @@ import org.apache.jena.rdf.model.RDFNode;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.Task;
-import io.bdrc.edit.sparql.Prefixes;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.libraries.GlobalHelpers;
+import io.bdrc.libraries.Prefixes;
 
 public class Checker {
 

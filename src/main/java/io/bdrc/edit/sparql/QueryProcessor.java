@@ -11,43 +11,59 @@ import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.libraries.Prefixes;
 
 public class QueryProcessor {
 
-    public static Model describeModel(String fullUri) {
+    public static Model describeModel(String fullUri, String fusekiUrl) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty("fusekiData");
+        }
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + " describe <" + fullUri.trim() + ">");
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execDescribe();
     }
 
-    public static void dropGraph(String graphUri) {
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+    public static void dropGraph(String graphUri, String fusekiDataUrl) {
+        if (fusekiDataUrl == null) {
+            fusekiDataUrl = EditConfig.getProperty("fusekiData");
+        }
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         fusConn.delete(graphUri);
     }
 
-    public static Model getTriplesWithObject(String fullUri) {
+    public static Model getTriplesWithObject(String fullUri, String fusekiUrl) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+        }
         String query = "construct {?s ?p <" + fullUri + ">} where { { ?s ?p <" + fullUri + "> } }";
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
 
-    public static Model getGraph(String fullUri) {
+    public static Model getGraph(String fullUri, String fusekiUrl) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+        }
         String query = "construct {?s ?p ?o} where { {<" + fullUri + "> { ?s ?p ?o } }}";
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
 
-    public static ResultSet getSelectResultSet(String query) {
+    public static ResultSet getSelectResultSet(String query, String fusekiUrl) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+        }
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), q);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execSelect();
     }
 
-    public static boolean resourceExist(String fullUri) {
-        Model m = getGraph(fullUri);
+    public static boolean resourceExist(String fullUri, String fusekiUrl) {
+        Model m = getGraph(fullUri, fusekiUrl);
         if (m != null) {
             return m.size() > 0;
         } else {
@@ -73,7 +89,7 @@ public class QueryProcessor {
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = QueryProcessor.getTriplesWithObject("http://purl.bdrc.io/resource/P1583");
+        Model m = QueryProcessor.getTriplesWithObject("http://purl.bdrc.io/resource/P1583", null);
         m.write(System.out, "TURTLE");
         // dropGraph("http://purl.bdrc.io/graph/P1524X");
     }

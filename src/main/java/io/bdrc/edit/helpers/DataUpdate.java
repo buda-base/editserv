@@ -186,7 +186,7 @@ public class DataUpdate {
     public static String buildReplacePatch(String uriToReplace, String newUri) {
         StringBuffer sb = new StringBuffer();
         sb.append("TX .");
-        Model m = QueryProcessor.getTriplesWithObject(uriToReplace);
+        Model m = QueryProcessor.getTriplesWithObject(uriToReplace, null);
         StmtIterator it = m.listStatements();
         while (it.hasNext()) {
             Statement st = it.next();

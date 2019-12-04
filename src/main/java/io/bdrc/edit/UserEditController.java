@@ -50,8 +50,10 @@ public class UserEditController {
             log.info("meUser() Access >> {}", acc);
             // TODO there should be a function in bdrc-auth-lib that does this
             String auth0Id = acc.getUser().getAuthId();
+            log.info("meUser() auth0Id >> {}", auth0Id);
             auth0Id = auth0Id.substring(auth0Id.indexOf("|") + 1);
             Resource usr = BudaUser.getRdfProfile(auth0Id);
+            log.info("meUser() usr >> {}", usr);
             if (usr == null) {
                 UserDataService.addNewBudaUser(acc.getUser());
                 usr = BudaUser.getRdfProfile(auth0Id);

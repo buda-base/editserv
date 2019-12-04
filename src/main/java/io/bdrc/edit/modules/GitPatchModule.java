@@ -88,7 +88,7 @@ public class GitPatchModule implements BUDAEditModule {
      * @throws TransportException
      * @throws InvalidRemoteException
      * 
-     * @throws                        @throws IOException
+     * @throws @throws                IOException
      */
     public void run() throws GitPatchModuleException {
         setStatus(Types.STATUS_PROCESSING);
@@ -117,7 +117,7 @@ public class GitPatchModule implements BUDAEditModule {
         try {
             for (String d : delete) {
                 String resId = d.substring(d.lastIndexOf("/") + 1);
-                QueryProcessor.dropGraph(d);
+                QueryProcessor.dropGraph(d, null);
                 String resType = data.getResourceType(d);
                 AdminData adm = data.getAdminData(d);
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));

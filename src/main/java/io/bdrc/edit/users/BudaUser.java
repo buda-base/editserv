@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.sparql.Prefixes;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.libraries.Prefixes;
 
 public class BudaUser {
 
@@ -68,10 +68,12 @@ public class BudaUser {
         String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/" + auth0Id + "> }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
+        log.info("QUERY EXECUTION >> {}", qe);
         ResultSet rs = qe.execSelect();
+        log.info("RS {} Has next >> {}", rs, rs.hasNext());
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
-            log.info("RESOURCE >> {} and rdfId= {} ", r);
+            log.info("RESOURCE >> {} ", r);
             UsersCache.addToCache(r, auth0Id.hashCode());
             return r;
         }

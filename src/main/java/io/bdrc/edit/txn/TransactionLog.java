@@ -26,6 +26,7 @@ public class TransactionLog {
     public static final String ERROR = "error";
 
     public static String USER_ID = "userId";
+    public static String EDITOR_ID = "editorId";
     public static String DATE = "date";
     public static String TASK_ID = "taskId";
     public static String TXN_LAST_STATUS = "txn_last_Status";
@@ -35,8 +36,12 @@ public class TransactionLog {
 
     public final static Logger logger = LoggerFactory.getLogger(TransactionLog.class.getName());
 
-    public TransactionLog() {
-
+    public TransactionLog(String editor_Name, String userId) {
+        header = new HashMap<>();
+        content = new HashMap<>();
+        error = new HashMap<>();
+        addHeader(EDITOR_ID, editor_Name);
+        addHeader(USER_ID, userId);
     }
 
     public TransactionLog(Task tk) {

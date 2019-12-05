@@ -23,8 +23,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.rdfconnection.RDFConnectionFuseki;
-import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -67,7 +65,8 @@ public class DataUpdate {
     }
 
     private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+        // RDFConnectionRemoteBuilder builder =
+        // RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
         // RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
 
         Dataset ds = DatasetFactory.create();

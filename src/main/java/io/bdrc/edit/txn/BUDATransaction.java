@@ -17,22 +17,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
-import io.bdrc.edit.modules.BUDAEditModule;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 
-public class BUDATransaction {
+public class BUDATransaction extends EditTransaction {
 
-    int status;
-    int currentModule = -1;
     String id;
-    String name;
     String user;
-    TreeMap<Integer, BUDAEditModule> modulesMap;
     DataUpdate data;
-    TransactionLog log;
     Date commitTime;
+    int currentModule = -1;
 
     public BUDATransaction(Task t) throws Exception {
         try {
@@ -65,31 +59,15 @@ public class BUDATransaction {
         return data;
     }
 
-    public TransactionLog getLog() {
-        return log;
-    }
-
-    /**
-     * Enlist the resource specified with the transaction associated with the target
-     * Transaction object.
-     * 
-     * @throws ServiceSequenceException
-     */
-    public boolean addModule(BUDAEditModule module, int order) throws ServiceSequenceException {
-        if (modulesMap.containsKey(order)) {
-            throw new ServiceSequenceException();
-        }
-        modulesMap.put(order, module);
-        return true;
-    }
-
     /**
      * Complete the transaction represented by this Transaction object or forward
      * the exception to the TransactionManager
      * 
      * @throws ModuleException
+     * @throws IOException
      */
-    public void commit() throws Exception {
+    @Override
+    public boolean commit() throws IOException {
         setStatus(Status.STATUS_COMMITTED);
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         commitTime = new Date();
@@ -97,18 +75,20 @@ public class BUDATransaction {
             try {
                 modulesMap.get(module).run();
                 currentModule = module;
-            } catch (Exception e) {
+            } catch (ModuleException e) {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
-                throw e;
+                return false;
             } finally {
                 finalizeLog();
             }
         }
         setStatus(Types.STATUS_SUCCESS);
         finalizeLog();
+        return true;
     }
 
+    @Override
     public boolean finalizeLog() throws JsonProcessingException, IOException {
         String path = EditConfig.getProperty("logRootDir") + user + "/";
         File f = new File(path);
@@ -127,19 +107,6 @@ public class BUDATransaction {
         return ok;
     }
 
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int stat) throws IOException {
-        this.status = stat;
-        log.addContent(name, " entered " + Types.getStatus(status));
-    }
-
-    public int getCurrentModule() {
-        return currentModule;
-    }
-
     public String getId() {
         return id;
     }
@@ -150,6 +117,10 @@ public class BUDATransaction {
 
     public Date getCommitTime() {
         return commitTime;
+    }
+
+    public int getCurrentModule() {
+        return currentModule;
     }
 
 }

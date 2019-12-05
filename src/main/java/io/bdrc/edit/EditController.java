@@ -207,7 +207,6 @@ public class EditController {
                 throw new ModuleException("Cannot save the task : user is null");
             }
             t = Task.create(jsonTask);
-
             btx = new BUDATransaction(t);
             btx.setStatus(Types.STATUS_PREPARING);
             DataUpdate data = btx.getData();

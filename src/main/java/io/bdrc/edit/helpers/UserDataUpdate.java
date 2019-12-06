@@ -23,9 +23,11 @@ public class UserDataUpdate {
     private DatasetGraph dsg;
     private HashMap<String, AdminData> admData;
     private HashMap<String, String> gitRev;
+    private String userId;
 
     public UserDataUpdate(PatchContent pc, String editor, String userId) throws DataUpdateException {
         this.pc = pc;
+        this.userId = userId;
         this.graphs = pc.getEditPatchHeaders().getGraphUris();
         prepareModels();
     }
@@ -48,6 +50,22 @@ public class UserDataUpdate {
                 throw new DataUpdateException("No graph could be fetched for " + st);
             }
         }
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public List<String> getGraphs() {
+        return graphs;
+    }
+
+    public DatasetGraph getDatasetGraph() {
+        return dsg;
+    }
+
+    public String getPatch() {
+        return pc.getContent();
     }
 
 }

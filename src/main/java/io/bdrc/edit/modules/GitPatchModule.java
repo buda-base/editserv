@@ -59,7 +59,6 @@ public class GitPatchModule implements BUDAEditModule {
     public final static Logger logger = LoggerFactory.getLogger(GitPatchModule.class.getName());
 
     int status;
-    String name;
     DataUpdate data;
     List<String> create;
     List<String> graphs;
@@ -72,7 +71,6 @@ public class GitPatchModule implements BUDAEditModule {
 
     public GitPatchModule(DataUpdate data, TransactionLog log) throws GitPatchModuleException {
         this.data = data;
-        this.name = "GIT_PATCH_MOD" + data.getTaskId();
         this.create = data.getCreate();
         this.graphs = data.getGraphs();
         this.delete = data.getDelete();
@@ -109,7 +107,7 @@ public class GitPatchModule implements BUDAEditModule {
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
     }
@@ -132,7 +130,7 @@ public class GitPatchModule implements BUDAEditModule {
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
     }
@@ -157,7 +155,7 @@ public class GitPatchModule implements BUDAEditModule {
             } catch (FileNotFoundException | GitAPIException e) {
                 e.printStackTrace();
                 setStatus(Types.STATUS_FAILED);
-                log.addError(name, e.getMessage());
+                log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
             }
         }
@@ -184,7 +182,7 @@ public class GitPatchModule implements BUDAEditModule {
             } catch (FileNotFoundException | GitAPIException e) {
                 e.printStackTrace();
                 setStatus(Types.STATUS_FAILED);
-                log.addError(name, e.getMessage());
+                log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
             }
         }
@@ -212,7 +210,7 @@ public class GitPatchModule implements BUDAEditModule {
             } catch (Exception e) {
                 e.printStackTrace();
                 setStatus(Types.STATUS_FAILED);
-                log.addError(name, e.getMessage());
+                log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
             }
         }
@@ -262,7 +260,7 @@ public class GitPatchModule implements BUDAEditModule {
         } catch (GitAPIException e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
         return false;
@@ -277,25 +275,20 @@ public class GitPatchModule implements BUDAEditModule {
     public void setStatus(int st) throws GitPatchModuleException {
         try {
             status = st;
-            log.addContent(name, " entered " + Types.getStatus(status));
-            log.setLastStatus(name + ": " + Types.getStatus(status));
+            log.addContent(getName(), " entered " + Types.getStatus(status));
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.setLastStatus(name + ": " + Types.getStatus(status));
-            log.addError(name, e.getMessage());
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
     }
 
     @Override
-    public String getId() {
-        return data.getTaskId();
-    }
-
-    @Override
     public String getName() {
-        return name;
+        return "GIT_PATCH_MOD" + data.getTaskId();
     }
 
     @Override

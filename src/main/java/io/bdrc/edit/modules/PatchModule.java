@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
@@ -21,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
@@ -29,7 +29,6 @@ public class PatchModule implements BUDAEditModule {
 
     DataUpdate data;
     String userId;
-    String name;
     int status;
     TransactionLog log;
     Reasoner reasoner;
@@ -38,7 +37,6 @@ public class PatchModule implements BUDAEditModule {
 
     public PatchModule(DataUpdate data, TransactionLog log, Reasoner reasoner) throws PatchModuleException {
         this.userId = data.getUserId();
-        this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
         this.reasoner = reasoner;
@@ -52,7 +50,7 @@ public class PatchModule implements BUDAEditModule {
     }
 
     @Override
-    public void run() throws ModuleException {
+    public void run() throws PatchModuleException {
         try {
             ArrayList<String> replaced = new ArrayList<>();
             setStatus(Types.STATUS_PROCESSING);
@@ -79,7 +77,7 @@ public class PatchModule implements BUDAEditModule {
             for (String st : data.getGraphs()) {
                 try {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                    putModel(fusConn, st, m);
+                    Helpers.putModelWithInference(fusConn, st, m, reasoner);
                     data.getDatasetGraph().addGraph(NodeFactory.createURI(st), m.getGraph());
                 } catch (HttpException ex) {
                     throw new PatchModuleException("No graph could be uploaded to fuseki as " + st + " for patchId:" + data.getTaskId());
@@ -88,12 +86,12 @@ public class PatchModule implements BUDAEditModule {
             // Adding created and populated graphs to the main fuseki dataset
             for (String c : data.getCreate()) {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(c)));
-                putModel(fusConn, c, m);
+                Helpers.putModelWithInference(fusConn, c, m, reasoner);
                 data.getDatasetGraph().addGraph(NodeFactory.createURI(c), m.getGraph());
             }
             for (String st : replaced) {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                putModel(fusConn, st, m);
+                Helpers.putModelWithInference(fusConn, st, m, reasoner);
             }
             fusConn.close();
             patch.close();
@@ -101,17 +99,9 @@ public class PatchModule implements BUDAEditModule {
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new PatchModuleException(e);
         }
-    }
-
-    private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) throws Exception {
-        fusConn.begin(ReadWrite.WRITE);
-        Model mi = ModelFactory.createInfModel(reasoner, m);
-        fusConn.put(graph, ModelFactory.createInfModel(reasoner, mi));
-        fusConn.commit();
-        fusConn.end();
     }
 
     public String getUserId() {
@@ -127,25 +117,20 @@ public class PatchModule implements BUDAEditModule {
     public void setStatus(int st) throws PatchModuleException {
         try {
             this.status = st;
-            log.addContent(name, " entered " + Types.getStatus(status));
+            log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.setLastStatus(name + ": " + Types.getStatus(status));
-            log.addError(name, e.getMessage());
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
             throw new PatchModuleException(e);
         }
     }
 
     @Override
     public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getId() {
-        return data.getTaskId();
+        return "PATCH_MOD_" + data.getTaskId();
     }
 
 }

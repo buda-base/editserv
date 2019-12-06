@@ -23,18 +23,15 @@ public class FinalizerModule implements BUDAEditModule {
      */
 
     public final static Logger logger = LoggerFactory.getLogger(FinalizerModule.class.getName());
-    TransactionLog log;
 
-    // Task tsk;
+    TransactionLog log;
     int status;
-    String name;
     DataUpdate data;
 
     public FinalizerModule(DataUpdate data, TransactionLog log) throws FinalizerModuleException {
         super();
         this.data = data;
         this.log = log;
-        this.name = "FINAL_MOD_" + data.getTaskId();
         setStatus(Types.STATUS_PREPARED);
     }
 
@@ -48,15 +45,15 @@ public class FinalizerModule implements BUDAEditModule {
     public void run() throws ModuleException {
         try {
             // 1) move task from user "stashed" to user "processed" directories
-            FileUtils.copyFile(new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + getId() + ".patch"), new File(EditConfig.getProperty("gitTransactDir") + getId() + ".patch"));
-            TaskGitManager.deleteTask(getUserId(), getId());
+            FileUtils.copyFile(new File(EditConfig.getProperty("gitTaskRepo") + getUserId() + "/" + data.getTaskId() + ".patch"), new File(EditConfig.getProperty("gitTransactDir") + data.getTaskId() + ".patch"));
+            TaskGitManager.deleteTask(getUserId(), data.getTaskId());
             // 2) close and write transaction log
             logger.info("Running Txn Closer Service for task {}", data.getTaskId());
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new FinalizerModuleException(e);
         }
     }
@@ -70,25 +67,20 @@ public class FinalizerModule implements BUDAEditModule {
     public void setStatus(int st) throws FinalizerModuleException {
         try {
             status = st;
-            log.addContent(name, " entered " + Types.getStatus(status));
+            log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.setLastStatus(name + ": " + Types.getStatus(status));
-            log.addError(name, e.getMessage());
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
             throw new FinalizerModuleException(e);
         }
     }
 
     @Override
-    public String getId() {
-        return data.getTaskId();
-    }
-
-    @Override
     public String getName() {
-        return name;
+        return "FINAL_MOD_" + data.getTaskId();
     }
 
     @Override

@@ -25,11 +25,6 @@ public interface BUDAEditModule {
     public void setStatus(int st) throws ModuleException;
 
     /**
-     * Obtain the id of the service object.
-     */
-    public String getId();
-
-    /**
      * Obtain the name of the service object.
      */
     public String getName();

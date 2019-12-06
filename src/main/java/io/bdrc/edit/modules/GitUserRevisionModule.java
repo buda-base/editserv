@@ -35,12 +35,6 @@ public class GitUserRevisionModule implements BUDAEditModule {
     }
 
     @Override
-    public String getId() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public String getName() {
         // TODO Auto-generated method stub
         return null;

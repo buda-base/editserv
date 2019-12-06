@@ -28,7 +28,6 @@ public class GitRevisionModule implements BUDAEditModule {
 
     HashMap<String, String> revMap;
     String patch;
-    String name;
     String id;
     int status;
     DataUpdate data;
@@ -41,7 +40,6 @@ public class GitRevisionModule implements BUDAEditModule {
         this.id = data.getTaskId();
         this.data = data;
         this.log = log;
-        this.name = "GIT_REV_MOD_" + data.getTaskId();
         setStatus(Types.STATUS_PREPARED);
     }
 
@@ -93,7 +91,7 @@ public class GitRevisionModule implements BUDAEditModule {
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.addError(name, e.getMessage());
+            log.addError(getName(), e.getMessage());
             throw new GitRevisionModuleException(e);
         }
     }
@@ -114,25 +112,20 @@ public class GitRevisionModule implements BUDAEditModule {
     public void setStatus(int st) throws GitRevisionModuleException {
         try {
             status = st;
-            log.addContent(name, " entered " + Types.getStatus(status));
+            log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.setLastStatus(name + ": " + Types.getStatus(status));
-            log.addError(name, e.getMessage());
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
             throw new GitRevisionModuleException(e);
         }
     }
 
     @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
     public String getName() {
-        return name;
+        return "GIT_REV_MOD_" + data.getTaskId();
     }
 
     @Override

@@ -19,7 +19,6 @@ public class ValidationModule implements BUDAEditModule {
 
     DataUpdate data;
     String userId;
-    String name;
     int status;
     TransactionLog log;
     String validation;
@@ -29,7 +28,6 @@ public class ValidationModule implements BUDAEditModule {
     public ValidationModule(DataUpdate data, TransactionLog log, String validation) throws ModuleException {
         this.validation = validation;
         this.userId = data.getUserId();
-        this.name = "PATCH_MOD_" + data.getTaskId();
         this.data = data;
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
@@ -72,27 +70,20 @@ public class ValidationModule implements BUDAEditModule {
     public void setStatus(int st) throws PatchModuleException {
         try {
             this.status = st;
-            log.addContent(name, " entered " + Types.getStatus(status));
+            log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
-            log.setLastStatus(name + ": " + Types.getStatus(status));
-            log.addError(name, e.getMessage());
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
             throw new PatchModuleException(e);
         }
     }
 
     @Override
-    public String getId() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return "PATCH_MOD_" + data.getTaskId();
     }
 
     @Override

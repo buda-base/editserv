@@ -2,15 +2,12 @@ package io.bdrc.edit.helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -33,6 +30,7 @@ import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.libraries.GitHelpers;
+import io.bdrc.libraries.GlobalHelpers;
 
 public class DataUpdate {
 
@@ -154,11 +152,7 @@ public class DataUpdate {
         if (index != -1) {
             resId = resId.substring(0, index);
         }
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        md.reset();
-        md.update(resId.getBytes(Charset.forName("UTF8")));
-        String hash = new String(Hex.encodeHex(md.digest())).substring(0, 2);
-        return hash;
+        return GlobalHelpers.getTwoLettersBucket(resId);
     }
 
     public static String buildReplacePatch(String uriToReplace, String newUri) {

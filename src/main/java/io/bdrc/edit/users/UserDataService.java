@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.helpers.AdminData;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
@@ -65,11 +67,14 @@ public class UserDataService {
         FileOutputStream fos = null;
         try {
             String bucket = GlobalHelpers.getTwoLettersBucket(userId);
+            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket);
+            Model adm = ad.asModel();
             createDirIfNotExists(dirpath + bucket + "/");
             fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
             DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
+            dsg.addGraph(ResourceFactory.createResource(EditConstants.BDA + userId).asNode(), adm.getGraph());
             new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
             if (r == null) {
                 r = ensureUserGitRepo();
@@ -82,13 +87,15 @@ public class UserDataService {
             git.close();
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-            QueryProcessor.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-            QueryProcessor.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
+            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+            Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
             fusConn.close();
             // Public graph is pushed to bdrcrw
             builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
             fusConn = ((RDFConnectionFuseki) builder.build());
-            QueryProcessor.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+            // adding adminData graph to public dataset
+            Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
             fusConn.close();
         } catch (Exception e) {
             log.error("Failed to add new Buda user :" + user.getName(), e);

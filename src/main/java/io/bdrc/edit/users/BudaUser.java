@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.libraries.Prefixes;
 
@@ -120,7 +121,7 @@ public class BudaUser {
         RDFChangesApply apply = new RDFChangesApply(dsg);
         rdf.apply(apply);
         Model m1 = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(PRIVATE_PFX + userId)));
-        QueryProcessor.putModel(fusConn, PRIVATE_PFX + userId, m1);
+        Helpers.putModel(fusConn, PRIVATE_PFX + userId, m1);
         ptc.close();
         fusConn.close();
         UserDataService.update(userId, pub, m1);

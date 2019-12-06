@@ -43,7 +43,6 @@ public class GitRevisionModule implements BUDAEditModule {
         this.log = log;
         this.name = "GIT_REV_MOD_" + data.getTaskId();
         setStatus(Types.STATUS_PREPARED);
-
     }
 
     private String buildRevisionPatch() throws GitRevisionModuleException {

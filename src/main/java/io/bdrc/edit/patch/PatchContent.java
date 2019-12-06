@@ -109,6 +109,10 @@ public class PatchContent {
         return "<" + s + ">";
     }
 
+    public EditPatchHeaders getEditPatchHeaders() {
+        return ph;
+    }
+
     public String normalizeContent(String s) {
         List<Object> chunks = Arrays.asList(s.split(Pattern.compile(" \\.").pattern()));
         String ret = null;

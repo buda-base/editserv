@@ -1,7 +1,6 @@
 package io.bdrc.edit.helpers;
 
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -23,8 +22,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
@@ -65,9 +62,6 @@ public class DataUpdate {
     }
 
     private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        // RDFConnectionRemoteBuilder builder =
-        // RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
-        // RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
 
         Dataset ds = DatasetFactory.create();
         dsg = ds.asDatasetGraph();
@@ -76,9 +70,10 @@ public class DataUpdate {
         for (String st : graphs) {
             Node graphUri = NodeFactory.createURI(st);
             try {
-                AdminData ad = fetchAdminInfo(graphUri.getURI());
+                AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), ph);
+                admData.put(graphUri.getURI(), ad);
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                Model m = ModelFactory.createModelForGraph(buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
+                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -89,9 +84,10 @@ public class DataUpdate {
         for (String rep : replace) {
             Node graphUri = NodeFactory.createURI(rep);
             try {
-                AdminData ad = fetchAdminInfo(graphUri.getURI());
+                AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), ph);
+                admData.put(graphUri.getURI(), ad);
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                Model m = ModelFactory.createModelForGraph(buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
+                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -125,15 +121,9 @@ public class DataUpdate {
         }
     }
 
-    private Graph buildGraphFromTrig(String data) {
-        Dataset ds = DatasetFactory.create();
-        RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
-        return ds.asDatasetGraph().getUnionGraph();
-    }
-
     private Model removeGitRevisionInfo(String graphUri, Model m) {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        Triple tpl = Triple.create(ResourceFactory.createResource(EditConstants.BDA + resId).asNode(), AdminData.GIT_REVISION.asNode(), Node.ANY);
+        Triple tpl = Triple.create(ResourceFactory.createResource(EditConstants.BDA + resId).asNode(), EditConstants.GIT_REVISION.asNode(), Node.ANY);
         Graph g = m.getGraph();
         List<Triple> list = g.find(tpl).toList();
         for (Triple t : list) {
@@ -151,21 +141,10 @@ public class DataUpdate {
         return all;
     }
 
-    public String getResourceType(String resId) {
-        return ph.getResourceType(resId);
-    }
-
-    private AdminData fetchAdminInfo(String graphUri) {
-        String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData ad = new AdminData(resId, getResourceType(graphUri));
-        admData.put(graphUri, ad);
-        return ad;
-    }
-
     private AdminData createAdminInfo(String graphUri) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         log.info("ADMIN INFO for URI : {}", graphUri);
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData ad = new AdminData(resId, getResourceType(graphUri), getGitDir(resId));
+        AdminData ad = new AdminData(resId, Helpers.getResourceType(graphUri, ph), getGitDir(resId));
         admData.put(graphUri, ad);
         return ad;
     }
@@ -218,10 +197,6 @@ public class DataUpdate {
         return graphs;
     }
 
-    public Task getTsk() {
-        return tsk;
-    }
-
     public String getUserId() {
         return tsk.getUser();
     }
@@ -236,6 +211,10 @@ public class DataUpdate {
 
     public HashMap<String, String> getGitRev() {
         return gitRev;
+    }
+
+    public EditPatchHeaders getEditPatchHeaders() {
+        return ph;
     }
 
     public DatasetGraph getDatasetGraph() {

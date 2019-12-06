@@ -43,6 +43,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
@@ -118,7 +119,7 @@ public class GitPatchModule implements BUDAEditModule {
             for (String d : delete) {
                 String resId = d.substring(d.lastIndexOf("/") + 1);
                 QueryProcessor.dropGraph(d, null);
-                String resType = data.getResourceType(d);
+                String resType = Helpers.getResourceType(d, data.getEditPatchHeaders());
                 AdminData adm = data.getAdminData(d);
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
                 String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
@@ -138,7 +139,7 @@ public class GitPatchModule implements BUDAEditModule {
 
     private void processUpdates(String gitUser, String gitPass) throws GitPatchModuleException {
         for (String g : graphs) {
-            String resType = data.getResourceType(g);
+            String resType = Helpers.getResourceType(g, data.getEditPatchHeaders());
             AdminData adm = data.getAdminData(g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
@@ -165,7 +166,7 @@ public class GitPatchModule implements BUDAEditModule {
     private void processReplaces(String gitUser, String gitPass) throws GitPatchModuleException {
         for (String r : replace) {
             String g = r.split("-")[0];
-            String resType = data.getResourceType(g);
+            String resType = Helpers.getResourceType(g, data.getEditPatchHeaders());
             AdminData adm = data.getAdminData(g);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;
@@ -191,7 +192,7 @@ public class GitPatchModule implements BUDAEditModule {
 
     private void processCreates(String gitUser, String gitPass) throws GitPatchModuleException {
         for (String c : create) {
-            String resType = data.getResourceType(c);
+            String resType = Helpers.getResourceType(c, data.getEditPatchHeaders());
             AdminData adm = data.getAdminData(c);
             GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
             FileOutputStream fos = null;

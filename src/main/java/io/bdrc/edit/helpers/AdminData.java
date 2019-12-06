@@ -3,7 +3,6 @@ package io.bdrc.edit.helpers;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.vocabulary.RDF;
@@ -17,14 +16,7 @@ import io.bdrc.libraries.Prefixes;
 
 public class AdminData {
 
-    public static Resource ADMIN_DATA = ResourceFactory.createResource("http://purl.bdrc.io/ontology/admin/AdminData");
-    public static Resource STATUS_PROV = ResourceFactory.createResource("http://purl.bdrc.io/admindata/StatusProvisional");
-    public static Property GIT_REPO = ResourceFactory.createProperty(EditConstants.ADM + "gitRepo");
-    public static Property GIT_PATH = ResourceFactory.createProperty(EditConstants.ADM + "gitPath");
-    public static Property GIT_REVISION = ResourceFactory.createProperty(EditConstants.ADM + "gitRevision");
-    public static Property ADMIN_ABOUT = ResourceFactory.createProperty(EditConstants.ADM + "adminAbout");
-    public static Property ADMIN_STATUS = ResourceFactory.createProperty(EditConstants.ADM + "status");
-    public static Property ADMIN_GRAPH_ID = ResourceFactory.createProperty(EditConstants.ADM + "graphId");
+    public static String USER_RES_TYPE = "user";
 
     public GitRepo gitRepo;
     public String resId;
@@ -36,16 +28,20 @@ public class AdminData {
     public AdminData(String resId, String resourceType, String gitPath) {
         this.resId = resId;
         this.resourceType = resourceType;
-        this.gitRepo = GitRepositories.getRepo(resourceType);
+        if (resourceType.equals(USER_RES_TYPE)) {
+            this.gitRepo = GitRepositories.getRepo(resourceType);
+        }
         this.gitPath = gitPath;
     }
 
     public AdminData(String resId, String resourceType) {
         this.resId = resId;
         this.resourceType = resourceType;
-        this.gitRepo = GitRepositories.getRepo(resourceType);
+        if (resourceType.equals(USER_RES_TYPE)) {
+            this.gitRepo = GitRepositories.getRepo(resourceType);
+        }
         Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
-        NodeIterator ni = adm.listObjectsOfProperty(GIT_PATH);
+        NodeIterator ni = adm.listObjectsOfProperty(EditConstants.GIT_PATH);
         if (ni.hasNext()) {
             this.gitPath = ni.next().asLiteral().getString();
         }
@@ -55,14 +51,16 @@ public class AdminData {
         log.info("GIT REPO = {}", gitRepo);
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
-        m.add(ResourceFactory.createStatement(r, RDF.type, ADMIN_DATA));
-        m.add(ResourceFactory.createStatement(r, GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
-        if (gitPath != null) {
-            m.add(ResourceFactory.createStatement(r, GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
+        m.add(ResourceFactory.createStatement(r, RDF.type, EditConstants.ADMIN_DATA));
+        if (gitRepo != null) {
+            m.add(ResourceFactory.createStatement(r, EditConstants.GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
         }
-        m.add(ResourceFactory.createStatement(r, ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
-        m.add(ResourceFactory.createStatement(r, ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
-        m.add(ResourceFactory.createStatement(r, ADMIN_STATUS, STATUS_PROV));
+        if (gitPath != null) {
+            m.add(ResourceFactory.createStatement(r, EditConstants.GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
+        }
+        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
+        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
+        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_STATUS, EditConstants.STATUS_PROV));
         m.setNsPrefixes(Prefixes.getPrefixMapping());
         return m;
     }
@@ -75,20 +73,8 @@ public class AdminData {
         this.gitRepo = gitRepo;
     }
 
-    public String getResId() {
-        return resId;
-    }
-
-    public void setResId(String id) {
-        this.resId = id;
-    }
-
     public String getGitPath() {
         return gitPath;
-    }
-
-    public void setGitPath(String gitPath) {
-        this.gitPath = gitPath;
     }
 
     @Override
@@ -98,7 +84,7 @@ public class AdminData {
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = new AdminData("P1524", "person").asModel();
+        Model m = new AdminData("U1669274875", "user").asModel();
         m.write(System.out, "TURTLE");
     }
 

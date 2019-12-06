@@ -100,49 +100,52 @@ public class UserEditController {
 
     @PatchMapping(value = "/resource-nc/user/public/{res}")
     public ResponseEntity<StreamingResponseBody> userPublicPatch(@PathVariable("res") final String res, HttpServletResponse response, HttpServletRequest request, @RequestBody String patch) throws Exception {
-        log.info("Call userPublicPatch()");
-        String token = getToken(request.getHeader("Authorization"));
-        if (token == null) {
-            return ResponseEntity.status(403).body(StreamingHelpers.getStream("You must be authenticated in order to modify this user"));
-        } else {
-            String auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
-            String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
-            Access acc = (Access) request.getAttribute("access");
-            log.info("userPatch() Token User {}", acc.getUser());
-            if (acc.getUser().isAdmin()) {
-                UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PUB_TYPE, acc.getUser().getName(), res);
-                ut.addModule(new UserPatchModule(patch), 0);
-                ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
-                ut.setStatus(Types.STATUS_PREPARED);
-                ut.commit();
-                return ResponseEntity.status(200).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "jsonld"));
-
+        log.info("Call userPublicPatch() for res:" + res);
+        try {
+            String token = getToken(request.getHeader("Authorization"));
+            if (token == null) {
+                return ResponseEntity.status(403).body(StreamingHelpers.getStream("You must be authenticated in order to modify this user"));
+            } else {
+                Access acc = (Access) request.getAttribute("access");
+                log.info("userPatch() Token User {}", acc.getUser());
+                if (acc.getUser().isAdmin()) {
+                    UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PUB_TYPE, acc.getUser().getName(), res);
+                    ut.addModule(new UserPatchModule(ut.getData(), UserTransaction.TX_PUB_TYPE), 0);
+                    ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
+                    ut.setStatus(Types.STATUS_PREPARED);
+                    ut.commit();
+                    return ResponseEntity.status(200).body(StreamingHelpers.getStream("OK"));
+                } else {
+                    return ResponseEntity.status(403).body(StreamingHelpers.getStream("You must be an admin to modify this user"));
+                }
             }
-            return ResponseEntity.status(200).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "jsonld"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(StreamingHelpers.getStream("Error while updating " + res + " " + e.getMessage()));
         }
     }
 
     @PatchMapping(value = "/resource-nc/user/private/{res}")
     public ResponseEntity<StreamingResponseBody> userPrivatePatch(@PathVariable("res") final String res, HttpServletResponse response, HttpServletRequest request, @RequestBody String patch) throws Exception {
-        log.info("Call userPublicPatch()");
-        String token = getToken(request.getHeader("Authorization"));
-        if (token == null) {
-            return ResponseEntity.status(403).body(StreamingHelpers.getStream("You must be authenticated in order to modify this user"));
-        } else {
-            String auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
-            String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
-            Access acc = (Access) request.getAttribute("access");
-            log.info("userPatch() Token User {}", acc.getUser());
-            if (acc.getUser().isAdmin()) {
-                UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PRIV_TYPE, acc.getUser().getName(), res);
-                ut.addModule(new UserPatchModule(patch), 0);
-                ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
-                ut.setStatus(Types.STATUS_PREPARED);
-                ut.commit();
-                return ResponseEntity.status(200).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "jsonld"));
-
+        log.info("Call userPrivatePatch() for res:" + res);
+        try {
+            String token = getToken(request.getHeader("Authorization"));
+            if (token == null) {
+                return ResponseEntity.status(403).body(StreamingHelpers.getStream("You must be authenticated in order to modify this user"));
+            } else {
+                Access acc = (Access) request.getAttribute("access");
+                log.info("userPatch() Token User {}", acc.getUser());
+                if (acc.getUser().isAdmin()) {
+                    UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PUB_TYPE, acc.getUser().getName(), res);
+                    ut.addModule(new UserPatchModule(ut.getData(), UserTransaction.TX_PUB_TYPE), 0);
+                    ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
+                    ut.setStatus(Types.STATUS_PREPARED);
+                    ut.commit();
+                }
+                return ResponseEntity.status(200).body(StreamingHelpers.getStream("OK"));
             }
-            return ResponseEntity.status(200).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "jsonld"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(StreamingHelpers.getStream("Error while updating " + res + " " + e.getMessage()));
         }
     }
 

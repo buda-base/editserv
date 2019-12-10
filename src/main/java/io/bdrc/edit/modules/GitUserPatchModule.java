@@ -1,9 +1,14 @@
 package io.bdrc.edit.modules;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 
 public class GitUserPatchModule implements BUDAEditModule {
+
+    public final static Logger logger = LoggerFactory.getLogger(GitUserPatchModule.class.getName());
 
     TransactionLog log;
 
@@ -20,7 +25,7 @@ public class GitUserPatchModule implements BUDAEditModule {
     @Override
     public void run() throws ModuleException {
         // TODO Auto-generated method stub
-
+        logger.info("Git User Patch has been applied");
     }
 
     @Override

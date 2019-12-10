@@ -1,6 +1,7 @@
 package io.bdrc.edit.helpers;
 
 import java.io.StringReader;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.jena.graph.Graph;
 import org.apache.jena.query.Dataset;
@@ -19,7 +20,7 @@ public class Helpers {
         return ph.getResourceType(resId);
     }
 
-    public static AdminData fetchAdminInfo(String graphUri, EditPatchHeaders ph) {
+    public static AdminData fetchAdminInfo(String graphUri, EditPatchHeaders ph) throws NoSuchAlgorithmException {
         String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         AdminData ad = new AdminData(resId, getResourceType(graphUri, ph));
         return ad;

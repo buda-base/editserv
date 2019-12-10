@@ -3,8 +3,6 @@ package io.bdrc.edit.txn;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -24,13 +22,16 @@ public class BUDATransaction extends EditTransaction {
 
     String id;
     String user;
+    String name;
+    int status;
     DataUpdate data;
     Date commitTime;
+    TransactionLog log;
     int currentModule = -1;
 
     public BUDATransaction(Task t) throws Exception {
         try {
-            log = new TransactionLog(t);
+            log = new TransactionLog(EditConfig.getProperty("logRootDir") + user + "/", t);
             this.name = "TXN_" + t.getId();
             setStatus(Types.STATUS_PREPARING);
             this.id = t.getId();
@@ -51,12 +52,25 @@ public class BUDATransaction extends EditTransaction {
         }
     }
 
+    public void setStatus(int stat) throws IOException {
+        this.status = stat;
+        log.addContent(name, " entered " + Types.getStatus(status));
+    }
+
     public String getName() {
         return name;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
     public DataUpdate getData() {
         return data;
+    }
+
+    public TransactionLog getLog() {
+        return log;
     }
 
     /**
@@ -69,7 +83,6 @@ public class BUDATransaction extends EditTransaction {
     @Override
     public boolean commit() throws IOException {
         setStatus(Status.STATUS_COMMITTED);
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         commitTime = new Date();
         for (int module : modulesMap.keySet()) {
             try {
@@ -90,8 +103,7 @@ public class BUDATransaction extends EditTransaction {
 
     @Override
     public boolean finalizeLog() throws JsonProcessingException, IOException {
-        String path = EditConfig.getProperty("logRootDir") + user + "/";
-        File f = new File(path);
+        File f = new File(log.getPath());
         if (!f.exists()) {
             f.mkdir();
         }
@@ -101,7 +113,7 @@ public class BUDATransaction extends EditTransaction {
         obj.put(TransactionLog.CONTENT, log.content);
         obj.put(TransactionLog.ERROR, log.error);
         ObjectMapper mapper = new ObjectMapper();
-        FileOutputStream fos = new FileOutputStream(new File(path + name + ".log"));
+        FileOutputStream fos = new FileOutputStream(new File(log.getPath() + name + ".log"));
         mapper.writerWithDefaultPrettyPrinter().writeValue(fos, obj);
         fos.close();
         return ok;

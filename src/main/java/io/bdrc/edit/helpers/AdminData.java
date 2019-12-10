@@ -1,5 +1,7 @@
 package io.bdrc.edit.helpers;
 
+import java.security.NoSuchAlgorithmException;
+
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
 
 public class AdminData {
@@ -28,22 +31,26 @@ public class AdminData {
     public AdminData(String resId, String resourceType, String gitPath) {
         this.resId = resId;
         this.resourceType = resourceType;
-        if (resourceType.equals(USER_RES_TYPE)) {
+        if (!resourceType.equals(USER_RES_TYPE)) {
             this.gitRepo = GitRepositories.getRepo(resourceType);
+
         }
         this.gitPath = gitPath;
     }
 
-    public AdminData(String resId, String resourceType) {
+    public AdminData(String resId, String resourceType) throws NoSuchAlgorithmException {
         this.resId = resId;
         this.resourceType = resourceType;
-        if (resourceType.equals(USER_RES_TYPE)) {
+        if (!resourceType.equals(USER_RES_TYPE)) {
             this.gitRepo = GitRepositories.getRepo(resourceType);
-        }
-        Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
-        NodeIterator ni = adm.listObjectsOfProperty(EditConstants.GIT_PATH);
-        if (ni.hasNext()) {
-            this.gitPath = ni.next().asLiteral().getString();
+
+            Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
+            NodeIterator ni = adm.listObjectsOfProperty(EditConstants.GIT_PATH);
+            if (ni.hasNext()) {
+                this.gitPath = ni.next().asLiteral().getString();
+            }
+        } else {
+            this.gitPath = GlobalHelpers.getTwoLettersBucket(resId) + "/" + resId + ".trig";
         }
     }
 
@@ -82,7 +89,7 @@ public class AdminData {
         return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchAlgorithmException {
         EditConfig.init();
         Model m = new AdminData("U1669274875", "user").asModel();
         m.write(System.out, "TURTLE");

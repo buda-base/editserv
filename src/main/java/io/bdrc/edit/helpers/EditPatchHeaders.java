@@ -77,8 +77,8 @@ public class EditPatchHeaders {
             map = Arrays.asList(restype.getLiteral().toString().split(","));
         }
         for (String res : map) {
-            String[] parts = res.split("-");
-            resTypes.put(parts[0], parts[1]);
+            int index = res.lastIndexOf("-");
+            resTypes.put(res.substring(0, index), res.substring(index + 1));
         }
         return resTypes;
     }

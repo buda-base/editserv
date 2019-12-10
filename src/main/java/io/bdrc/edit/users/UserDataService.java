@@ -58,7 +58,7 @@ public class UserDataService {
             log.error("Invalid user model for {}", user);
             return null;
         }
-        String dirpath = System.getProperty("user.dir") + "/users/";
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         File theDir = new File(dirpath);
         Repository r = null;
         if (!theDir.exists()) {
@@ -80,10 +80,10 @@ public class UserDataService {
                 r = ensureUserGitRepo();
             }
             Git git = new Git(r);
-            if (!git.status().call().isClean()) {
-                git.add().addFilepattern(".").call();
-                rev = git.commit().setMessage("User " + user.getName() + " was created").call();
-            }
+            // if (!git.status().call().isClean()) {
+            git.add().addFilepattern(".").call();
+            rev = git.commit().setMessage("User " + user.getName() + " was created").call();
+            // }
             git.close();
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
@@ -106,7 +106,7 @@ public class UserDataService {
     public static RevCommit update(String userId, Model pub, Model priv)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         RevCommit rev = null;
-        String dirpath = System.getProperty("user.dir") + "/users/";
+        String dirpath = EditConfig.getProperty("/etc/buda/editserv/users/");
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
         createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
@@ -129,7 +129,7 @@ public class UserDataService {
 
     public static Repository ensureUserGitRepo() {
         Repository repository = null;
-        String dirpath = System.getProperty("user.dir") + "/users/";
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         createDirIfNotExists(dirpath);
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         File gitDir = new File(dirpath + "/.git");

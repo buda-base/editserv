@@ -1,0 +1,5 @@
+H  graph  "http://purl.bdrc.io/graph-nc/user-private/U1417245714" .
+H  mapping  "http://purl.bdrc.io/graph-nc/user-private/U1417245714-user" . 
+TX . 
+A <http://purl.bdrc.io/resource-nc/user/U1417245714> <http://www.w3.org/2004/02/skos/core#prefLabel> "Test public user" <http://purl.bdrc.io/graph-nc/user-private/U1417245714> .
+TC .

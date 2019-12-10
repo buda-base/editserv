@@ -5,15 +5,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -22,7 +25,6 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ import io.bdrc.edit.users.BudaUser;
 import io.bdrc.libraries.GlobalHelpers;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { UserEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = { UserEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class UserAPICheck {
 
     public final static Logger log = LoggerFactory.getLogger(UserAPICheck.class.getName());
@@ -65,7 +67,7 @@ public class UserAPICheck {
     public static void init() throws IOException {
         EditConfig.init();
         Properties props = EditConfig.getProperties();
-        InputStream input = new FileInputStream("/etc/buda/ldspdi/ldspdi.properties");
+        InputStream input = new FileInputStream("/etc/buda/editserv/editserv.properties");
         // Properties props = new Properties();
         props.load(input);
         input.close();
@@ -95,10 +97,10 @@ public class UserAPICheck {
         token = node.findValue("access_token").asText();
         RdfAuthModel.init();
         log.info("USERS >> {}" + RdfAuthModel.getUsers());
-        set123Token();
+        // set123Token();
         set456Token();
-        setPrivateToken();
-        setStaffToken();
+        // setPrivateToken();
+        // setStaffToken();
     }
 
     private static void set123Token() throws IOException {
@@ -245,7 +247,7 @@ public class UserAPICheck {
         assert (new File(filepath + r.getLocalName() + ".trig").exists());
     }
 
-    @Test
+    // @Test
     public void disableBudaUser() throws ClientProtocolException, IOException {
         // First, make sure we have a user
         HttpClient client = HttpClientBuilder.create().build();
@@ -266,6 +268,27 @@ public class UserAPICheck {
         assert (resp.getStatusLine().getStatusCode() == 200);
         assert (!BudaUser.isActive(userId));
         // assert (up.getUser().isBlocked());
+    }
+
+    // @Test
+    public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/public/U1417245714");
+        patch.addHeader("Authorization", "Bearer " + adminToken);
+        StringEntity entity = new StringEntity(getResourceFileContent("changePublic.patch"));
+        patch.setEntity(entity);
+        HttpResponse resp = client.execute(patch);
+        System.out.println("RESP STATUS public resource >> " + resp.getStatusLine());
+        // assert (resp.getStatusLine().getStatusCode() == 200);
+        System.out.println("RESULT >> " + EntityUtils.toString(resp.getEntity()));
+
+    }
+
+    public static String getResourceFileContent(String file) throws IOException {
+        InputStream stream = PostTaskTest.class.getClassLoader().getResourceAsStream(file);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(stream, writer, "UTF-8");
+        return writer.toString();
     }
 
 }

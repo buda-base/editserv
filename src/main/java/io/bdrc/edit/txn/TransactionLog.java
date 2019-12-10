@@ -20,6 +20,7 @@ public class TransactionLog {
     public HashMap<String, String> header;
     public HashMap<String, String> content;
     public HashMap<String, String> error;
+    public String path;
 
     public static final String HEADER = "header";
     public static final String CONTENT = "content";
@@ -36,7 +37,8 @@ public class TransactionLog {
 
     public final static Logger logger = LoggerFactory.getLogger(TransactionLog.class.getName());
 
-    public TransactionLog(String editor_Name, String userId) {
+    public TransactionLog(String path, String editor_Name, String userId) {
+        this.path = path;
         header = new HashMap<>();
         content = new HashMap<>();
         error = new HashMap<>();
@@ -44,7 +46,8 @@ public class TransactionLog {
         addHeader(USER_ID, userId);
     }
 
-    public TransactionLog(Task tk) {
+    public TransactionLog(String path, Task tk) {
+        this.path = path;
         header = new HashMap<>();
         content = new HashMap<>();
         error = new HashMap<>();
@@ -129,10 +132,14 @@ public class TransactionLog {
         return mapper.readValue(json, TransactionLog.class);
     }
 
+    public String getPath() {
+        return path;
+    }
+
     public static void main(String[] args) throws IOException {
         EditConfig.init();
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", "patch content", "marc");
-        TransactionLog log = new TransactionLog(tk);
+        TransactionLog log = new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk);
         log.addContent("test", "whatever");
         log.addContent("test", "whatever");
         String json = TransactionLog.asJson(log);

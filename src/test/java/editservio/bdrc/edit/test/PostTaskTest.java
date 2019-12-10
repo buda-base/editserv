@@ -112,11 +112,11 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/createDelete.patch");
         Task tk1 = new Task("saveMsg", "message", "uuid:1vvv3c4d-5zzzf-7a8b-9c0d-e1qqq3b4c5r6", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk1);
-        PatchModule tsvc = new PatchModule(new DataUpdate(tk1), new TransactionLog(tk1), bdrcReasoner);
+        PatchModule tsvc = new PatchModule(new DataUpdate(tk1), new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk1), bdrcReasoner);
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk1));
+        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk1));
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk1));
+        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk1));
         grs.run();
     }
 
@@ -125,11 +125,11 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/mixed.patch");
         Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3bTTTT", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        PatchModule tsvc = new PatchModule(data, new TransactionLog(tk), bdrcReasoner);
+        PatchModule tsvc = new PatchModule(data, new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk), bdrcReasoner);
         tsvc.run();
-        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(tk));
+        GitPatchModule gps = new GitPatchModule(data, new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk));
         gps.run();
-        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(tk));
+        GitRevisionModule grs = new GitRevisionModule(data, new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk));
         grs.run();
     }
 
@@ -138,7 +138,7 @@ public class PostTaskTest {
         String patch = getResourceFileContent("patch/simpleAdd.patch");
         Task tk = new Task("saveMsg", "message", "1a2b3c4d-5e6f-7a8b-9c0d-XXXWWWWWW", "shortName", patch, "marc");
         DataUpdate data = new DataUpdate(tk);
-        TransactionLog lg = new TransactionLog(tk);
+        TransactionLog lg = new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk);
         PatchModule tsvc = new PatchModule(data, lg, bdrcReasoner);
         tsvc.run();
         GitPatchModule gps = new GitPatchModule(data, lg);

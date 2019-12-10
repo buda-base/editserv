@@ -10,6 +10,8 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.PatchContent;
@@ -17,6 +19,8 @@ import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.libraries.GitHelpers;
 
 public class UserDataUpdate {
+
+    public final static Logger log = LoggerFactory.getLogger(UserDataUpdate.class.getName());
 
     PatchContent pc;
     private List<String> graphs;
@@ -35,14 +39,16 @@ public class UserDataUpdate {
     private void prepareModels() throws DataUpdateException {
         Dataset ds = DatasetFactory.create();
         dsg = ds.asDatasetGraph();
-
+        admData = new HashMap<>();
         // Fetching the graphs, building the dataset to be patched
         for (String st : graphs) {
             Node graphUri = NodeFactory.createURI(st);
             try {
+                log.info("graphUri {} and patchheaders {}", graphUri.getURI(), pc.getEditPatchHeaders().getResTypeMapping());
                 AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), pc.getEditPatchHeaders());
+                log.info("Admin Data {} ", ad);
                 admData.put(graphUri.getURI(), ad);
-                String repoName = EditConfig.getProperty("usersGitLocalRoot") + "users";
+                String repoName = EditConfig.getProperty("usersGitLocalRoot");
                 Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {

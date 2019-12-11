@@ -11,6 +11,7 @@ import org.seaborne.patch.PatchHeader;
 public class EditPatchHeaders {
 
     public static final String KEY_GRAPH = "graph";
+    public static final String KEY_SCOPE = "scope";
     public static final String KEY_MAPPING = "mapping";
     public static final String KEY_CREATE = "create";
     public static final String KEY_DELETE = "delete";
@@ -18,11 +19,13 @@ public class EditPatchHeaders {
     public static final String KEY_ID = "id";
 
     private PatchHeader ph;
-    private HashMap<String, String> mappings;
+    private HashMap<String, String> types;
+    private HashMap<String, String> scopes;
 
     public EditPatchHeaders(PatchHeader header) {
         this.ph = header;
-        mappings = getResTypeMapping();
+        types = getResTypeMapping();
+        scopes = getScopesMapping();
     }
 
     public PatchHeader getPatchHeader() {
@@ -66,13 +69,31 @@ public class EditPatchHeaders {
     }
 
     public String getResourceType(String resId) {
-        return mappings.get(resId);
+        return types.get(resId);
+    }
+
+    public String getScope(String graphUri) {
+        return scopes.get(graphUri);
     }
 
     public HashMap<String, String> getResTypeMapping() {
         HashMap<String, String> resTypes = new HashMap<>();
         List<String> map = new ArrayList<>();
         Node restype = ph.get(KEY_MAPPING);
+        if (restype != null) {
+            map = Arrays.asList(restype.getLiteral().toString().split(","));
+        }
+        for (String res : map) {
+            int index = res.lastIndexOf("-");
+            resTypes.put(res.substring(0, index), res.substring(index + 1));
+        }
+        return resTypes;
+    }
+
+    public HashMap<String, String> getScopesMapping() {
+        HashMap<String, String> resTypes = new HashMap<>();
+        List<String> map = new ArrayList<>();
+        Node restype = ph.get(KEY_SCOPE);
         if (restype != null) {
             map = Arrays.asList(restype.getLiteral().toString().split(","));
         }

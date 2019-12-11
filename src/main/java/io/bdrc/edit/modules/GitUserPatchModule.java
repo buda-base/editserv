@@ -18,10 +18,12 @@ public class GitUserPatchModule implements BUDAEditModule {
 
     TransactionLog log;
     UserDataUpdate data;
+    int status;
 
     public GitUserPatchModule(UserDataUpdate data, TransactionLog log) {
         this.log = log;
         this.data = data;
+        setStatus(Types.STATUS_PREPARED);
     }
 
     @Override
@@ -37,7 +39,6 @@ public class GitUserPatchModule implements BUDAEditModule {
         try {
             UserDataService.update(data);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
@@ -48,14 +49,12 @@ public class GitUserPatchModule implements BUDAEditModule {
 
     @Override
     public int getStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+        return status;
     }
 
     @Override
-    public void setStatus(int st) throws ModuleException {
-        // TODO Auto-generated method stub
-
+    public void setStatus(int st) {
+        this.status = st;
     }
 
     public String getName() {

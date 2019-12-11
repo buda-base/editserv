@@ -50,18 +50,17 @@ public class UserDataUpdate {
                 String repoName = EditConfig.getProperty("usersGitLocalRoot");
                 dsg = Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
                 dsg.addGraph(graphUri, dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
-                // Also getting here private-graph, otherwise it is missing when writing
-                // datasetgraph back to git
-                dsg.addGraph(NodeFactory.createURI(st.replace("/user", "/user-private")), dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
-                // log.info("Check model {} ");
-                // ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out,
-                // "TRIG");
+                dsg.addGraph(NodeFactory.createURI(st.replace("/user/", "/user-private/")), dsg.getGraph(NodeFactory.createURI(BudaUser.PRIVATE_PFX + userId)));
 
             } catch (Exception ex) {
                 ex.printStackTrace();
                 throw new DataUpdateException("No graph could be fetched for " + st);
             }
         }
+    }
+
+    public EditPatchHeaders getEditPatchHeaders() {
+        return pc.getEditPatchHeaders();
     }
 
     public String getUserId() {

@@ -1,5 +1,9 @@
-H  graph  "http://purl.bdrc.io/graph-nc/user-private/U1417245714" .
-H  mapping  "http://purl.bdrc.io/graph-nc/user-private/U1417245714-user" . 
+H  graph  "http://purl.bdrc.io/graph-nc/user/U1273977656,http://purl.bdrc.io/graph-nc/user-private/U1273977656" .
+H  mapping  "http://purl.bdrc.io/graph-nc/user/U1273977656-user,http://purl.bdrc.io/graph-nc/user-private/U1273977656-user" .
+H  scope  "http://purl.bdrc.io/graph-nc/user/U1273977656-public,http://purl.bdrc.io/graph-nc/user-private/U1273977656-private" . 
 TX . 
-A <http://purl.bdrc.io/resource-nc/user/U1417245714> <http://www.w3.org/2004/02/skos/core#prefLabel> "Test public user" <http://purl.bdrc.io/graph-nc/user-private/U1417245714> .
+D <http://purl.bdrc.io/resource-nc/user/U1273977656> <http://www.w3.org/2004/02/skos/core#prefLabel> "Test private user" <http://purl.bdrc.io/graph-nc/user/U1273977656> .
+D <http://purl.bdrc.io/resource-nc/user/U1273977656> <http://www.w3.org/2004/02/skos/core#prefLabel> "Test private user" <http://purl.bdrc.io/graph-nc/user-private/U1273977656> .
+A <http://purl.bdrc.io/resource-nc/user/U1273977656> <http://www.w3.org/2004/02/skos/core#prefLabel> "privateuser@bdrc.com" <http://purl.bdrc.io/graph-nc/user/U1273977656> .
+A <http://purl.bdrc.io/resource-nc/user/U1273977656> <http://www.w3.org/2004/02/skos/core#prefLabel> "privateuser@bdrc.com" <http://purl.bdrc.io/graph-nc/user-private/U1273977656> .
 TC .

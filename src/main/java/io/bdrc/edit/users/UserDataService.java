@@ -45,6 +45,9 @@ public class UserDataService {
     public final static Logger log = LoggerFactory.getLogger(UserDataService.class.getName());
     public static final String gitignore = "# Ignore everything\n" + "*\n" + "# Don't ignore directories, so we can recurse into them\n" + "!*/\n" + "# Don't ignore .gitignore and *.foo files\n" + "!.gitignore\n" + "!*.trig\n" + "";
 
+    public static String PUB_SCOPE = "public";
+    public static String PRIV_SCOPE = "private";
+
     public static RevCommit addNewBudaUser(User user) {
         RevCommit rev = null;
         Model[] mod = BudaUser.createBudaUserModels(user);

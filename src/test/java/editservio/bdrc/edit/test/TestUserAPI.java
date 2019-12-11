@@ -111,7 +111,7 @@ public class TestUserAPI {
     @Test
     public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/public/U1273977656");
+        HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/patch/U1273977656");
         patch.addHeader("Authorization", "Bearer " + adminToken);
         StringEntity entity = new StringEntity(getResourceFileContent("patch/changePublic.patch"));
         patch.setEntity(entity);

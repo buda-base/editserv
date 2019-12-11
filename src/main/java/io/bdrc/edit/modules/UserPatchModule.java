@@ -16,31 +16,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
-import io.bdrc.edit.txn.UserTransaction;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
 import io.bdrc.edit.users.BudaUser;
+import io.bdrc.edit.users.UserDataService;
 
 public class UserPatchModule implements BUDAEditModule {
 
-    private String type;
     UserDataUpdate data;
-    String fusekiUrl;
+    int status;
 
     public final static Logger log = LoggerFactory.getLogger(UserPatchModule.class.getName());
 
-    public UserPatchModule(UserDataUpdate data, String type) throws ModuleException {
+    public UserPatchModule(UserDataUpdate data) throws ModuleException {
         this.data = data;
-        this.type = type;
-        this.fusekiUrl = EditConfig.getProperty("fusekiData");
-        if (!type.equals(UserTransaction.TX_PUB_TYPE) && !type.equals(UserTransaction.TX_PRIV_TYPE)) {
-            throw new ModuleException("Invalid transaction type: must be public or private");
-        }
-        if (type.equals(UserTransaction.TX_PRIV_TYPE)) {
-            this.fusekiUrl = EditConfig.getProperty("fusekiAuthData");
-        }
+        setStatus(Types.STATUS_PREPARED);
     }
 
     @Override
@@ -51,10 +44,12 @@ public class UserPatchModule implements BUDAEditModule {
 
     @Override
     public void run() throws PatchModuleException {
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+        RDFConnectionFuseki pubFusConn = ((RDFConnectionFuseki) builder.build());
+        RDFConnectionRemoteBuilder builder1 = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+        RDFConnectionFuseki privFusConn = ((RDFConnectionFuseki) builder1.build());
         InputStream patch = new ByteArrayInputStream(data.getPatch().getBytes());
         RDFPatchReaderText rdf = new RDFPatchReaderText(patch);
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiUrl);
-        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         DatasetGraph dsg = data.getDatasetGraph();
         log.info("Graph to be patched :");
         ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + data.getUserId()))).write(System.out, "TURTLE");
@@ -63,30 +58,32 @@ public class UserPatchModule implements BUDAEditModule {
         rdf.apply(apply);
         log.info("Graph after patching :");
         ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + data.getUserId()))).write(System.out, "TURTLE");
-        // Putting the graphs back into main fuseki dataset
+        // Putting the graphs back into fuseki datasets
         for (String st : data.getGraphs()) {
             try {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                Helpers.putModel(fusConn, st, m);
-                fusConn.close();
-                // If we modify the public part of the profile, we also have to
-                // modify it in the private graph (that includes this public part)
-                if (type.equals(UserTransaction.TX_PUB_TYPE)) {
-                    builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
-                    fusConn = ((RDFConnectionFuseki) builder.build());
-                    Helpers.putModel(fusConn, st, m);
-                    fusConn.close();
+                if (data.getEditPatchHeaders().getScope(st).equals(UserDataService.PUB_SCOPE)) {
+                    Helpers.putModel(pubFusConn, st, m);
+                }
+                if (data.getEditPatchHeaders().getScope(st).equals(UserDataService.PRIV_SCOPE)) {
+                    Helpers.putModel(privFusConn, st, m);
                 }
             } catch (HttpException ex) {
+                pubFusConn.close();
+                privFusConn.close();
+                // later we'll try a rollback, if possible (from previous git version a full
+                // rollback should be possible)
                 throw new PatchModuleException("No graph could be uploaded to fuseki as " + st);
             }
         }
+        pubFusConn.close();
+        privFusConn.close();
         log.info("User Patch has been applied");
     }
 
     @Override
     public String getName() {
-        return "USER_PATCH_MODULE_" + type + "_" + data.getUserId();
+        return "USER_PATCH_MODULE_" + data.getUserId();
     }
 
     @Override
@@ -97,13 +94,12 @@ public class UserPatchModule implements BUDAEditModule {
 
     @Override
     public int getStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+        return status;
     }
 
     @Override
     public void setStatus(int st) throws ModuleException {
-        // TODO Auto-generated method stub
+        this.status = st;
 
     }
 

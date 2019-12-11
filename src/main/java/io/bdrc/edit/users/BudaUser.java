@@ -62,10 +62,7 @@ public class BudaUser {
     public static HashMap<String, List<String>> propsPolicies;
 
     public static Resource getRdfProfile(String auth0Id) throws IOException {
-        Resource r = (Resource) UsersCache.getObjectFromCache(auth0Id.hashCode());
-        if (r != null) {
-            return r;
-        }
+        Resource r = null;
         String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/" + auth0Id + "> }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
@@ -75,7 +72,6 @@ public class BudaUser {
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
             log.info("RESOURCE >> {} ", r);
-            UsersCache.addToCache(r, auth0Id.hashCode());
             return r;
         }
         qe.close();
@@ -189,7 +185,6 @@ public class BudaUser {
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "isActive"), ResourceFactory.createPlainLiteral("true"));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "hasUserProfile"), ResourceFactory.createResource(ADR_PFX + auth0Id));
         privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(usr.getEmail()));
-        privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
         // TODO don't write on system.out
         // for development purpose only
         privateModel.write(System.out, "TURTLE");

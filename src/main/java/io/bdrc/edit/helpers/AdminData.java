@@ -33,7 +33,6 @@ public class AdminData {
         this.resourceType = resourceType;
         if (!resourceType.equals(USER_RES_TYPE)) {
             this.gitRepo = GitRepositories.getRepo(resourceType);
-
         }
         this.gitPath = gitPath;
     }

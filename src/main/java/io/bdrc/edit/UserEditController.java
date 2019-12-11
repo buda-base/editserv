@@ -101,6 +101,7 @@ public class UserEditController {
     @PatchMapping(value = "/resource-nc/user/public/{res}")
     public ResponseEntity<StreamingResponseBody> userPublicPatch(@PathVariable("res") final String res, HttpServletResponse response, HttpServletRequest request, @RequestBody String patch) throws Exception {
         log.info("Call userPublicPatch() for res:" + res);
+        log.info("Call userPublicPatch() for Patch:" + patch);
         try {
             String token = getToken(request.getHeader("Authorization"));
             if (token == null) {
@@ -111,7 +112,7 @@ public class UserEditController {
                 if (acc.getUser().isAdmin()) {
                     UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PUB_TYPE, acc.getUser().getName(), res);
                     ut.addModule(new UserPatchModule(ut.getData(), UserTransaction.TX_PUB_TYPE), 0);
-                    ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
+                    ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
                     ut.setStatus(Types.STATUS_PREPARED);
                     ut.commit();
                     return ResponseEntity.status(200).body(StreamingHelpers.getStream("OK"));
@@ -139,7 +140,7 @@ public class UserEditController {
                 if (acc.getUser().isAdmin()) {
                     UserTransaction ut = new UserTransaction(patch, UserTransaction.TX_PUB_TYPE, acc.getUser().getName(), res);
                     ut.addModule(new UserPatchModule(ut.getData(), UserTransaction.TX_PUB_TYPE), 0);
-                    ut.addModule(new GitUserPatchModule(ut.getLog()), 1);
+                    ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
                     ut.setStatus(Types.STATUS_PREPARED);
                     ut.commit();
                 }

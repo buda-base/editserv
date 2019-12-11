@@ -286,7 +286,6 @@ public class GitPatchModule implements BUDAEditModule {
         }
     }
 
-    @Override
     public String getName() {
         return "GIT_PATCH_MOD" + data.getTaskId();
     }

@@ -67,7 +67,7 @@ public class UserDataService {
         FileOutputStream fos = null;
         try {
             String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket);
+            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
             Model adm = ad.asModel();
             createDirIfNotExists(dirpath + bucket + "/");
             fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
@@ -80,10 +80,8 @@ public class UserDataService {
                 r = ensureUserGitRepo();
             }
             Git git = new Git(r);
-            // if (!git.status().call().isClean()) {
             git.add().addFilepattern(".").call();
             rev = git.commit().setMessage("User " + user.getName() + " was created").call();
-            // }
             git.close();
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
@@ -106,7 +104,7 @@ public class UserDataService {
     public static RevCommit update(String userId, Model pub, Model priv)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         RevCommit rev = null;
-        String dirpath = EditConfig.getProperty("/etc/buda/editserv/users/");
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
         createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");

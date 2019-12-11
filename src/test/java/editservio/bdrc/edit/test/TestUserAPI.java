@@ -117,7 +117,7 @@ public class TestUserAPI {
         patch.setEntity(entity);
         HttpResponse resp = client.execute(patch);
         System.out.println("RESP STATUS public resource >> " + resp.getStatusLine());
-        // assert (resp.getStatusLine().getStatusCode() == 200);
+        assert (resp.getStatusLine().getStatusCode() == 200);
         System.out.println("RESULT >> " + EntityUtils.toString(resp.getEntity()));
 
     }

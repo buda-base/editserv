@@ -5,9 +5,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.util.Calendar;
 
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -33,6 +35,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
+import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
@@ -45,8 +48,6 @@ public class UserDataService {
     public static RevCommit addNewBudaUser(User user) {
         RevCommit rev = null;
         Model[] mod = BudaUser.createBudaUserModels(user);
-        log.info("public model for user {} is {}", user, mod[0]);
-        log.info("private model for user {} is {}", user, mod[1]);
         Model pub = mod[0];
         Model priv = mod[1];
         String userId = null;
@@ -98,6 +99,27 @@ public class UserDataService {
         } catch (Exception e) {
             log.error("Failed to add new Buda user :" + user.getName(), e);
         }
+        return rev;
+    }
+
+    public static RevCommit update(UserDataUpdate data)
+            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        RevCommit rev = null;
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        String bucket = GlobalHelpers.getTwoLettersBucket(data.getUserId());
+        createDirIfNotExists(dirpath + bucket + "/");
+        FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + data.getUserId() + ".trig");
+        DatasetGraph dsg = data.getDatasetGraph();
+        ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out, "TURTLE");
+        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+        Repository r = null;
+        if (r == null) {
+            r = ensureUserGitRepo();
+        }
+        Git git = new Git(r);
+        git.add().addFilepattern(".").call();
+        rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
+        git.close();
         return rev;
     }
 

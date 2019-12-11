@@ -7,8 +7,6 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.patch.PatchContent;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
+import io.bdrc.edit.users.BudaUser;
 import io.bdrc.libraries.GitHelpers;
 
 public class UserDataUpdate {
@@ -49,8 +48,15 @@ public class UserDataUpdate {
                 log.info("Admin Data {} ", ad);
                 admData.put(graphUri.getURI(), ad);
                 String repoName = EditConfig.getProperty("usersGitLocalRoot");
-                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
-                dsg.addGraph(graphUri, m.getGraph());
+                dsg = Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
+                dsg.addGraph(graphUri, dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
+                // Also getting here private-graph, otherwise it is missing when writing
+                // datasetgraph back to git
+                dsg.addGraph(NodeFactory.createURI(st.replace("/user", "/user-private")), dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
+                // log.info("Check model {} ");
+                // ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out,
+                // "TRIG");
+
             } catch (Exception ex) {
                 ex.printStackTrace();
                 throw new DataUpdateException("No graph could be fetched for " + st);

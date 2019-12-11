@@ -21,6 +21,7 @@ import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.UserTransaction;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
+import io.bdrc.edit.users.BudaUser;
 
 public class UserPatchModule implements BUDAEditModule {
 
@@ -56,12 +57,12 @@ public class UserPatchModule implements BUDAEditModule {
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         DatasetGraph dsg = data.getDatasetGraph();
         log.info("Graph to be patched :");
-        ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI("http://purl.bdrc.io/graph-nc/user/U1417245714"))).write(System.out, "TURTLE");
+        ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + data.getUserId()))).write(System.out, "TURTLE");
         // Applying changes
         RDFChangesApply apply = new RDFChangesApply(dsg);
         rdf.apply(apply);
         log.info("Graph after patching :");
-        ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI("http://purl.bdrc.io/graph-nc/user/U1417245714"))).write(System.out, "TURTLE");
+        ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + data.getUserId()))).write(System.out, "TURTLE");
         // Putting the graphs back into main fuseki dataset
         for (String st : data.getGraphs()) {
             try {

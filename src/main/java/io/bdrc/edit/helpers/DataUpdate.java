@@ -71,7 +71,7 @@ public class DataUpdate {
                 AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), ph);
                 admData.put(graphUri.getURI(), ad);
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
+                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())).getUnionGraph());
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -85,7 +85,7 @@ public class DataUpdate {
                 AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), ph);
                 admData.put(graphUri.getURI(), ad);
                 String repoName = EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName();
-                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())));
+                Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())).getUnionGraph());
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
                 ex.printStackTrace();

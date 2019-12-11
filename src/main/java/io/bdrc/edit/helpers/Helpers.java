@@ -3,7 +3,6 @@ package io.bdrc.edit.helpers;
 import java.io.StringReader;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.jena.graph.Graph;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ReadWrite;
@@ -13,6 +12,7 @@ import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.sparql.core.DatasetGraph;
 
 public class Helpers {
 
@@ -26,10 +26,10 @@ public class Helpers {
         return ad;
     }
 
-    public static Graph buildGraphFromTrig(String data) {
+    public static DatasetGraph buildGraphFromTrig(String data) {
         Dataset ds = DatasetFactory.create();
         RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
-        return ds.asDatasetGraph().getUnionGraph();
+        return ds.asDatasetGraph();
     }
 
     public static void putModelWithInference(RDFConnectionFuseki fusConn, String graph, Model m, Reasoner reasoner) {

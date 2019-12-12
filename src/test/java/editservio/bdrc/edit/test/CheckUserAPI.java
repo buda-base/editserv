@@ -43,7 +43,7 @@ import io.bdrc.edit.EditConfig;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EditApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class TestUserAPI {
+public class CheckUserAPI {
 
     @Autowired
     Environment environment;
@@ -55,7 +55,7 @@ public class TestUserAPI {
     static String privateToken;
     static String staffToken;
 
-    public final static Logger log = LoggerFactory.getLogger(TestUserAPI.class.getName());
+    public final static Logger log = LoggerFactory.getLogger(CheckUserAPI.class.getName());
 
     @BeforeClass
     public static void init() throws IOException {
@@ -108,7 +108,7 @@ public class TestUserAPI {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/patch/U1273977656");

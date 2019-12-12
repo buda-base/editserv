@@ -8,7 +8,7 @@ import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.users.UserDataService;
+import io.bdrc.edit.users.BudaUser;
 
 public class GitUserPatchModule implements BUDAEditModule {
 
@@ -33,7 +33,7 @@ public class GitUserPatchModule implements BUDAEditModule {
     @Override
     public void run() throws ModuleException {
         try {
-            UserDataService.update(data);
+            BudaUser.update(data);
         } catch (Exception e) {
             e.printStackTrace();
             setStatus(Types.STATUS_FAILED);

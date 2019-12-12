@@ -23,7 +23,6 @@ import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
 import io.bdrc.edit.users.BudaUser;
-import io.bdrc.edit.users.UserDataService;
 
 public class UserPatchModule implements BUDAEditModule {
 
@@ -66,10 +65,10 @@ public class UserPatchModule implements BUDAEditModule {
         for (String st : data.getGraphs()) {
             try {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
-                if (data.getEditPatchHeaders().getScope(st).equals(UserDataService.PUB_SCOPE)) {
+                if (data.getEditPatchHeaders().getScope(st).equals(BudaUser.PUB_SCOPE)) {
                     Helpers.putModel(pubFusConn, st, m);
                 }
-                if (data.getEditPatchHeaders().getScope(st).equals(UserDataService.PRIV_SCOPE)) {
+                if (data.getEditPatchHeaders().getScope(st).equals(BudaUser.PRIV_SCOPE)) {
                     Helpers.putModel(privFusConn, st, m);
                 }
             } catch (HttpException ex) {

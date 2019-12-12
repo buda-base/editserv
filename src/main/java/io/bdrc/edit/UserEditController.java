@@ -29,7 +29,6 @@ import io.bdrc.edit.modules.UserPatchModule;
 import io.bdrc.edit.patch.UserPatches;
 import io.bdrc.edit.txn.UserTransaction;
 import io.bdrc.edit.users.BudaUser;
-import io.bdrc.edit.users.UserDataService;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
 
@@ -58,7 +57,7 @@ public class UserEditController {
             Resource usr = BudaUser.getRdfProfile(auth0Id);
             log.info("meUser() usr >> {}", usr);
             if (usr == null) {
-                UserDataService.addNewBudaUser(acc.getUser());
+                BudaUser.addNewBudaUser(acc.getUser());
                 usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() User Resource >> {}", usr);
             }
@@ -112,7 +111,7 @@ public class UserEditController {
             } else {
                 Access acc = (Access) request.getAttribute("access");
                 log.info("userPatch() Token User {}", acc.getUser());
-                if (acc.getUser().isAdmin()) {
+                if (acc.getUser().isAdmin() || BudaUser.isSameUser(acc.getUser(), res)) {
                     UserTransaction ut = new UserTransaction(patch, acc.getUser().getName(), res);
                     ut.addModule(new UserPatchModule(ut.getData()), 0);
                     ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);

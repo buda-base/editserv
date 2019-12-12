@@ -1,10 +1,15 @@
 package io.bdrc.edit.users;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +28,24 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.vocabulary.RDF;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.AbortedByHookException;
+import org.eclipse.jgit.api.errors.ConcurrentRefUpdateException;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.api.errors.NoMessageException;
+import org.eclipse.jgit.api.errors.UnmergedPathsException;
+import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
@@ -37,11 +54,18 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
+import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.jena.sttl.STriGWriter;
+import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
 
 public class BudaUser {
+
+    public static final String gitignore = "# Ignore everything\n" + "*\n" + "# Don't ignore directories, so we can recurse into them\n" + "!*/\n" + "# Don't ignore .gitignore and *.foo files\n" + "!.gitignore\n" + "!*.trig\n" + "";
 
     public final static Property SKOS_PREF_LABEL = ResourceFactory.createProperty("http://www.w3.org/2004/02/skos/core#prefLabel");
 
@@ -58,6 +82,9 @@ public class BudaUser {
     public static final String PUBLIC_PROPS_KEY = "publicProps";
     public static final String ADMIN_PROPS_KEY = "adminEditProps";
     public static final String USER_PROPS_KEY = "userEditProps";
+
+    public static String PUB_SCOPE = "public";
+    public static String PRIV_SCOPE = "private";
 
     public static HashMap<String, List<String>> propsPolicies;
 
@@ -120,7 +147,7 @@ public class BudaUser {
         Helpers.putModel(fusConn, PRIVATE_PFX + userId, m1);
         ptc.close();
         fusConn.close();
-        UserDataService.update(userId, pub, m1);
+        BudaUser.update(userId, pub, m1);
     }
 
     public static Model getUserModel(boolean full, Resource r) throws IOException {
@@ -185,9 +212,6 @@ public class BudaUser {
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "isActive"), ResourceFactory.createPlainLiteral("true"));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "hasUserProfile"), ResourceFactory.createResource(ADR_PFX + auth0Id));
         privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(usr.getEmail()));
-        // TODO don't write on system.out
-        // for development purpose only
-        privateModel.write(System.out, "TURTLE");
 
         mods[0] = publicModel;
         mods[1] = privateModel;
@@ -195,6 +219,13 @@ public class BudaUser {
         fusConn.put(PRIVATE_PFX + userId, publicModel);
         fusConn.close();
         return mods;
+    }
+
+    public static boolean isSameUser(User usr, String userResId) throws IOException {
+        String auth0Id = usr.getUserId();
+        String userAuthId = getAuth0IdFromUserId(userResId).toString();
+        userAuthId = userAuthId.substring(userAuthId.lastIndexOf("/") + 1);
+        return auth0Id.equals(userAuthId);
     }
 
     // for admin or testing purpose only
@@ -233,9 +264,6 @@ public class BudaUser {
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"), ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("eng"));
         privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(userName));
-        // TODO don't write on system.out
-        // for development purpose only
-        privateModel.write(System.out, "TURTLE");
 
         mods[0] = publicModel;
         mods[1] = privateModel;
@@ -266,15 +294,146 @@ public class BudaUser {
         return ontModel;
     }
 
+    public static RevCommit addNewBudaUser(User user) {
+        RevCommit rev = null;
+        Model[] mod = BudaUser.createBudaUserModels(user);
+        Model pub = mod[0];
+        Model priv = mod[1];
+        String userId = null;
+        ResIterator rit = priv.listSubjectsWithProperty(ResourceFactory.createProperty(BudaUser.BDOU_PFX + "hasUserProfile"));
+        if (rit.hasNext()) {
+            Resource r = rit.next();
+            userId = r.getLocalName();
+        } else {
+            log.error("Invalid user model for {}", user);
+            return null;
+        }
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        File theDir = new File(dirpath);
+        Repository r = null;
+        if (!theDir.exists()) {
+            r = ensureUserGitRepo();
+        }
+        FileOutputStream fos = null;
+        try {
+            String bucket = GlobalHelpers.getTwoLettersBucket(userId);
+            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
+            Model adm = ad.asModel();
+            createDirIfNotExists(dirpath + bucket + "/");
+            fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
+            DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
+            dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
+            dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
+            dsg.addGraph(ResourceFactory.createResource(EditConstants.BDA + userId).asNode(), adm.getGraph());
+            new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+            if (r == null) {
+                r = ensureUserGitRepo();
+            }
+            Git git = new Git(r);
+            git.add().addFilepattern(".").call();
+            rev = git.commit().setMessage("User " + user.getName() + " was created").call();
+            git.close();
+            RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+            RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+            Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
+            fusConn.close();
+            // Public graph is pushed to bdrcrw
+            builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
+            fusConn = ((RDFConnectionFuseki) builder.build());
+            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+            // adding adminData graph to public dataset
+            Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
+            fusConn.close();
+        } catch (Exception e) {
+            log.error("Failed to add new Buda user :" + user.getName(), e);
+        }
+        return rev;
+    }
+
+    public static Repository ensureUserGitRepo() {
+        Repository repository = null;
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        createDirIfNotExists(dirpath);
+        FileRepositoryBuilder builder = new FileRepositoryBuilder();
+        File gitDir = new File(dirpath + "/.git");
+        File wtDir = new File(dirpath);
+        try {
+            repository = builder.setGitDir(gitDir).setWorkTree(wtDir).readEnvironment() // scan environment GIT_* variables
+                    .build();
+            if (!repository.getObjectDatabase().exists()) {
+                log.info("create git repository in {}", dirpath);
+                repository.create();
+                PrintWriter out = new PrintWriter(dirpath + ".gitignore");
+                out.println(gitignore);
+                out.close();
+            }
+        } catch (IOException e) {
+            log.error("Could not get git repository: ", e);
+        }
+        return repository;
+    }
+
+    public static void createDirIfNotExists(String dir) {
+        File theDir = new File(dir);
+        if (!theDir.exists()) {
+            try {
+                theDir.mkdir();
+            } catch (SecurityException se) {
+                log.error("Could not create " + dir, se);
+            }
+        }
+    }
+
+    public static RevCommit update(UserDataUpdate data)
+            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        RevCommit rev = null;
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        String bucket = GlobalHelpers.getTwoLettersBucket(data.getUserId());
+        createDirIfNotExists(dirpath + bucket + "/");
+        FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + data.getUserId() + ".trig");
+        DatasetGraph dsg = data.getDatasetGraph();
+        ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out, "TURTLE");
+        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+        Repository r = null;
+        if (r == null) {
+            r = ensureUserGitRepo();
+        }
+        Git git = new Git(r);
+        if (!git.status().call().isClean()) {
+            git.add().addFilepattern(".").call();
+            rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
+            data.setGitRevisionInfo(rev.getName());
+        }
+        git.close();
+        return rev;
+    }
+
+    public static RevCommit update(String userId, Model pub, Model priv)
+            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        RevCommit rev = null;
+        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
+        createDirIfNotExists(dirpath + bucket + "/");
+        FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
+        DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
+        dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
+        dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
+        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+        Repository r = null;
+        if (r == null) {
+            r = ensureUserGitRepo();
+        }
+        Git git = new Git(r);
+        git.add().addFilepattern(".").call();
+        rev = git.commit().setMessage("User " + userId + " was updated").call();
+        git.close();
+        return rev;
+    }
+
     public static void main(String[] args) throws IOException {
         EditConfig.init();
         RdfAuthModel.initForTest(false, true);
-        // String auth0Id = BudaUser.getAuth0IdFromUserId("U456").asNode().getURI();
-        // System.out.println("Is active >> " + BudaUser.isActive("U456"));
-        // System.out.println("Auth0Id >> " + auth0Id);
-        // System.out.println("USERS >> " + RdfAuthModel.getUsers());
-        // System.out.println("USER >> " +
-        // RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1)));
         System.out.println(BudaUser.createBudaUserModels("Nicolas Berger", "103776618189565648628", "quai.ledrurollin@gmail.com")[0]);
         System.out.println(BudaUser.createBudaUserModels("Nicolas Berger", "103776618189565648628", "quai.ledrurollin@gmail.com")[1]);
     }

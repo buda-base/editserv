@@ -24,6 +24,7 @@ import io.bdrc.auth.model.AuthDataModelBuilder;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.modules.GitUserPatchModule;
+import io.bdrc.edit.modules.GitUserRevisionModule;
 import io.bdrc.edit.modules.UserPatchModule;
 import io.bdrc.edit.patch.UserPatches;
 import io.bdrc.edit.txn.UserTransaction;
@@ -115,6 +116,7 @@ public class UserEditController {
                     UserTransaction ut = new UserTransaction(patch, acc.getUser().getName(), res);
                     ut.addModule(new UserPatchModule(ut.getData()), 0);
                     ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
+                    ut.addModule(new GitUserRevisionModule(ut.getData(), ut.getLog()), 2);
                     ut.setStatus(Types.STATUS_PREPARED);
                     ut.commit();
                     return ResponseEntity.status(200).body(StreamingHelpers.getStream("OK"));

@@ -1,7 +1,5 @@
 package io.bdrc.edit.modules;
 
-import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +32,6 @@ public class GitUserPatchModule implements BUDAEditModule {
 
     @Override
     public void run() throws ModuleException {
-        logger.info("Graph from user update in gitUserPatchModule :");
-        ModelFactory.createModelForGraph(data.getDatasetGraph().getGraph(NodeFactory.createURI("http://purl.bdrc.io/graph-nc/user/" + data.getUserId()))).write(System.out, "TURTLE");
         try {
             UserDataService.update(data);
         } catch (Exception e) {

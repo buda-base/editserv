@@ -120,8 +120,11 @@ public class UserDataService {
             r = ensureUserGitRepo();
         }
         Git git = new Git(r);
-        git.add().addFilepattern(".").call();
-        rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
+        if (!git.status().call().isClean()) {
+            git.add().addFilepattern(".").call();
+            rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
+            data.setGitRevisionInfo(rev.getName());
+        }
         git.close();
         return rev;
     }
@@ -142,10 +145,8 @@ public class UserDataService {
             r = ensureUserGitRepo();
         }
         Git git = new Git(r);
-        if (!git.status().call().isClean()) {
-            git.add().addFilepattern(".").call();
-            rev = git.commit().setMessage("User " + userId + " was updated").call();
-        }
+        git.add().addFilepattern(".").call();
+        rev = git.commit().setMessage("User " + userId + " was updated").call();
         git.close();
         return rev;
     }

@@ -25,7 +25,7 @@ public class UserDataUpdate {
     private List<String> graphs;
     private DatasetGraph dsg;
     private HashMap<String, AdminData> admData;
-    private HashMap<String, String> gitRev;
+    private String gitRev;
     private String userId;
 
     public UserDataUpdate(PatchContent pc, String editor, String userId) throws DataUpdateException {
@@ -57,6 +57,14 @@ public class UserDataUpdate {
                 throw new DataUpdateException("No graph could be fetched for " + st);
             }
         }
+    }
+
+    public void setGitRevisionInfo(String sha1) {
+        this.gitRev = sha1;
+    }
+
+    public String getGitRevisionInfo() {
+        return gitRev;
     }
 
     public EditPatchHeaders getEditPatchHeaders() {

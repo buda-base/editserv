@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
@@ -20,6 +19,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitRevisionModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
@@ -85,7 +85,7 @@ public class GitRevisionModule implements BUDAEditModule {
             List<String> allGraphs = data.getAllAffectedGraphs();
             for (String g : allGraphs) {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(g)));
-                putModel(fusConn, g, m);
+                Helpers.putModel(fusConn, g, m);
             }
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
@@ -94,13 +94,6 @@ public class GitRevisionModule implements BUDAEditModule {
             log.addError(getName(), e.getMessage());
             throw new GitRevisionModuleException(e);
         }
-    }
-
-    private void putModel(RDFConnectionFuseki fusConn, String graph, Model m) {
-        fusConn.begin(ReadWrite.WRITE);
-        fusConn.put(graph, m);
-        fusConn.commit();
-        fusConn.end();
     }
 
     @Override

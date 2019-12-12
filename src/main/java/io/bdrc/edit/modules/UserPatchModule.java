@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
@@ -59,6 +60,9 @@ public class UserPatchModule implements BUDAEditModule {
         log.info("Graph after patching :");
         ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + data.getUserId()))).write(System.out, "TURTLE");
         // Putting the graphs back into fuseki datasets
+        Model adm = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(EditConstants.BDA + data.getUserId())));
+        Helpers.putModel(pubFusConn, EditConstants.BDA + data.getUserId(), adm);
+        Helpers.putModel(privFusConn, EditConstants.BDA + data.getUserId(), adm);
         for (String st : data.getGraphs()) {
             try {
                 Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));

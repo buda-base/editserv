@@ -1,5 +1,6 @@
 package io.bdrc.edit.helpers;
 
+import java.io.File;
 import java.io.StringReader;
 import java.security.NoSuchAlgorithmException;
 
@@ -13,8 +14,12 @@ import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Helpers {
+
+    public final static Logger log = LoggerFactory.getLogger(Helpers.class.getName());
 
     public static String getResourceType(String resId, EditPatchHeaders ph) {
         return ph.getResourceType(resId);
@@ -45,6 +50,17 @@ public class Helpers {
         fusConn.put(graph, m);
         fusConn.commit();
         fusConn.end();
+    }
+
+    public static void createDirIfNotExists(String dir) {
+        File theDir = new File(dir);
+        if (!theDir.exists()) {
+            try {
+                theDir.mkdir();
+            } catch (SecurityException se) {
+                log.error("Could not create " + dir, se);
+            }
+        }
     }
 
 }

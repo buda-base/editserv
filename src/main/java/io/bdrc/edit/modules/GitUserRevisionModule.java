@@ -31,10 +31,12 @@ public class GitUserRevisionModule implements BUDAEditModule {
 
     TransactionLog log;
     UserDataUpdate data;
+    int status;
 
-    public GitUserRevisionModule(UserDataUpdate data, TransactionLog log) {
+    public GitUserRevisionModule(UserDataUpdate data, TransactionLog log) throws ModuleException {
         this.log = log;
         this.data = data;
+        setStatus(Types.STATUS_PREPARED);
     }
 
     private String buildRevisionPatch() throws GitRevisionModuleException {
@@ -64,6 +66,7 @@ public class GitUserRevisionModule implements BUDAEditModule {
 
     @Override
     public void run() throws ModuleException {
+        setStatus(Types.STATUS_PROCESSING);
         RDFConnectionFuseki pubFusConn = null;
         RDFConnectionFuseki privFusConn = null;
         try {
@@ -98,25 +101,22 @@ public class GitUserRevisionModule implements BUDAEditModule {
 
     @Override
     public int getStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+        return status;
     }
 
     @Override
     public void setStatus(int st) throws ModuleException {
-        // TODO Auto-generated method stub
+        this.status = st;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return "USER_GIT_REV_MOD_" + data.getUserId();
     }
 
     @Override
     public String getUserId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getUserId();
     }
 
 }

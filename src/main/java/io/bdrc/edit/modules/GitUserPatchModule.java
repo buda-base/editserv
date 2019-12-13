@@ -32,11 +32,13 @@ public class GitUserPatchModule implements BUDAEditModule {
 
     @Override
     public void run() throws ModuleException {
+        setStatus(Types.STATUS_PROCESSING);
         try {
             BudaUser.update(data);
+            setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
             setStatus(Types.STATUS_FAILED);
+            logger.error("Git user update failed for userid " + data.getUserId(), e);
             log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
@@ -59,8 +61,7 @@ public class GitUserPatchModule implements BUDAEditModule {
 
     @Override
     public String getUserId() {
-        // TODO Auto-generated method stub
-        return null;
+        return data.getUserId();
     }
 
 }

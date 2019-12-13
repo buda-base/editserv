@@ -73,6 +73,7 @@ public class GitRevisionModule implements BUDAEditModule {
 
     @Override
     public void run() throws GitRevisionModuleException {
+        setStatus(Types.STATUS_PROCESSING);
         try {
             InputStream ptc = new ByteArrayInputStream(patch.getBytes());
             RDFPatchReaderText rdf = new RDFPatchReaderText(ptc);

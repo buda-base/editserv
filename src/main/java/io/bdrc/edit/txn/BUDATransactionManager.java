@@ -9,10 +9,9 @@ import java.util.Timer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.jena.atlas.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.edit.Types;
@@ -84,13 +83,10 @@ public class BUDATransactionManager implements Runnable {
                 e.printStackTrace();
             } finally {
                 try {
-                    btx.finalizeLog();
-                } catch (JsonProcessingException e) {
-                    // TODO Auto-generated catch block
+                    btx.finalizeLog(btx.getLog(), btx.getName());
+                } catch (Exception e) {
                     e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    Log.error(this, "Edit Transaction Manager failed to close log properly for Transaction " + btx.getName() + "finishing with status:" + Types.getStatus(btx.getStatus()), e);
                 }
             }
         }

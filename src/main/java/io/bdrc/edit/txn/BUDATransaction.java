@@ -1,16 +1,10 @@
 package io.bdrc.edit.txn;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TreeMap;
 
 import javax.transaction.Status;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
@@ -43,7 +37,7 @@ public class BUDATransaction extends EditTransaction {
             log.addError(name, e.getMessage());
             setStatus(Types.STATUS_FAILED);
             try {
-                finalizeLog();
+                finalizeLog(log, name);
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
@@ -93,30 +87,12 @@ public class BUDATransaction extends EditTransaction {
                 log.addError(name, e.getMessage());
                 return false;
             } finally {
-                finalizeLog();
+                finalizeLog(log, name);
             }
         }
         setStatus(Types.STATUS_SUCCESS);
-        finalizeLog();
+        finalizeLog(log, name);
         return true;
-    }
-
-    @Override
-    public boolean finalizeLog() throws JsonProcessingException, IOException {
-        File f = new File(log.getPath());
-        if (!f.exists()) {
-            f.mkdir();
-        }
-        boolean ok = true;
-        HashMap<String, HashMap<String, String>> obj = new HashMap<>();
-        obj.put(TransactionLog.HEADER, log.header);
-        obj.put(TransactionLog.CONTENT, log.content);
-        obj.put(TransactionLog.ERROR, log.error);
-        ObjectMapper mapper = new ObjectMapper();
-        FileOutputStream fos = new FileOutputStream(new File(log.getPath() + name + ".log"));
-        mapper.writerWithDefaultPrettyPrinter().writeValue(fos, obj);
-        fos.close();
-        return ok;
     }
 
     public String getId() {

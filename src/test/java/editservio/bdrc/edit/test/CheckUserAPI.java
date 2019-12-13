@@ -108,7 +108,7 @@ public class CheckUserAPI {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    // @Test
+    @Test
     public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/patch/U1273977656");

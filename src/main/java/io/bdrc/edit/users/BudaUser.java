@@ -319,7 +319,7 @@ public class BudaUser {
             String bucket = GlobalHelpers.getTwoLettersBucket(userId);
             AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
             Model adm = ad.asModel();
-            createDirIfNotExists(dirpath + bucket + "/");
+            Helpers.createDirIfNotExists(dirpath + bucket + "/");
             fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
             DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
@@ -354,7 +354,7 @@ public class BudaUser {
     public static Repository ensureUserGitRepo() {
         Repository repository = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
-        createDirIfNotExists(dirpath);
+        Helpers.createDirIfNotExists(dirpath);
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         File gitDir = new File(dirpath + "/.git");
         File wtDir = new File(dirpath);
@@ -374,23 +374,12 @@ public class BudaUser {
         return repository;
     }
 
-    public static void createDirIfNotExists(String dir) {
-        File theDir = new File(dir);
-        if (!theDir.exists()) {
-            try {
-                theDir.mkdir();
-            } catch (SecurityException se) {
-                log.error("Could not create " + dir, se);
-            }
-        }
-    }
-
     public static RevCommit update(UserDataUpdate data)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(data.getUserId());
-        createDirIfNotExists(dirpath + bucket + "/");
+        Helpers.createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + data.getUserId() + ".trig");
         DatasetGraph dsg = data.getDatasetGraph();
         ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out, "TURTLE");
@@ -414,7 +403,7 @@ public class BudaUser {
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-        createDirIfNotExists(dirpath + bucket + "/");
+        Helpers.createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());

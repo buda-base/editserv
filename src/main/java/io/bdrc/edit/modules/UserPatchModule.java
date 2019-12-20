@@ -72,6 +72,7 @@ public class UserPatchModule implements BUDAEditModule {
                     Model m = ModelFactory.createModelForGraph(dsg.getGraph(NodeFactory.createURI(st)));
                     if (data.getEditPatchHeaders().getScope(st).equals(BudaUser.PUB_SCOPE)) {
                         Helpers.putModel(pubFusConn, st, m);
+                        Helpers.putModel(privFusConn, st, m);
                     }
                     if (data.getEditPatchHeaders().getScope(st).equals(BudaUser.PRIV_SCOPE)) {
                         Helpers.putModel(privFusConn, st, m);
@@ -114,7 +115,6 @@ public class UserPatchModule implements BUDAEditModule {
     @Override
     public void setStatus(int st) throws ModuleException {
         this.status = st;
-
     }
 
 }

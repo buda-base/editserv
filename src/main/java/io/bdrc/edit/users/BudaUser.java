@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,6 +23,7 @@ import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
@@ -59,6 +61,7 @@ import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
+import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
@@ -420,11 +423,68 @@ public class BudaUser {
         return rev;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void deleteBudaUser(String userid, boolean deleteGit) throws DataUpdateException {
+        try {
+            QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiData"));
+            System.out.println(1);
+            QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiAuthData"));
+            System.out.println(2);
+            QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user/" + userid, EditConfig.getProperty("fusekiData"));
+            System.out.println(3);
+            QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user/" + userid, EditConfig.getProperty("fusekiAuthData"));
+            System.out.println(4);
+            QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user-private/" + userid, EditConfig.getProperty("fusekiAuthData"));
+            System.out.println(5);
+            if (deleteGit) {
+                String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+                String bucket = GlobalHelpers.getTwoLettersBucket(userid);
+                Helpers.createDirIfNotExists(dirpath + bucket + "/");
+                File f = new File(dirpath + bucket + "/" + userid + ".trig");
+                f.delete();
+                Repository r = null;
+                if (r == null) {
+                    r = ensureUserGitRepo();
+                }
+                Git git = new Git(r);
+                git.add().addFilepattern(".").call();
+                git.commit().setMessage("User " + userid + " was deleted").call();
+                git.close();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // throw new DataUpdateException("users cleanup failed for " + userid, ex);
+        }
+    }
+
+    public static void cleanAllUsers(boolean deleteGit) throws DataUpdateException {
+        ArrayList<String> users = getUserIds();
+        for (String id : users) {
+            deleteBudaUser(id, deleteGit);
+        }
+    }
+
+    private static ArrayList<String> getUserIds() {
+        ArrayList<String> users = new ArrayList<>();
+        String query = "select distinct ?s ?p ?o where  {  ?s a <http://purl.bdrc.io/ontology/ext/user/User> }";
+        ResultSet set = QueryProcessor.getSelectResultSet(query, null);
+        while (set.hasNext()) {
+            QuerySolution qs = set.next();
+            String tmp = qs.get("?s").asNode().getLocalName();
+            users.add(tmp);
+        }
+        System.out.println(users);
+        return users;
+    }
+
+    public static void main(String[] args) throws IOException, DataUpdateException {
         EditConfig.init();
         RdfAuthModel.initForTest(false, true);
-        System.out.println(BudaUser.createBudaUserModels("Nicolas Berger", "103776618189565648628", "quai.ledrurollin@gmail.com")[0]);
-        System.out.println(BudaUser.createBudaUserModels("Nicolas Berger", "103776618189565648628", "quai.ledrurollin@gmail.com")[1]);
+        BudaUser.getUserIds();
+        // BudaUser.deleteBudaUser("U678062094", true);
+        // System.out.println(BudaUser.createBudaUserModels("Nicolas Berger",
+        // "103776618189565648628", "quai.ledrurollin@gmail.com")[0]);
+        // System.out.println(BudaUser.createBudaUserModels("Nicolas Berger",
+        // "103776618189565648628", "quai.ledrurollin@gmail.com")[1]);
     }
 
 }

@@ -1,5 +1,6 @@
 package io.bdrc.edit.sparql;
 
+import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -24,12 +25,17 @@ public class QueryProcessor {
     }
 
     public static void dropGraph(String graphUri, String fusekiDataUrl) {
-        if (fusekiDataUrl == null) {
-            fusekiDataUrl = EditConfig.getProperty("fusekiData");
+        try {
+            if (fusekiDataUrl == null) {
+                fusekiDataUrl = EditConfig.getProperty("fusekiData");
+            }
+            RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
+            RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+            fusConn.delete(graphUri);
+            fusConn.close();
+        } catch (Exception e) {
+            Log.error("dropGraph", e.getMessage());
         }
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
-        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-        fusConn.delete(graphUri);
     }
 
     public static Model getTriplesWithObject(String fullUri, String fusekiUrl) {

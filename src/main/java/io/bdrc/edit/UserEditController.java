@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +29,7 @@ import io.bdrc.edit.modules.GitUserRevisionModule;
 import io.bdrc.edit.modules.UserPatchModule;
 import io.bdrc.edit.patch.UserPatches;
 import io.bdrc.edit.txn.UserTransaction;
+import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.edit.users.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
@@ -61,7 +63,7 @@ public class UserEditController {
                 usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() User Resource >> {}", usr);
             }
-            return ResponseEntity.status(200).header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "jsonld"));
+            return ResponseEntity.status(200).header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
         }
     }
 
@@ -169,6 +171,13 @@ public class UserEditController {
             return null;
         }
         return header.substring(7);
+    }
+
+    @PostMapping(value = "/usersCleanup")
+    public ResponseEntity<String> cleanUsers() throws DataUpdateException {
+        log.info("Call to cleanUsers()");
+        BudaUser.cleanAllUsers(true);
+        return ResponseEntity.ok().body("OK");
     }
 
 }

@@ -1,6 +1,8 @@
 package io.bdrc.edit.helpers;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.security.NoSuchAlgorithmException;
 
@@ -14,8 +16,17 @@ import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.bdrc.edit.EditConfig;
+import io.bdrc.libraries.GitHelpers;
 
 public class Helpers {
 
@@ -61,6 +72,39 @@ public class Helpers {
                 log.error("Could not create " + dir, se);
             }
         }
+    }
+
+    public static void pullOrCloneUsers() throws GitAPIException, IOException {
+        String remoteGit = EditConfig.getProperty("usersRemoteGit");
+        String dir = System.getProperty("editserv.configpath") + "users";
+        File theDir = new File(dir);
+        if (!theDir.exists()) {
+            // clone
+            Git git = Git.cloneRepository().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setURI(remoteGit)
+                    .setDirectory(new File(System.getProperty("editserv.configpath") + "users")).call();
+            git.close();
+        } else {
+            // pull
+            FileRepositoryBuilder builder = new FileRepositoryBuilder();
+            File gitDir = new File(dir + "/.git");
+            File wtDir = new File(dir);
+            Repository repository = builder.setGitDir(gitDir).setWorkTree(wtDir).readEnvironment() // scan environment GIT_* variables
+                    .build();
+            if (!repository.getObjectDatabase().exists()) {
+                repository.create();
+                PrintWriter out = new PrintWriter(dir + ".gitignore");
+                out.println(GitHelpers.gitignore);
+                out.close();
+            }
+            Git git = new Git(repository);
+            git.pull().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setProgressMonitor(new TextProgressMonitor()).setRemote("origin").call();
+            git.close();
+        }
+    }
+
+    public static void main(String[] args) throws GitAPIException, IOException {
+        EditConfig.init();
+        Helpers.pullOrCloneUsers();
     }
 
 }

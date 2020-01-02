@@ -48,6 +48,7 @@ import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
@@ -297,7 +298,8 @@ public class BudaUser {
         return ontModel;
     }
 
-    public static RevCommit addNewBudaUser(User user) {
+    public static RevCommit addNewBudaUser(User user) throws GitAPIException, IOException {
+        Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         Model[] mod = BudaUser.createBudaUserModels(user);
         Model pub = mod[0];
@@ -335,6 +337,7 @@ public class BudaUser {
             Git git = new Git(r);
             git.add().addFilepattern(".").call();
             rev = git.commit().setMessage("User " + user.getName() + " was created").call();
+            git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
             git.close();
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
@@ -379,6 +382,7 @@ public class BudaUser {
 
     public static RevCommit update(UserDataUpdate data)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(data.getUserId());
@@ -395,6 +399,7 @@ public class BudaUser {
         if (!git.status().call().isClean()) {
             git.add().addFilepattern(".").call();
             rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
+            git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
             data.setGitRevisionInfo(rev.getName());
         }
         git.close();
@@ -403,6 +408,7 @@ public class BudaUser {
 
     public static RevCommit update(String userId, Model pub, Model priv)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
@@ -419,12 +425,14 @@ public class BudaUser {
         Git git = new Git(r);
         git.add().addFilepattern(".").call();
         rev = git.commit().setMessage("User " + userId + " was updated").call();
+        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
         git.close();
         return rev;
     }
 
     public static void deleteBudaUser(String userid, boolean deleteGit) throws DataUpdateException {
         try {
+            Helpers.pullOrCloneUsers();
             QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiData"));
             System.out.println(1);
             QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiAuthData"));
@@ -448,6 +456,7 @@ public class BudaUser {
                 Git git = new Git(r);
                 git.add().addFilepattern(".").call();
                 git.commit().setMessage("User " + userid + " was deleted").call();
+                git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
                 git.close();
             }
         } catch (Exception ex) {

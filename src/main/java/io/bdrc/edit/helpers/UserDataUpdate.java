@@ -39,10 +39,14 @@ public class UserDataUpdate {
         Dataset ds = DatasetFactory.create();
         dsg = ds.asDatasetGraph();
         admData = new HashMap<>();
-        // Fetching the graphs, building the dataset to be patched
-        for (String st : graphs) {
-            Node graphUri = NodeFactory.createURI(st);
-            try {
+        String s = null;
+        try {
+            // update local gitrepo
+            Helpers.pullOrCloneUsers();
+            // Fetching the graphs, building the dataset to be patched
+            for (String st : graphs) {
+                s = st;
+                Node graphUri = NodeFactory.createURI(st);
                 log.info("graphUri {} and patchheaders {}", graphUri.getURI(), pc.getEditPatchHeaders().getResTypeMapping());
                 AdminData ad = Helpers.fetchAdminInfo(graphUri.getURI(), pc.getEditPatchHeaders());
                 log.info("Admin Data {} ", ad);
@@ -52,10 +56,10 @@ public class UserDataUpdate {
                 dsg.addGraph(graphUri, dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
                 dsg.addGraph(NodeFactory.createURI(st.replace("/user/", "/user-private/")), dsg.getGraph(NodeFactory.createURI(BudaUser.PRIVATE_PFX + userId)));
 
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                throw new DataUpdateException("No graph could be fetched for " + st);
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new DataUpdateException("No graph could be fetched for " + s);
         }
     }
 

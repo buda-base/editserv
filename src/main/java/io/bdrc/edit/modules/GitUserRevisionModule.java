@@ -22,6 +22,7 @@ import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitRevisionModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.PatchModuleException;
 import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.GlobalHelpers;
 
@@ -106,7 +107,17 @@ public class GitUserRevisionModule implements BUDAEditModule {
 
     @Override
     public void setStatus(int st) throws ModuleException {
-        this.status = st;
+        try {
+            this.status = st;
+            log.addContent(getName(), " entered " + Types.getStatus(status));
+            log.setLastStatus(Types.getStatus(status));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
+            throw new PatchModuleException(e);
+        }
     }
 
     @Override

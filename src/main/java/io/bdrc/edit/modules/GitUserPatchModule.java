@@ -8,6 +8,7 @@ import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.PatchModuleException;
 import io.bdrc.edit.users.BudaUser;
 
 public class GitUserPatchModule implements BUDAEditModule {
@@ -18,7 +19,7 @@ public class GitUserPatchModule implements BUDAEditModule {
     UserDataUpdate data;
     int status;
 
-    public GitUserPatchModule(UserDataUpdate data, TransactionLog log) {
+    public GitUserPatchModule(UserDataUpdate data, TransactionLog log) throws PatchModuleException {
         this.log = log;
         this.data = data;
         setStatus(Types.STATUS_PREPARED);
@@ -51,8 +52,18 @@ public class GitUserPatchModule implements BUDAEditModule {
     }
 
     @Override
-    public void setStatus(int st) {
-        this.status = st;
+    public void setStatus(int st) throws PatchModuleException {
+        try {
+            this.status = st;
+            log.addContent(getName(), " entered " + Types.getStatus(status));
+            log.setLastStatus(Types.getStatus(status));
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus(Types.STATUS_FAILED);
+            log.setLastStatus(getName() + ": " + Types.getStatus(status));
+            log.addError(getName(), e.getMessage());
+            throw new PatchModuleException(e);
+        }
     }
 
     public String getName() {

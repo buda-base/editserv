@@ -115,7 +115,7 @@ public class UserEditController {
                 Access acc = (Access) request.getAttribute("access");
                 log.info("userPatch() Token User {}", acc.getUser());
                 if (acc.getUser().isAdmin() || BudaUser.isSameUser(acc.getUser(), res)) {
-                    UserTransaction ut = new UserTransaction(patch, acc.getUser().getName(), res);
+                    UserTransaction ut = new UserTransaction(patch, acc.getUser(), res);
                     ut.addModule(new UserPatchModule(ut.getData(), ut.getLog()), 0);
                     ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
                     ut.addModule(new GitUserRevisionModule(ut.getData(), ut.getLog()), 2);

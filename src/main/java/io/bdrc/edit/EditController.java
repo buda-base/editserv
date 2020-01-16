@@ -108,7 +108,7 @@ public class EditController {
             mapper.writeValue(os, map);
             res = os.toString();
         } catch (IOException | RevisionSyntaxException e) {
-            e.printStackTrace();
+            log.error("A error occured while getting /tasks/" + taskId, e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(res, HttpStatus.OK);
@@ -121,11 +121,13 @@ public class EditController {
             return new ResponseEntity<>(getJsonErrorString(new ModuleException("Cannot delete the task : user is null")), HttpStatus.BAD_REQUEST);
 
         }
+        Task tk = null;
         try {
-            Task tk = Task.create(jsonTask);
+            tk = Task.create(jsonTask);
             TaskGitManager.deleteTask(userId, tk.getId());
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("A error occured while deleting task" + tk.getId(), e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -155,7 +157,7 @@ public class EditController {
             }
             res = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(test);
         } catch (IOException | ModuleException e) {
-            e.printStackTrace();
+            log.error("A error occured while listing all tasks", e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(res, HttpStatus.OK);
@@ -180,7 +182,7 @@ public class EditController {
             TaskGitManager.saveTask(t);
 
         } catch (IOException | GitAPIException e) {
-            e.printStackTrace();
+            log.error("A error occured while storing task" + t.getId() + "as user :" + userId, e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
         HttpHeaders responseHeaders = new HttpHeaders();
@@ -222,7 +224,7 @@ public class EditController {
                 return new ResponseEntity<>("Unknown issue while initializing the transaction for task " + t.getId(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("A error occured while applying patch for task " + t.getId(), e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         HttpHeaders responseHeaders = new HttpHeaders();
@@ -272,7 +274,7 @@ public class EditController {
                 trig = GitHelpers.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + resType.toLowerCase() + "s", parts[1] + "/" + parts[2], parts[3]);
             }
         } catch (IOException | RevisionSyntaxException e) {
-            e.printStackTrace();
+            log.error("A error occured while getting git graph at " + req.getRequestURL().toString(), e);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(trig, responseHeaders, HttpStatus.OK);

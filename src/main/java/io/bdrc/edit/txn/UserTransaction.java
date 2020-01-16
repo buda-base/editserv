@@ -72,7 +72,7 @@ public class UserTransaction extends EditTransaction {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
                 try {
-                    sendNotification("User Transaction " + name + " failed ", "User Transaction failure");
+                    sendNotification("User Transaction " + name + " failed :" + System.lineSeparator() + TransactionLog.asString(log), "User Transaction failure");
                 } catch (MessagingException e1) {
                     logger.error("Email notification failure", e1);
                 }
@@ -84,7 +84,7 @@ public class UserTransaction extends EditTransaction {
         setStatus(Types.STATUS_SUCCESS);
         try {
             try {
-                sendNotification("User Transaction " + name + " succeded ", "User Transaction Success");
+                sendNotification("User Transaction " + name + " succeeded :" + System.lineSeparator() + TransactionLog.asString(log), "User Transaction Success");
             } catch (MessagingException e1) {
                 logger.error("Email notification failure", e1);
             }

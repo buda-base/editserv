@@ -5,6 +5,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,6 +127,25 @@ public class TransactionLog {
         obj.put(ERROR, log.error);
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(obj);
+    }
+
+    public static String asString(TransactionLog log) {
+        String lg = System.lineSeparator();
+        Set<Entry<String, String>> set = log.header.entrySet();
+        for (Entry<String, String> ent : set) {
+            lg = lg + ent.getKey() + " : " + ent.getValue() + System.lineSeparator();
+        }
+        lg = lg + System.lineSeparator();
+        set = log.error.entrySet();
+        for (Entry<String, String> ent : set) {
+            lg = lg + ent.getKey() + " : " + ent.getValue() + System.lineSeparator();
+        }
+        lg = lg + System.lineSeparator();
+        set = log.content.entrySet();
+        for (Entry<String, String> ent : set) {
+            lg = lg + ent.getKey() + " : " + ent.getValue() + System.lineSeparator();
+        }
+        return lg;
     }
 
     public static TransactionLog create(String json) throws IOException {

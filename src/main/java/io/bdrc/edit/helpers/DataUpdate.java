@@ -60,7 +60,6 @@ public class DataUpdate {
     }
 
     private void prepareModels() throws DataUpdateException, NoSuchAlgorithmException, UnsupportedEncodingException {
-
         Dataset ds = DatasetFactory.create();
         dsg = ds.asDatasetGraph();
 
@@ -74,7 +73,7 @@ public class DataUpdate {
                 Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())).getUnionGraph());
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                log.error("prepare models failed in data update", ex);
                 throw new DataUpdateException("No graph could be fetched as " + st + " for patchId:" + ph.getPatchId());
             }
         }
@@ -88,7 +87,7 @@ public class DataUpdate {
                 Model m = ModelFactory.createModelForGraph(Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath())).getUnionGraph());
                 dsg.addGraph(graphUri, m.getGraph());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                log.error("prepare models failed in data update", ex);
                 throw new DataUpdateException("No graph could be fetched as " + rep + " for patchId:" + ph.getPatchId());
             }
         }

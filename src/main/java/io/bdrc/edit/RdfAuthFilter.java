@@ -29,60 +29,65 @@ public class RdfAuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        if (EditConfig.useAuth()) {
-            HttpServletRequest req = (HttpServletRequest) request;
-            boolean isSecuredEndpoint = true;
-            request.setAttribute("access", new Access());
-            String token = getToken(req.getHeader("Authorization"));
-            TokenValidation validation = null;
-            String path = req.getServletPath();
-            Endpoint end;
-            try {
-                end = RdfAuthModel.getEndpoint(path);
-            } catch (Exception e) {
-                e.printStackTrace();
-                end = null;
-            }
-            UserProfile prof = null;
-            if (end == null) {
-                isSecuredEndpoint = false;
-                // endpoint is not secured - Using default (empty endpoint)
-                // for Access Object end=new Endpoint();
-            }
-            if (token != null) {
-                // User is logged on
-                // Getting his profile
-                validation = new TokenValidation(token);
-                prof = validation.getUser();
-                log.info("validation >>>> " + validation);
-            }
-            if (isSecuredEndpoint) {
-                // Endpoint is secure
-                if (validation == null) {
-                    // no token --> access forbidden
-                    ((HttpServletResponse) response).setStatus(403);
-                    return;
-                } else {
-                    Access access = new Access(prof, end);
-                    log.info("FILTER Access matchGroup >> {}", access.matchGroup());
-                    log.info("FILTER Access matchRole >> {}", access.matchRole());
-                    log.info("FILTER Access matchPerm >> {}", access.matchPermissions());
-                    if (!access.hasEndpointAccess()) {
+        try {
+            if (EditConfig.useAuth()) {
+                HttpServletRequest req = (HttpServletRequest) request;
+                boolean isSecuredEndpoint = true;
+                request.setAttribute("access", new Access());
+                String token = getToken(req.getHeader("Authorization"));
+                TokenValidation validation = null;
+                String path = req.getServletPath();
+                Endpoint end;
+                try {
+                    end = RdfAuthModel.getEndpoint(path);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    end = null;
+                }
+                UserProfile prof = null;
+                if (end == null) {
+                    isSecuredEndpoint = false;
+                    // endpoint is not secured - Using default (empty endpoint)
+                    // for Access Object end=new Endpoint();
+                }
+                if (token != null) {
+                    // User is logged on
+                    // Getting his profile
+                    validation = new TokenValidation(token);
+                    prof = validation.getUser();
+                    log.info("validation >>>> " + validation);
+                }
+                if (isSecuredEndpoint) {
+                    // Endpoint is secure
+                    if (validation == null) {
+                        // no token --> access forbidden
                         ((HttpServletResponse) response).setStatus(403);
                         return;
+                    } else {
+                        Access access = new Access(prof, end);
+                        log.info("FILTER Access matchGroup >> {}", access.matchGroup());
+                        log.info("FILTER Access matchRole >> {}", access.matchRole());
+                        log.info("FILTER Access matchPerm >> {}", access.matchPermissions());
+                        if (!access.hasEndpointAccess()) {
+                            ((HttpServletResponse) response).setStatus(403);
+                            return;
+                        }
+                        request.setAttribute("access", access);
                     }
-                    request.setAttribute("access", access);
-                }
-            } else {
-                // end point not secured
-                if (validation != null) {
-                    // token present since validation is not null
-                    Access acc = new Access(prof, end);
-                    request.setAttribute("access", acc);
+                } else {
+                    // end point not secured
+                    if (validation != null) {
+                        // token present since validation is not null
+                        Access acc = new Access(prof, end);
+                        request.setAttribute("access", acc);
+                    }
                 }
             }
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            log.error("Auth filter did not go through properly", e);
+            throw e;
         }
-        chain.doFilter(request, response);
     }
 
     public static String getToken(final String header) {

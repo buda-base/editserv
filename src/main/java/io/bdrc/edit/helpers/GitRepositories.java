@@ -13,6 +13,8 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.util.iterator.ExtendedIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConstants;
 
@@ -21,6 +23,7 @@ public class GitRepositories {
     public static String GIT_REPO_TYPES_FILE_URL = "https://raw.githubusercontent.com/buda-base/owl-schema/master/adm/types/git_repos.ttl";
 
     public static HashMap<String, GitRepo> repos;
+    public final static Logger log = LoggerFactory.getLogger(GitRepositories.class.getName());
 
     static {
 
@@ -34,8 +37,7 @@ public class GitRepositories {
             OntModel om = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, reposMod);
             loadRepos(om);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("GitRepositories failed to initialize", e);
         }
     }
 

@@ -73,7 +73,7 @@ public class ValidationModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("ValidationModule set status failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

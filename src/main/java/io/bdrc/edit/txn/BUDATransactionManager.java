@@ -80,12 +80,12 @@ public class BUDATransactionManager implements Runnable {
                 }
             } catch (Exception e) {
                 btx.getLog().addError(btx.modulesMap.get(btx.getCurrentModule()).getName(), e.getMessage());
-                e.printStackTrace();
+                logger.error("BudaTransactionManager failed ", e);
             } finally {
                 try {
                     btx.finalizeLog(btx.getLog(), btx.getName());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("BudaTransaction failed to initialized", e);
                     Log.error(this, "Edit Transaction Manager failed to close log properly for Transaction " + btx.getName() + "finishing with status:" + Types.getStatus(btx.getStatus()), e);
                 }
             }

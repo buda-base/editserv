@@ -47,24 +47,29 @@ public class UserEditController {
 
     @GetMapping(value = "/resource-nc/user/me")
     public ResponseEntity<StreamingResponseBody> meUser(HttpServletResponse response, HttpServletRequest request) throws IOException, GitAPIException {
-        log.info("Call meUser()");
-        String token = getToken(request.getHeader("Authorization"));
-        if (token == null) {
-            return ResponseEntity.status(401).body(StreamingHelpers.getStream("No token available"));
-        } else {
-            Access acc = (Access) request.getAttribute("access");
-            log.info("meUser() Access >> {}", acc);
-            String auth0Id = acc.getUser().getAuthId();
-            log.info("meUser() auth0Id >> {}", auth0Id);
-            auth0Id = auth0Id.substring(auth0Id.indexOf("|") + 1);
-            Resource usr = BudaUser.getRdfProfile(auth0Id);
-            log.info("meUser() usr >> {}", usr);
-            if (usr == null) {
-                BudaUser.addNewBudaUser(acc.getUser());
-                usr = BudaUser.getRdfProfile(auth0Id);
-                log.info("meUser() User Resource >> {}", usr);
+        try {
+            log.info("Call meUser()");
+            String token = getToken(request.getHeader("Authorization"));
+            if (token == null) {
+                return ResponseEntity.status(401).body(StreamingHelpers.getStream("No token available"));
+            } else {
+                Access acc = (Access) request.getAttribute("access");
+                log.debug("meUser() Access >> {}", acc);
+                String auth0Id = acc.getUser().getAuthId();
+                log.debug("meUser() auth0Id >> {}", auth0Id);
+                auth0Id = auth0Id.substring(auth0Id.indexOf("|") + 1);
+                Resource usr = BudaUser.getRdfProfile(auth0Id);
+                log.debug("meUser() Buda usr >> {}", usr);
+                if (usr == null) {
+                    BudaUser.addNewBudaUser(acc.getUser());
+                    usr = BudaUser.getRdfProfile(auth0Id);
+                    log.debug("meUser() User Resource >> {}", usr);
+                }
+                return ResponseEntity.status(200).header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
             }
-            return ResponseEntity.status(200).header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
+        } catch (IOException | GitAPIException e) {
+            log.error("/resource-nc/user/me failed ", e);
+            throw e;
         }
     }
 
@@ -101,6 +106,7 @@ public class UserEditController {
             }
             return ResponseEntity.status(200).body(StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "jsonld"));
         }
+
     }
 
     @PatchMapping(value = "/resource-nc/user/patch/{res}")
@@ -127,7 +133,7 @@ public class UserEditController {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("/resource-nc/user/patch/{res} failed for resource:" + res, e);
             return ResponseEntity.status(500).body(StreamingHelpers.getStream("Error while updating " + res + " " + e.getMessage()));
         }
     }
@@ -143,15 +149,20 @@ public class UserEditController {
             Access acc = (Access) request.getAttribute("access");
             log.info("userDelete() Token User {}", acc.getUser());
             if (acc.getUser().isAdmin()) {
-                auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
-                User usr = RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1));
-                // first update the Buda User rdf profile
-                BudaUser.update(res, UserPatches.getSetActivePatch(res, false));
-                // next, mark (patch) the corresponding Auth0 user as "blocked'
-                AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":true}");
-                // next, update RdfAuthModel (auth0 users)
-                Thread t = new Thread(new RdfAuthModel());
-                t.start();
+                try {
+                    auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
+                    User usr = RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1));
+                    // first update the Buda User rdf profile
+                    BudaUser.update(res, UserPatches.getSetActivePatch(res, false));
+                    // next, mark (patch) the corresponding Auth0 user as "blocked'
+                    AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":true}");
+                    // next, update RdfAuthModel (auth0 users)
+                    Thread t = new Thread(new RdfAuthModel());
+                    t.start();
+                } catch (Exception e) {
+                    log.error("DELETE /resource-nc/user/{res} for resource " + res, e);
+                    throw e;
+                }
             }
             String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
             if (acc.getUser().isAdmin()) {

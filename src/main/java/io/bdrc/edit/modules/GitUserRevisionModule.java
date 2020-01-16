@@ -52,7 +52,7 @@ public class GitUserRevisionModule implements BUDAEditModule {
             sb.append(System.lineSeparator());
             sb.append("TC .");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitUserRevisionModule buildRevisionPatch failed ", e);
             throw new GitRevisionModuleException(e);
         }
         String s = sb.toString();
@@ -90,7 +90,7 @@ public class GitUserRevisionModule implements BUDAEditModule {
             privFusConn.close();
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitUserRevisionModule failed ", e);
             pubFusConn.close();
             privFusConn.close();
             setStatus(Types.STATUS_FAILED);
@@ -112,7 +112,7 @@ public class GitUserRevisionModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitUserRevisionModule set status failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

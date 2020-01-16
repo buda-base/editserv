@@ -51,7 +51,7 @@ public class FinalizerModule implements BUDAEditModule {
             logger.info("Running Txn Closer Service for task {}", data.getTaskId());
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("FinalizerModule failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new FinalizerModuleException(e);
@@ -70,7 +70,7 @@ public class FinalizerModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("FinalizerModule setStatus failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

@@ -460,8 +460,7 @@ public class BudaUser {
                 git.close();
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
-            // throw new DataUpdateException("users cleanup failed for " + userid, ex);
+            log.error("BudaUser deleteBudaUser failed ", ex);
         }
     }
 

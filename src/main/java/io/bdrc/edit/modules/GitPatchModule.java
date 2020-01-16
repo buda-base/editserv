@@ -105,7 +105,7 @@ public class GitPatchModule implements BUDAEditModule {
             processReplaces(gitUser, gitPass);
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitPatchModule failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
@@ -128,7 +128,7 @@ public class GitPatchModule implements BUDAEditModule {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitPatchModule process deletes failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
@@ -153,7 +153,7 @@ public class GitPatchModule implements BUDAEditModule {
                 }
 
             } catch (FileNotFoundException | GitAPIException e) {
-                e.printStackTrace();
+                logger.error("GitPatchModule process updates failed ", e);
                 setStatus(Types.STATUS_FAILED);
                 log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
@@ -180,7 +180,7 @@ public class GitPatchModule implements BUDAEditModule {
                 }
 
             } catch (FileNotFoundException | GitAPIException e) {
-                e.printStackTrace();
+                logger.error("GitPatchModule process replace failed ", e);
                 setStatus(Types.STATUS_FAILED);
                 log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
@@ -208,7 +208,7 @@ public class GitPatchModule implements BUDAEditModule {
                     GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("GitPatchModule process create failed ", e);
                 setStatus(Types.STATUS_FAILED);
                 log.addError(getName(), e.getMessage());
                 throw new GitPatchModuleException(e);
@@ -258,7 +258,7 @@ public class GitPatchModule implements BUDAEditModule {
             git.pull().setProgressMonitor(new TextProgressMonitor()).setRemote("origin").call();
             git.close();
         } catch (GitAPIException e) {
-            e.printStackTrace();
+            logger.error("GitPatchModule rollback failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
@@ -278,7 +278,7 @@ public class GitPatchModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitPatchModule set status failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

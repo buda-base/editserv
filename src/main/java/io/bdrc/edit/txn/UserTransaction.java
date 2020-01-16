@@ -46,14 +46,13 @@ public class UserTransaction extends EditTransaction {
             this.data = new UserDataUpdate(new PatchContent(patch), user.getName(), userId);
             this.modulesMap = new TreeMap<>();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("UserTransaction failed to initialized", e);
             log.addError(name, e.getMessage());
             setStatus(Types.STATUS_FAILED);
             try {
                 finalizeLog(log, name);
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                logger.error("UserTransaction failed to initialized", e);
                 throw new Exception(e1);
             }
         }
@@ -90,7 +89,7 @@ public class UserTransaction extends EditTransaction {
             }
             finalizeLog(log, name);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("UserTransaction commit failed", e);
             Log.error(this, "Edit User Transaction Manager failed to close log properly for User Transaction " + getName() + "finishing with status:" + Types.getStatus(getStatus()), e);
         }
         return true;

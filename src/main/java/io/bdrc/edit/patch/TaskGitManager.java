@@ -61,8 +61,7 @@ public class TaskGitManager {
             }
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("TaskGitManager initialization failed ", e);
         }
     }
 
@@ -141,7 +140,7 @@ public class TaskGitManager {
         try (Stream<String> stream = Files.lines(Paths.get(EditConfig.getProperty("gitTaskRepo") + user + "/" + taskId + ".patch"), StandardCharsets.UTF_8)) {
             stream.forEach(s -> contentBuilder.append(s).append("\n"));
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("TaskGitManager getTaskAsJson failed ", e);
         }
         return contentBuilder.toString();
     }
@@ -153,11 +152,9 @@ public class TaskGitManager {
         try {
             rc = git.log().addPath(user + "/" + taskId + ".patch").call();
         } catch (NoHeadException e) {
-            log.warn("Empty repo, nothing to log");
-            e.printStackTrace();
+            log.error("TaskGitManager getAllSessions ", e);
         } catch (GitAPIException e) {
-            log.warn("Unexpected exception >> " + e.getMessage());
-            e.printStackTrace();
+            log.error("TaskGitManager getAllSessions ", e);
         }
         if (rc != null) {
             for (RevCommit rvc : rc) {

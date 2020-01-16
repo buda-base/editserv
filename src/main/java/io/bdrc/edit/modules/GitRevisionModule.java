@@ -14,6 +14,8 @@ import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.text.RDFPatchReaderText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -32,6 +34,7 @@ public class GitRevisionModule implements BUDAEditModule {
     int status;
     DataUpdate data;
     TransactionLog log;
+    public final static Logger logger = LoggerFactory.getLogger(GitRevisionModule.class.getName());
 
     public GitRevisionModule(DataUpdate data, TransactionLog log) throws GitRevisionModuleException {
         super();
@@ -58,7 +61,7 @@ public class GitRevisionModule implements BUDAEditModule {
             sb.append(System.lineSeparator());
             sb.append("TC .");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitRevisionModule buildRevisionPatch failed ", e);
             throw new GitRevisionModuleException(e);
         }
         String s = sb.toString();
@@ -90,7 +93,7 @@ public class GitRevisionModule implements BUDAEditModule {
             }
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitRevisionModule run failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new GitRevisionModuleException(e);
@@ -109,7 +112,7 @@ public class GitRevisionModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitRevisionModule set status failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

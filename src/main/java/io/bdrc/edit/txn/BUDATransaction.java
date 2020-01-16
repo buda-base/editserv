@@ -6,6 +6,9 @@ import java.util.TreeMap;
 
 import javax.transaction.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.DataUpdate;
@@ -23,6 +26,8 @@ public class BUDATransaction extends EditTransaction {
     TransactionLog log;
     int currentModule = -1;
 
+    public final static Logger logger = LoggerFactory.getLogger(BUDATransaction.class.getName());
+
     public BUDATransaction(Task t) throws Exception {
         try {
             log = new TransactionLog(EditConfig.getProperty("logRootDir") + user + "/", t);
@@ -33,14 +38,13 @@ public class BUDATransaction extends EditTransaction {
             this.data = new DataUpdate(t);
             this.modulesMap = new TreeMap<>();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("BudaTransaction failed to initialized", e);
             log.addError(name, e.getMessage());
             setStatus(Types.STATUS_FAILED);
             try {
                 finalizeLog(log, name);
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                logger.error("BudaTransaction failed to initialized", e1);
                 throw new Exception(e1);
             }
         }
@@ -83,6 +87,7 @@ public class BUDATransaction extends EditTransaction {
                 modulesMap.get(module).run();
                 currentModule = module;
             } catch (ModuleException e) {
+                logger.error("BudaTransaction commit failed ", e);
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
                 return false;

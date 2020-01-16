@@ -39,7 +39,7 @@ public class GitUserPatchModule implements BUDAEditModule {
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             setStatus(Types.STATUS_FAILED);
-            logger.error("Git user update failed for userid " + data.getUserId(), e);
+            logger.error("GitUserPatchModule update failed for userid " + data.getUserId(), e);
             log.addError(getName(), e.getMessage());
             throw new GitPatchModuleException(e);
         }
@@ -58,7 +58,7 @@ public class GitUserPatchModule implements BUDAEditModule {
             log.addContent(getName(), " entered " + Types.getStatus(status));
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("GitUserPatchModule buildRevisionPatch failed ", e);
             setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());

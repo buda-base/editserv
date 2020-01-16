@@ -129,7 +129,7 @@ public class PatchContent {
             ret = sw.getBuffer().toString();
             bw.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("PatchContent normalize content failed ", e);
         }
         return ret;
     }

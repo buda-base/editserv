@@ -9,11 +9,15 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.libraries.Prefixes;
 
 public class QueryProcessor {
+
+    public final static Logger log = LoggerFactory.getLogger(QueryProcessor.class.getName());
 
     public static Model describeModel(String fullUri, String fusekiUrl) {
         if (fusekiUrl == null) {
@@ -34,7 +38,7 @@ public class QueryProcessor {
             fusConn.delete(graphUri);
             fusConn.close();
         } catch (Exception e) {
-            Log.error("dropGraph", e.getMessage());
+            Log.error("QueryProcessor dropGraph", e.getMessage());
         }
     }
 

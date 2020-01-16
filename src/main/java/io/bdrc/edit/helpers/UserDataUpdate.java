@@ -58,7 +58,7 @@ public class UserDataUpdate {
 
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("Prepare models failed in UserDataUpdate ", ex);
             throw new DataUpdateException("No graph could be fetched for " + s);
         }
     }

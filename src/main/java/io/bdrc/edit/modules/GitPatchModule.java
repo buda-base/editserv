@@ -1,34 +1,20 @@
 package io.bdrc.edit.modules;
 
-import static io.bdrc.libraries.Models.ADM;
-import static io.bdrc.libraries.Models.BDA;
 import static io.bdrc.libraries.Models.BDG;
-import static io.bdrc.libraries.Models.BDO;
-import static io.bdrc.libraries.Models.BDR;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.SortedMap;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.system.PrefixMap;
-import org.apache.jena.riot.system.PrefixMapFactory;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.util.Context;
-import org.apache.jena.sparql.util.Symbol;
-import org.apache.jena.vocabulary.OWL;
-import org.apache.jena.vocabulary.RDF;
-import org.apache.jena.vocabulary.RDFS;
-import org.apache.jena.vocabulary.SKOS;
-import org.apache.jena.vocabulary.VCARD4;
-import org.apache.jena.vocabulary.XSD;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
@@ -48,9 +34,6 @@ import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.jena.sttl.CompareComplex;
-import io.bdrc.jena.sttl.ComparePredicates;
-import io.bdrc.jena.sttl.STTLWriter;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
 
@@ -75,7 +58,7 @@ public class GitPatchModule implements BUDAEditModule {
         this.graphs = data.getGraphs();
         this.delete = data.getDelete();
         this.replace = data.getReplace();
-        this.writerContext = createWriterContext();
+        this.writerContext = Helpers.createWriterContext();
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
     }
@@ -222,33 +205,7 @@ public class GitPatchModule implements BUDAEditModule {
         Node graphUri = NodeFactory.createURI(uriStr);
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
-        new STriGWriter().write(out, dsg, getPrefixMap(), graphUri.toString(m), writerContext);
-    }
-
-    private Context createWriterContext() {
-        SortedMap<String, Integer> nsPrio = ComparePredicates.getDefaultNSPriorities();
-        nsPrio.put(SKOS.getURI(), 1);
-        nsPrio.put("http://purl.bdrc.io/ontology/admin/", 5);
-        nsPrio.put("http://purl.bdrc.io/ontology/toberemoved/", 6);
-        List<String> predicatesPrio = CompareComplex.getDefaultPropUris();
-        predicatesPrio.add(ADM + "logDate");
-        predicatesPrio.add(BDO + "seqNum");
-        predicatesPrio.add(BDO + "onYear");
-        predicatesPrio.add(BDO + "notBefore");
-        predicatesPrio.add(BDO + "notAfter");
-        predicatesPrio.add(BDO + "noteText");
-        predicatesPrio.add(BDO + "noteWork");
-        predicatesPrio.add(BDO + "noteLocationStatement");
-        predicatesPrio.add(BDO + "volumeNumber");
-        predicatesPrio.add(BDO + "eventWho");
-        predicatesPrio.add(BDO + "eventWhere");
-        Context ctx = new Context();
-        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "nsPriorities"), nsPrio);
-        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "nsDefaultPriority"), 2);
-        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "complexPredicatesPriorities"), predicatesPrio);
-        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "indentBase"), 4);
-        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "predicateBaseWidth"), 18);
-        return ctx;
+        new STriGWriter().write(out, dsg, Helpers.getPrefixMap(), graphUri.toString(m), writerContext);
     }
 
     public boolean rollback() throws ModuleException {
@@ -293,22 +250,6 @@ public class GitPatchModule implements BUDAEditModule {
     @Override
     public String getUserId() {
         return data.getUserId();
-    }
-
-    public static PrefixMap getPrefixMap() {
-        PrefixMap pm = PrefixMapFactory.create();
-        pm.add("", BDO);
-        pm.add("adm", ADM);
-        pm.add("bda", BDA);
-        pm.add("bdg", BDG);
-        pm.add("bdr", BDR);
-        pm.add("owl", OWL.getURI());
-        pm.add("rdf", RDF.getURI());
-        pm.add("rdfs", RDFS.getURI());
-        pm.add("skos", SKOS.getURI());
-        pm.add("vcard", VCARD4.getURI());
-        pm.add("xsd", XSD.getURI());
-        return pm;
     }
 
 }

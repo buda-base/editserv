@@ -22,7 +22,8 @@ public class GitRepositories {
 
     public static String GIT_REPO_TYPES_FILE_URL = "https://raw.githubusercontent.com/buda-base/owl-schema/master/adm/types/git_repos.ttl";
 
-    public static HashMap<String, GitRepo> repos;
+    public static HashMap<String, GitRepo> reposByType;
+    public static HashMap<String, GitRepo> reposByUri;
     public final static Logger log = LoggerFactory.getLogger(GitRepositories.class.getName());
 
     static {
@@ -42,19 +43,26 @@ public class GitRepositories {
     }
 
     private static void loadRepos(OntModel mod) {
-        repos = new HashMap<>();
+        reposByType = new HashMap<>();
+        reposByUri = new HashMap<>();
         ExtendedIterator<Individual> ind = mod.listIndividuals();
         while (ind.hasNext()) {
             Individual i = ind.next();
             String name = i.getProperty(ResourceFactory.createProperty(EditConstants.ADM + "gitRepoName")).getObject().toString();
             String url = i.getProperty(ResourceFactory.createProperty(EditConstants.ADM + "gitUrl")).getObject().toString();
             GitRepo rep = new GitRepo(i.getURI(), name, url);
-            repos.put(rep.getRepoResType(), rep);
+            reposByType.put(rep.getRepoResType(), rep);
+            // System.out.println("GitRepositories adding :"+rep + " to )
+            reposByUri.put(i.getURI(), rep);
         }
     }
 
-    public static GitRepo getRepo(String resType) {
-        return repos.get(resType);
+    public static GitRepo getRepoByType(String resType) {
+        return reposByType.get(resType);
+    }
+
+    public static GitRepo getRepoByUri(String repUri) {
+        return reposByUri.get(repUri);
     }
 
 }

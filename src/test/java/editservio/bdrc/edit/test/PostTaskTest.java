@@ -39,7 +39,6 @@ import io.bdrc.edit.modules.PatchModule;
 import io.bdrc.edit.patch.Task;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.users.BudaUser;
 import io.bdrc.libraries.BDRCReasoner;
 
 @RunWith(SpringRunner.class)
@@ -49,7 +48,7 @@ public class PostTaskTest {
     @Autowired
     Environment environment;
 
-    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner(BudaUser.getOntologyModel());
+    private Reasoner bdrcReasoner = BDRCReasoner.getReasoner();
 
     @BeforeClass
     public static void init() {
@@ -154,7 +153,7 @@ public class PostTaskTest {
 
     // @Test
     public void testBDRCReasoner() {
-        Reasoner bdrcReasoner = BDRCReasoner.getReasonerWithSymetry(BudaUser.getOntologyModel());
+        Reasoner bdrcReasoner = BDRCReasoner.getReasonerWithSymetry();
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         Model gp = fusConn.fetch("http://purl.bdrc.io/graph/P1525");

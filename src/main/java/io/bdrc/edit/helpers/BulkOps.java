@@ -20,13 +20,18 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.SparqlCommons;
 
 public class BulkOps {
+
+	public final static Logger log = LoggerFactory.getLogger(BulkOps.class.getName());
 
 	public static String STATUS_PROP = "http://purl.bdrc.io/ontology/admin/status";
 	public static String STATUS_WITHDRAWN = "http://purl.bdrc.io/admindata/StatusWithdrawn";
@@ -76,7 +81,9 @@ public class BulkOps {
 	}
 
 	public static void replaceAllDuplicateByValid(String replacedUri, String validUri, String fusekiUrl)
-			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException {
+			throws DataUpdateException, NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException {
+		String gitUser = EditConfig.getProperty("gitUser");
+		String gitPass = EditConfig.getProperty("gitPass");
 		if (fusekiUrl == null) {
 			if (fusekiUrl == null) {
 				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
@@ -125,24 +132,36 @@ public class BulkOps {
 				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
 			}
 			// Commit changes to the repo
+			GitHelpers.ensureGitRepo(gitRep.getRepoResType(), EditConfig.getProperty("gitLocalRoot"));
 			RevCommit rev = GitHelpers.commitChanges(gitRep.getRepoResType(), "Committed by marc" + " for replaceduri:" + replacedUri);
 			if (rev != null) {
-				// System.out.println("COMMIT >> " + rev.getId());
-				// data.addGitRevisionInfo(g, rev.getName());
-				GitHelpers.push(gitRep.getRepoResType(), EditConfig.getProperty("gitRemoteBase"), "", "", EditConfig.getProperty("gitLocalRoot"));
+				GitHelpers.push(gitRep.getRepoResType(), EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass,
+						EditConfig.getProperty("gitLocalRoot"));
+			} else {
+				DataUpdateException due = new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
+				log.error("Commit failed in repo :" + gitRep.getGitRepoName(), due);
+				throw new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
 			}
+			// for a given repo, set git revision number then update fuseki with the
+			// corresponding updated models/graphs
+			Set<String> set = models.keySet();
+			RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+			RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+			for (String graphUri : set) {
+				Model m = models.get(graphUri);
+				m = SparqlCommons.setGitRevision(m, "http://purl.bdrc.io/admindata/" + graphUri.substring(graphUri.lastIndexOf("/") + 1),
+						rev.getName());
+				Helpers.putModelWithInference(fusConn, graphUri, m, REASONER);
+			}
+			fusConn.close();
 		}
-		Set<String> set = models.keySet();
-		RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
-		RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-		for (String graphUri : set) {
-			Helpers.putModelWithInference(fusConn, graphUri, models.get(graphUri), REASONER);
-		}
+
 	}
 
-	public static void main(String[] args) throws NoSuchAlgorithmException, InvalidRemoteException, TransportException, IOException, GitAPIException {
+	public static void main(String[] args)
+			throws NoSuchAlgorithmException, InvalidRemoteException, TransportException, IOException, GitAPIException, DataUpdateException {
 		EditConfig.init();
-		replaceAllDuplicateByValid("http://purl.bdrc.io/resource/P1588", "http://purl.bdrc.io/resource/PPP1588",
+		replaceAllDuplicateByValid("http://purl.bdrc.io/resource/P1595", "http://purl.bdrc.io/resource/PPP1595",
 				"http://buda1.bdrc.io:13180/fuseki/testrw/query");
 	}
 

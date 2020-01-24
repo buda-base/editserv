@@ -10,6 +10,8 @@ import java.util.Set;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
@@ -82,8 +84,6 @@ public class BulkOps {
 
 	public static void replaceAllDuplicateByValid(String replacedUri, String validUri, String fusekiUrl)
 			throws DataUpdateException, NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException {
-		String gitUser = EditConfig.getProperty("gitUser");
-		String gitPass = EditConfig.getProperty("gitPass");
 		if (fusekiUrl == null) {
 			if (fusekiUrl == null) {
 				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
@@ -122,7 +122,7 @@ public class BulkOps {
 									EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
 							.getGraph(NodeFactory.createURI(uri)));
 					// Updating status
-					SparqlCommons.setAdminStatus(to_update, ad.getUri(), STATUS_WITHDRAWN);
+					SparqlCommons.setStatusWithDrawn(to_update, ad.getUri(), STATUS_WITHDRAWN);
 					to_update.write(System.out, "TURTLE");
 				}
 				models.put(uri, to_update);
@@ -132,30 +132,80 @@ public class BulkOps {
 				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
 			}
 			// Commit changes to the repo
-			GitHelpers.ensureGitRepo(gitRep.getRepoResType(), EditConfig.getProperty("gitLocalRoot"));
-			RevCommit rev = GitHelpers.commitChanges(gitRep.getRepoResType(), "Committed by marc" + " for replaceduri:" + replacedUri);
-			if (rev != null) {
-				GitHelpers.push(gitRep.getRepoResType(), EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass,
-						EditConfig.getProperty("gitLocalRoot"));
-			} else {
-				DataUpdateException due = new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
-				log.error("Commit failed in repo :" + gitRep.getGitRepoName(), due);
-				throw new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
-			}
+			RevCommit rev = commitRepo(gitRep);
 			// for a given repo, set git revision number then update fuseki with the
 			// corresponding updated models/graphs
-			Set<String> set = models.keySet();
-			RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
-			RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-			for (String graphUri : set) {
-				Model m = models.get(graphUri);
-				m = SparqlCommons.setGitRevision(m, "http://purl.bdrc.io/admindata/" + graphUri.substring(graphUri.lastIndexOf("/") + 1),
-						rev.getName());
-				Helpers.putModelWithInference(fusConn, graphUri, m, REASONER);
-			}
-			fusConn.close();
+			updateFuseki(models, rev.getName());
 		}
 
+	}
+
+	public static void setPropValueForModels(ArrayList<String> graphUris, Property p, Resource value, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
+		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		HashMap<String, Model> models = new HashMap<>();
+		Set<String> repos = map.keySet();
+		for (String rep : repos) {
+			ArrayList<String> affectedGraphs = map.get(rep);
+			GitRepo gitRep = GitRepositories.getRepoByUri(rep);
+			System.out.println("GitRep for uri: " + rep + " is :" + gitRep);
+			AdminData ad = null;
+			Model to_update = null;
+			for (String uri : affectedGraphs) {
+				ad = new AdminData(uri.substring(uri.lastIndexOf("/") + 1), gitRep.getRepoResType());
+				// Building model from git
+				to_update = ModelFactory.createModelForGraph(Helpers
+						.buildGraphFromTrig(GitHelpers
+								.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
+						.getUnionGraph());
+				// Updating model
+				to_update = SparqlCommons.setPropValue(to_update, uri, p, value);
+				models.put(uri, to_update);
+				// writing the graph back to git
+				FileOutputStream fos = new FileOutputStream(
+						EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName() + "/" + ad.getGitPath());
+				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
+			}
+			// Commit changes to the repo
+			RevCommit rev = commitRepo(gitRep);
+			// for a given repo, set git revision number then update fuseki with the
+			// corresponding updated models/graphs
+			updateFuseki(models, rev.getName());
+		}
+	}
+
+	private static void updateFuseki(HashMap<String, Model> models, String revision) {
+		Set<String> set = models.keySet();
+		RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+		RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+		for (String graphUri : set) {
+			Model m = models.get(graphUri);
+			m = SparqlCommons.setGitRevision(m, "http://purl.bdrc.io/admindata/" + graphUri.substring(graphUri.lastIndexOf("/") + 1), revision);
+			Helpers.putModelWithInference(fusConn, graphUri, m, REASONER);
+		}
+		fusConn.close();
+	}
+
+	private static RevCommit commitRepo(GitRepo gitRep) throws InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+		String gitUser = EditConfig.getProperty("gitUser");
+		String gitPass = EditConfig.getProperty("gitPass");
+		GitHelpers.ensureGitRepo(gitRep.getRepoResType(), EditConfig.getProperty("gitLocalRoot"));
+		RevCommit rev = GitHelpers.commitChanges(gitRep.getRepoResType(), "Committed by marc" + " for repo:" + gitRep.getGitUrl());
+		if (rev != null) {
+			GitHelpers.push(gitRep.getRepoResType(), EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass,
+					EditConfig.getProperty("gitLocalRoot"));
+		} else {
+			DataUpdateException due = new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
+			log.error("Commit failed in repo :" + gitRep.getGitRepoName(), due);
+			throw new DataUpdateException("Commit failed in repo :" + gitRep.getGitRepoName());
+		}
+		return rev;
 	}
 
 	public static void main(String[] args)

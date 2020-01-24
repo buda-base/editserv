@@ -180,6 +180,125 @@ public class BulkOps {
 		}
 	}
 
+	public static void addPropValueForModels(ArrayList<String> graphUris, Property p, Resource value, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
+		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		HashMap<String, Model> models = new HashMap<>();
+		Set<String> repos = map.keySet();
+		for (String rep : repos) {
+			ArrayList<String> affectedGraphs = map.get(rep);
+			GitRepo gitRep = GitRepositories.getRepoByUri(rep);
+			System.out.println("GitRep for uri: " + rep + " is :" + gitRep);
+			AdminData ad = null;
+			Model to_update = null;
+			for (String uri : affectedGraphs) {
+				ad = new AdminData(uri.substring(uri.lastIndexOf("/") + 1), gitRep.getRepoResType());
+				// Building model from git
+				to_update = ModelFactory.createModelForGraph(Helpers
+						.buildGraphFromTrig(GitHelpers
+								.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
+						.getUnionGraph());
+				// Updating model
+				to_update = SparqlCommons.addResourceValueForPropInGraph(to_update, p, value);
+				models.put(uri, to_update);
+				// writing the graph back to git
+				FileOutputStream fos = new FileOutputStream(
+						EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName() + "/" + ad.getGitPath());
+				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
+			}
+			// Commit changes to the repo
+			RevCommit rev = commitRepo(gitRep);
+			// for a given repo, set git revision number then update fuseki with the
+			// corresponding updated models/graphs
+			updateFuseki(models, rev.getName());
+		}
+	}
+
+	public static void addLiteralValueForModels(ArrayList<String> graphUris, Property p, String value, String lang, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
+		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		HashMap<String, Model> models = new HashMap<>();
+		Set<String> repos = map.keySet();
+		for (String rep : repos) {
+			ArrayList<String> affectedGraphs = map.get(rep);
+			GitRepo gitRep = GitRepositories.getRepoByUri(rep);
+			System.out.println("GitRep for uri: " + rep + " is :" + gitRep);
+			AdminData ad = null;
+			Model to_update = null;
+			for (String uri : affectedGraphs) {
+				ad = new AdminData(uri.substring(uri.lastIndexOf("/") + 1), gitRep.getRepoResType());
+				// Building model from git
+				to_update = ModelFactory.createModelForGraph(Helpers
+						.buildGraphFromTrig(GitHelpers
+								.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
+						.getUnionGraph());
+				// Updating model
+				to_update = SparqlCommons.addLiteralValueForPropInGraph(to_update, p, value, lang);
+				models.put(uri, to_update);
+				// writing the graph back to git
+				FileOutputStream fos = new FileOutputStream(
+						EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName() + "/" + ad.getGitPath());
+				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
+			}
+			// Commit changes to the repo
+			RevCommit rev = commitRepo(gitRep);
+			// for a given repo, set git revision number then update fuseki with the
+			// corresponding updated models/graphs
+			updateFuseki(models, rev.getName());
+		}
+	}
+
+	public static void setLiteralValueForModels(ArrayList<String> graphUris, Property p, String value, String lang, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
+		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		HashMap<String, Model> models = new HashMap<>();
+		Set<String> repos = map.keySet();
+		for (String rep : repos) {
+			ArrayList<String> affectedGraphs = map.get(rep);
+			GitRepo gitRep = GitRepositories.getRepoByUri(rep);
+			System.out.println("GitRep for uri: " + rep + " is :" + gitRep);
+			AdminData ad = null;
+			Model to_update = null;
+			for (String uri : affectedGraphs) {
+				ad = new AdminData(uri.substring(uri.lastIndexOf("/") + 1), gitRep.getRepoResType());
+				// Building model from git
+				to_update = ModelFactory.createModelForGraph(Helpers
+						.buildGraphFromTrig(GitHelpers
+								.getGitHeadFileContent(EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
+						.getUnionGraph());
+				// Updating model
+				to_update = SparqlCommons.setLiteralPropValue(to_update, uri, p, value, lang);
+				models.put(uri, to_update);
+				// writing the graph back to git
+				FileOutputStream fos = new FileOutputStream(
+						EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName() + "/" + ad.getGitPath());
+				Helpers.modelToOutputStream(to_update, fos, uri.substring(uri.lastIndexOf("/") + 1));
+			}
+			// Commit changes to the repo
+			RevCommit rev = commitRepo(gitRep);
+			// for a given repo, set git revision number then update fuseki with the
+			// corresponding updated models/graphs
+			updateFuseki(models, rev.getName());
+		}
+	}
+
 	private static void updateFuseki(HashMap<String, Model> models, String revision) {
 		Set<String> set = models.keySet();
 		RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));

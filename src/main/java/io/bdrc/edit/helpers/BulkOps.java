@@ -149,6 +149,17 @@ public class BulkOps {
 			}
 		}
 		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		setPropValueForModels(map, p, value, fusekiUrl);
+	}
+
+	public static void setPropValueForModels(HashMap<String, ArrayList<String>> map, Property p, Resource value, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
 		HashMap<String, Model> models = new HashMap<>();
 		Set<String> repos = map.keySet();
 		for (String rep : repos) {
@@ -229,6 +240,17 @@ public class BulkOps {
 			}
 		}
 		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		addPropValueForModels(map, p, value, fusekiUrl);
+	}
+
+	public static void addPropValueForModels(HashMap<String, ArrayList<String>> map, Property p, Resource value, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
 		HashMap<String, Model> models = new HashMap<>();
 		Set<String> repos = map.keySet();
 		for (String rep : repos) {
@@ -269,6 +291,17 @@ public class BulkOps {
 			}
 		}
 		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		addLiteralValueForModels(map, p, value, lang, fusekiUrl);
+	}
+
+	public static void addLiteralValueForModels(HashMap<String, ArrayList<String>> map, Property p, String value, String lang, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
 		HashMap<String, Model> models = new HashMap<>();
 		Set<String> repos = map.keySet();
 		for (String rep : repos) {
@@ -308,6 +341,16 @@ public class BulkOps {
 			}
 		}
 		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+		setLiteralValueForModels(map, p, value, lang, fusekiUrl);
+	}
+
+	public static void setLiteralValueForModels(HashMap<String, ArrayList<String>> map, Property p, String value, String lang, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
 		HashMap<String, Model> models = new HashMap<>();
 		Set<String> repos = map.keySet();
 		for (String rep : repos) {

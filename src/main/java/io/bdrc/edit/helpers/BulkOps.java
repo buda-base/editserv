@@ -199,6 +199,16 @@ public class BulkOps {
 			}
 		}
 		HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitReposHavingProp(graphUris, oldPropUri, fusekiUrl);
+		renameProp(map, oldPropUri, newPropUri, fusekiUrl);
+	}
+
+	public static void renameProp(HashMap<String, ArrayList<String>> map, String oldPropUri, String newPropUri, String fusekiUrl)
+			throws NoSuchAlgorithmException, IOException, InvalidRemoteException, TransportException, GitAPIException, DataUpdateException {
+		if (fusekiUrl == null) {
+			if (fusekiUrl == null) {
+				fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+			}
+		}
 		HashMap<String, Model> models = new HashMap<>();
 		Set<String> repos = map.keySet();
 		for (String rep : repos) {

@@ -108,7 +108,7 @@ public class CheckUserAPI {
         assert (response.getStatusLine().getStatusCode() == 200);
     }
 
-    @Test
+    // @Test
     public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/patch/U51251837");
@@ -116,6 +116,28 @@ public class CheckUserAPI {
         StringEntity entity = new StringEntity(getResourceFileContent("patch/changePublic.patch"));
         patch.setEntity(entity);
         HttpResponse resp = client.execute(patch);
+        System.out.println("RESP STATUS public resource >> " + resp.getStatusLine());
+        assert (resp.getStatusLine().getStatusCode() == 200);
+        System.out.println("RESULT >> " + EntityUtils.toString(resp.getEntity()));
+
+    }
+
+    @Test
+    public void bulkRename() throws ClientProtocolException, IOException {
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost post = new HttpPost("http://localhost:" + environment.getProperty("local.server.port") + "/bulk/renameProp");
+        post.addHeader("Authorization", "Bearer " + adminToken);
+        HashMap<String, String> map = new HashMap<>();
+        map.put("oldProp", "http://purl.bdrc.io/ontology/admin/replaceWith");
+        map.put("newProp", "http://purl.bdrc.io/ontology/admin/replacedBy");
+        map.put("graphs", "");
+        map.put("sparql", "select distinct ?g ?rep where { graph ?g {?s adm:replaceWith ?o .} ?ad adm:graphId ?g . ?ad adm:gitRepo ?rep }");
+        map.put("fusekiUrl", "http://buda1.bdrc.io:13180/fuseki/testrw/query");
+        String json = new ObjectMapper().writeValueAsString(map);
+        System.out.println("Doing REPLACE with request >> " + json);
+        StringEntity entity = new StringEntity(json);
+        post.setEntity(entity);
+        HttpResponse resp = client.execute(post);
         System.out.println("RESP STATUS public resource >> " + resp.getStatusLine());
         assert (resp.getStatusLine().getStatusCode() == 200);
         System.out.println("RESULT >> " + EntityUtils.toString(resp.getEntity()));

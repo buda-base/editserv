@@ -41,7 +41,7 @@ public class BulkEditController {
      * - valid: the full uri of the replacement resource - fusekiUrl : the url of
      * the fuseki server
      */
-    @PostMapping(value = "/bulk/withdrawn")
+    @PostMapping(value = "/bulk/withdraw")
     public ResponseEntity<String> withdrawn(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
         Access acc = (Access) req.getAttribute("access");
         if (!acc.hasEndpointAccess()) {
@@ -88,7 +88,7 @@ public class BulkEditController {
      * 
      * - fusekiUrl : the url of the fuseki server
      */
-    @PostMapping(value = "/bulk/propVal")
+    @PostMapping(value = "/bulk/propValue")
     public ResponseEntity<String> addPropVal(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
         Access acc = (Access) req.getAttribute("access");
         if (!acc.hasEndpointAccess()) {
@@ -180,11 +180,12 @@ public class BulkEditController {
      */
     @PostMapping(value = "/bulk/renameProp")
     public ResponseEntity<String> renameProp(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
-        Access acc = (Access) req.getAttribute("access");
-        if (!acc.hasEndpointAccess()) {
-            log.info("An authorized user is required for this operation " + json);
-            return new ResponseEntity<>("An authorized user user is required for this operation " + json, HttpStatus.UNAUTHORIZED);
-        }
+        // Access acc = (Access) req.getAttribute("access");
+        // if (!acc.hasEndpointAccess()) {
+        // log.info("An authorized user is required for this operation " + json);
+        // return new ResponseEntity<>("An authorized user user is required for this
+        // operation " + json, HttpStatus.UNAUTHORIZED);
+        // }
         try {
             JsonNode node = new ObjectMapper().readTree(json);
             String oldProp = node.findValue("oldProp").asText();
@@ -205,14 +206,15 @@ public class BulkEditController {
                     BulkOps.renameProp(map, oldProp, newProp, fusekiUrl);
 
                 } else {
-                    log.error("No graph list or valid sparql has been found to change prop value using params :" + json);
-                    return new ResponseEntity<>("No graph list or valid sparql has been found to change prop value using params :" + json,
+                    log.error("No graph list or valid sparql has been found to rename prop using params :" + json);
+                    return new ResponseEntity<>("No graph list or valid sparql has been found to rename prop using params :" + json,
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
 
         } catch (Exception e) {
-            log.error("A error occured while processing withdraw operation for " + json);
+            log.error("A error occured while processing renameProp operation for " + json);
+            e.printStackTrace();
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(req.getRemoteAddr(), HttpStatus.OK);

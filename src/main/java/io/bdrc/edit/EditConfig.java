@@ -35,7 +35,7 @@ public class EditConfig {
             prop.load(is);
             is.close();
             AuthProps.init(prop);
-            if ("true".equals(prop.getProperty("useAuth"))) {
+            if (useAuth()) {
                 RdfAuthModel.init();
             }
             UsersCache.init();

@@ -40,6 +40,7 @@ public class RdfAuthFilter implements Filter {
                 Endpoint end;
                 try {
                     end = RdfAuthModel.getEndpoint(path);
+                    log.debug("for path {} ENDPOINT IN FILTER id {} ", path, end);
                 } catch (Exception e) {
                     e.printStackTrace();
                     end = null;
@@ -47,6 +48,7 @@ public class RdfAuthFilter implements Filter {
                 UserProfile prof = null;
                 if (end == null) {
                     isSecuredEndpoint = false;
+                    log.debug("Endpoint with path {} is not secured", path);
                     // endpoint is not secured - Using default (empty endpoint)
                     // for Access Object end=new Endpoint();
                 }
@@ -55,7 +57,7 @@ public class RdfAuthFilter implements Filter {
                     // Getting his profile
                     validation = new TokenValidation(token);
                     prof = validation.getUser();
-                    log.info("validation >>>> " + validation);
+                    log.debug("validation is {}", validation);
                 }
                 if (isSecuredEndpoint) {
                     // Endpoint is secure
@@ -85,7 +87,7 @@ public class RdfAuthFilter implements Filter {
             }
             chain.doFilter(request, response);
         } catch (Exception e) {
-            log.error("Auth filter did not go through properly", e);
+            log.error("Auth filter did not go through properly ", e);
             throw e;
         }
     }

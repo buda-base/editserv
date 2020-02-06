@@ -180,12 +180,11 @@ public class BulkEditController {
      */
     @PostMapping(value = "/bulk/renameProp")
     public ResponseEntity<String> renameProp(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
-        // Access acc = (Access) req.getAttribute("access");
-        // if (!acc.hasEndpointAccess()) {
-        // log.info("An authorized user is required for this operation " + json);
-        // return new ResponseEntity<>("An authorized user user is required for this
-        // operation " + json, HttpStatus.UNAUTHORIZED);
-        // }
+        Access acc = (Access) req.getAttribute("access");
+        if (!acc.hasEndpointAccess()) {
+            log.info("An authorized user is required for this operation " + json);
+            return new ResponseEntity<>("An authorized user user is required for this operation " + json, HttpStatus.UNAUTHORIZED);
+        }
         try {
             JsonNode node = new ObjectMapper().readTree(json);
             String oldProp = node.findValue("oldProp").asText();

@@ -128,10 +128,11 @@ public class CheckUserAPI {
         HttpPost post = new HttpPost("http://localhost:" + environment.getProperty("local.server.port") + "/bulk/renameProp");
         post.addHeader("Authorization", "Bearer " + adminToken);
         HashMap<String, String> map = new HashMap<>();
-        map.put("oldProp", "http://purl.bdrc.io/ontology/admin/replaceWith");
-        map.put("newProp", "http://purl.bdrc.io/ontology/admin/replacedBy");
+        map.put("oldProp", "http://purl.bdrc.io/ontology/admin/replacedBy");
+        map.put("newProp", "http://purl.bdrc.io/ontology/admin/replaceWith");
         map.put("graphs", "");
-        map.put("sparql", "select distinct ?g ?rep where { graph ?g {?s adm:replaceWith ?o .} ?ad adm:graphId ?g . ?ad adm:gitRepo ?rep }");
+        map.put("sparql",
+                "select distinct ?g ?rep where { graph ?g {?s adm:replacedBy ?o .} ?ad adm:graphId ?g . ?ad adm:gitRepo ?rep .  ?ad adm:adminAbout  ?ab. ?ab rdf:type ?t  . FILTER (?t!=:Role) }");
         map.put("fusekiUrl", "http://buda1.bdrc.io:13180/fuseki/testrw/query");
         String json = new ObjectMapper().writeValueAsString(map);
         System.out.println("Doing REPLACE with request >> " + json);

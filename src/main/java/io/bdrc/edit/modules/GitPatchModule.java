@@ -3,8 +3,8 @@ package io.bdrc.edit.modules;
 import static io.bdrc.libraries.Models.BDG;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -103,7 +103,8 @@ public class GitPatchModule implements BUDAEditModule {
                 String resType = Helpers.getResourceType(d, data.getEditPatchHeaders());
                 AdminData adm = data.getAdminData(d);
                 GitHelpers.ensureGitRepo(resType, EditConfig.getProperty("gitLocalRoot"));
-                String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId + ".trig";
+                String deletePath = EditConfig.getProperty("gitLocalRoot") + adm.getGitRepo().getGitRepoName() + "/" + adm.getGitPath() + "/" + resId
+                        + ".trig";
                 new File(deletePath).delete();
                 RevCommit rev = GitHelpers.commitDelete(resType, adm.getGitPath() + "/" + resId + ".trig", resId + " deleted by " + data.getUserId());
                 if (rev != null) {
@@ -135,7 +136,7 @@ public class GitPatchModule implements BUDAEditModule {
                     GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
                 }
 
-            } catch (FileNotFoundException | GitAPIException e) {
+            } catch (GitAPIException | IOException e) {
                 logger.error("GitPatchModule process updates failed ", e);
                 setStatus(Types.STATUS_FAILED);
                 log.addError(getName(), e.getMessage());
@@ -162,7 +163,7 @@ public class GitPatchModule implements BUDAEditModule {
                     GitHelpers.push(resType, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass, EditConfig.getProperty("gitLocalRoot"));
                 }
 
-            } catch (FileNotFoundException | GitAPIException e) {
+            } catch (GitAPIException | IOException e) {
                 logger.error("GitPatchModule process replace failed ", e);
                 setStatus(Types.STATUS_FAILED);
                 log.addError(getName(), e.getMessage());
@@ -199,13 +200,14 @@ public class GitPatchModule implements BUDAEditModule {
         }
     }
 
-    public void modelToOutputStream(Model m, OutputStream out, String resId) throws FileNotFoundException {
+    public void modelToOutputStream(Model m, OutputStream out, String resId) throws IOException {
         // m = removeGitInfo(m);
         String uriStr = BDG + resId;
         Node graphUri = NodeFactory.createURI(uriStr);
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
         new STriGWriter().write(out, dsg, Helpers.getPrefixMap(), graphUri.toString(m), writerContext);
+        out.close();
     }
 
     public boolean rollback() throws ModuleException {

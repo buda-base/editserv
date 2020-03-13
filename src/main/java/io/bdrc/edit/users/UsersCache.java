@@ -1,18 +1,26 @@
 package io.bdrc.edit.users;
 
-import org.apache.commons.jcs.JCS;
-import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.access.exception.CacheException;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.EntryUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UsersCache {
 
-    public static CacheAccess<Integer, Object> CACHE;
+    public static Cache<Integer, Object> CACHE;
     public final static Logger log = LoggerFactory.getLogger(UsersCache.class);
 
     public static void init() {
-        CACHE = JCS.getInstance("usr");
+        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+        cacheManager.init();
+        CACHE = cacheManager.createCache("users", CacheConfigurationBuilder.newCacheConfigurationBuilder(Integer.class, Object.class,
+                ResourcePoolsBuilder.newResourcePoolsBuilder().heap(500, EntryUnit.ENTRIES)));
+        log.debug("Cache was initialized {}", CACHE);
     }
 
     public static void addToCache(Object res, int hash) {

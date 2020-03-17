@@ -6,6 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,6 +17,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
@@ -30,6 +35,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -42,8 +48,11 @@ import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.UnmergedPathsException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.seaborne.patch.changes.RDFChangesApply;
@@ -52,7 +61,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
-import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.AdminData;
@@ -66,7 +74,8 @@ import io.bdrc.libraries.Prefixes;
 
 public class BudaUser {
 
-    public static final String gitignore = "# Ignore everything\n" + "*\n" + "# Don't ignore directories, so we can recurse into them\n" + "!*/\n" + "# Don't ignore .gitignore and *.foo files\n" + "!.gitignore\n" + "!*.trig\n" + "";
+    public static final String gitignore = "# Ignore everything\n" + "*\n" + "# Don't ignore directories, so we can recurse into them\n" + "!*/\n"
+            + "# Don't ignore .gitignore and *.foo files\n" + "!.gitignore\n" + "!*.trig\n" + "";
 
     public final static Property SKOS_PREF_LABEL = ResourceFactory.createProperty("http://www.w3.org/2004/02/skos/core#prefLabel");
 
@@ -76,6 +85,7 @@ public class BudaUser {
     public static final String PUBLIC_PFX = "http://purl.bdrc.io/graph-nc/user/";
     public static final String BDOU_PFX = "http://purl.bdrc.io/ontology/ext/user/";
     public static final String BDU_PFX = "http://purl.bdrc.io/resource-nc/user/";
+    public static final String BDA = "http://purl.bdrc.io/admindata/";
     public static final String BDO = "http://purl.bdrc.io/ontology/core/";
     public static final String FOAF = "http://xmlns.com/foaf/0.1/";
     public static final String ADR_PFX = "http://purl.bdrc.io/resource-nc/auth/";
@@ -91,7 +101,8 @@ public class BudaUser {
 
     public static Resource getRdfProfile(String auth0Id) throws IOException {
         Resource r = null;
-        String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/" + auth0Id + "> }";
+        String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
+                + auth0Id + "> }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
         log.info("QUERY EXECUTION >> {}", qe);
@@ -200,7 +211,7 @@ public class BudaUser {
         publicModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
         // TODO don't write on System.out
         // for development purpose only
-        publicModel.write(System.out, "TURTLE");
+        // publicModel.write(System.out, "TURTLE");
         mods[0] = publicModel;
 
         Model privateModel = ModelFactory.createDefaultModel();
@@ -262,7 +273,8 @@ public class BudaUser {
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "isActive"), ResourceFactory.createPlainLiteral("true"));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "hasUserProfile"), ResourceFactory.createResource(ADR_PFX + auth0Id));
         privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(userEmail));
-        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"), ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"),
+                ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("eng"));
         privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(userName));
 
@@ -323,7 +335,10 @@ public class BudaUser {
             Git git = new Git(r);
             git.add().addFilepattern(".").call();
             rev = git.commit().setMessage("User " + user.getName() + " was created").call();
-            git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
+            git.push()
+                    .setCredentialsProvider(
+                            new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
+                    .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
             git.close();
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
@@ -366,8 +381,8 @@ public class BudaUser {
         return repository;
     }
 
-    public static RevCommit update(UserDataUpdate data)
-            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+    public static RevCommit update(UserDataUpdate data) throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException,
+            UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
@@ -385,7 +400,10 @@ public class BudaUser {
         if (!git.status().call().isClean()) {
             git.add().addFilepattern(".").call();
             rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
-            git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
+            git.push()
+                    .setCredentialsProvider(
+                            new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
+                    .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
             data.setGitRevisionInfo(rev.getName());
         }
         git.close();
@@ -393,7 +411,8 @@ public class BudaUser {
     }
 
     public static RevCommit update(String userId, Model pub, Model priv)
-            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+            throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException,
+            WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
@@ -411,7 +430,9 @@ public class BudaUser {
         Git git = new Git(r);
         git.add().addFilepattern(".").call();
         rev = git.commit().setMessage("User " + userId + " was updated").call();
-        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
+        git.push()
+                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
+                .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
         git.close();
         return rev;
     }
@@ -442,7 +463,10 @@ public class BudaUser {
                 Git git = new Git(r);
                 git.add().addFilepattern(".").call();
                 git.commit().setMessage("User " + userid + " was deleted").call();
-                git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"))).setRemote(EditConfig.getProperty("usersRemoteGit")).call();
+                git.push()
+                        .setCredentialsProvider(
+                                new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
+                        .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
                 git.close();
             }
         } catch (Exception ex) {
@@ -470,10 +494,66 @@ public class BudaUser {
         return users;
     }
 
+    public static void rebuiltFuseki() {
+        RDFConnectionRemoteBuilder pubBuilder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
+        RDFConnectionFuseki pubConn = ((RDFConnectionFuseki) pubBuilder.build());
+        RDFConnectionRemoteBuilder privBuilder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+        RDFConnectionFuseki privConn = ((RDFConnectionFuseki) privBuilder.build());
+        File[] files = new File(EditConfig.getProperty("usersGitLocalRoot")).listFiles(File::isDirectory);
+        for (File file : files) {
+            try (Stream<Path> walk = Files.walk(Paths.get(file.getAbsoluteFile().getAbsolutePath()))) {
+                List<String> result = walk.map(x -> x.toString()).filter(f -> f.endsWith(".trig")).collect(Collectors.toList());
+                for (String s : result) {
+                    updateDataset(s, pubConn, privConn);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        pubConn.close();
+        privConn.close();
+    }
+
+    private static void updateDataset(String trigFilename, RDFConnectionFuseki pubConn, RDFConnectionFuseki privConn) throws IOException {
+        Repository repository = BudaUser.ensureUserGitRepo();
+        RevWalk revwalk = new RevWalk(repository);
+        ObjectId lastCommitId = repository.resolve(Constants.HEAD);
+        RevCommit commit = revwalk.parseCommit(lastCommitId);
+        revwalk.close();
+        String version = commit.getName();
+        String resId = trigFilename.substring(trigFilename.lastIndexOf("/") + 1);
+        resId = resId.substring(0, resId.lastIndexOf("."));
+        System.out.println("-------ResId--- " + resId + " ------------" + trigFilename + "---------------");
+        DatasetGraph dsg = Helpers.buildGraphFromTrig(GlobalHelpers.readFileContent(trigFilename));
+        Model m = ModelFactory.createModelForGraph(dsg.getUnionGraph());
+        Model pub = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + resId).asNode()));
+        Model priv = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + resId).asNode()));
+        Model adm = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.BDA + resId).asNode()));
+
+        Resource r = ResourceFactory.createResource(BudaUser.BDA + resId);
+        Statement st = ResourceFactory.createStatement(r, ResourceFactory.createProperty("http://purl.bdrc.io/ontology/admin/gitRevision"),
+                ResourceFactory.createPlainLiteral(version));
+        adm.add(st);
+        Helpers.putModel(pubConn, BudaUser.PUBLIC_PFX + resId, pub);
+        Helpers.putModel(pubConn, BudaUser.BDA + resId, adm);
+        Helpers.putModel(privConn, BudaUser.BDA + resId, adm);
+        Helpers.putModel(privConn, BudaUser.PRIVATE_PFX + resId, priv);
+        /*
+         * System.out.println("<-------PUBLIC------------------------->");
+         * pub.write(System.out, "TRIG");
+         * System.out.println("<-------PRIVATE------------------------->");
+         * priv.write(System.out, "TRIG");
+         * System.out.println("<-------ADMIN------------------------->");
+         * adm.write(System.out, "TRIG");
+         * System.out.println("<-------STATEMENT GIT REV---------->" + st);
+         */
+    }
+
     public static void main(String[] args) throws IOException, DataUpdateException {
         EditConfig.init();
-        RdfAuthModel.initForTest(false, true);
-        BudaUser.getUserIds();
+        BudaUser.rebuiltFuseki();
+        // RdfAuthModel.initForTest(false, true);
+        // BudaUser.getUserIds();
         // BudaUser.deleteBudaUser("U678062094", true);
         // System.out.println(BudaUser.createBudaUserModels("Nicolas Berger",
         // "103776618189565648628", "quai.ledrurollin@gmail.com")[0]);

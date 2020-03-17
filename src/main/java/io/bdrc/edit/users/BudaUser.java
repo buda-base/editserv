@@ -297,9 +297,14 @@ public class BudaUser {
     }
 
     public static RevCommit addNewBudaUser(User user) throws GitAPIException, IOException {
+        long start = System.currentTimeMillis();
         Helpers.pullOrCloneUsers();
+        long start1 = System.currentTimeMillis();
+        log.info("Pulling users repo took {} ms", (start1 - start));
         RevCommit rev = null;
         Model[] mod = BudaUser.createBudaUserModels(user);
+        long start2 = System.currentTimeMillis();
+        log.info("Creating buda users models took {} ms", (start2 - start1));
         Model pub = mod[0];
         Model priv = mod[1];
         String userId = null;
@@ -332,14 +337,21 @@ public class BudaUser {
             if (r == null) {
                 r = ensureUserGitRepo();
             }
+            long git1 = System.currentTimeMillis();
             Git git = new Git(r);
             git.add().addFilepattern(".").call();
+            long git2 = System.currentTimeMillis();
+            log.info("Git add file took {} ms", (git2 - git1));
             rev = git.commit().setMessage("User " + user.getName() + " was created").call();
+            long git3 = System.currentTimeMillis();
+            log.info("Git commit took {} ms", (git3 - git2));
             git.push()
                     .setCredentialsProvider(
                             new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
                     .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
             git.close();
+            long git4 = System.currentTimeMillis();
+            log.info("Git push took {} ms", (git4 - git3));
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
             Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
@@ -351,6 +363,8 @@ public class BudaUser {
             Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
             // adding adminData graph to public dataset
             Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
+            long fus = System.currentTimeMillis();
+            log.info("Updating fuseki dataset after git took {} ms", (fus - git4));
             fusConn.close();
         } catch (Exception e) {
             log.error("Failed to add new Buda user :" + user.getName(), e);

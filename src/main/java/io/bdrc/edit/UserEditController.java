@@ -202,4 +202,11 @@ public class UserEditController {
         return ResponseEntity.ok().body("OK");
     }
 
+    @PostMapping(value = "/callbacks/updateFuseki/")
+    public ResponseEntity<String> updateFuseki() {
+        log.info("updating Fuseki users data >>");
+        BudaUser.rebuiltFuseki();
+        return ResponseEntity.ok("Fuseki users data has been rebuilt");
+    }
+
 }

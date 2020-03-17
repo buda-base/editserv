@@ -523,13 +523,10 @@ public class BudaUser {
         String version = commit.getName();
         String resId = trigFilename.substring(trigFilename.lastIndexOf("/") + 1);
         resId = resId.substring(0, resId.lastIndexOf("."));
-        System.out.println("-------ResId--- " + resId + " ------------" + trigFilename + "---------------");
         DatasetGraph dsg = Helpers.buildGraphFromTrig(GlobalHelpers.readFileContent(trigFilename));
-        Model m = ModelFactory.createModelForGraph(dsg.getUnionGraph());
         Model pub = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + resId).asNode()));
         Model priv = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + resId).asNode()));
         Model adm = ModelFactory.createModelForGraph(dsg.getGraph(ResourceFactory.createResource(BudaUser.BDA + resId).asNode()));
-
         Resource r = ResourceFactory.createResource(BudaUser.BDA + resId);
         Statement st = ResourceFactory.createStatement(r, ResourceFactory.createProperty("http://purl.bdrc.io/ontology/admin/gitRevision"),
                 ResourceFactory.createPlainLiteral(version));
@@ -538,15 +535,6 @@ public class BudaUser {
         Helpers.putModel(pubConn, BudaUser.BDA + resId, adm);
         Helpers.putModel(privConn, BudaUser.BDA + resId, adm);
         Helpers.putModel(privConn, BudaUser.PRIVATE_PFX + resId, priv);
-        /*
-         * System.out.println("<-------PUBLIC------------------------->");
-         * pub.write(System.out, "TRIG");
-         * System.out.println("<-------PRIVATE------------------------->");
-         * priv.write(System.out, "TRIG");
-         * System.out.println("<-------ADMIN------------------------->");
-         * adm.write(System.out, "TRIG");
-         * System.out.println("<-------STATEMENT GIT REV---------->" + st);
-         */
     }
 
     public static void main(String[] args) throws IOException, DataUpdateException {

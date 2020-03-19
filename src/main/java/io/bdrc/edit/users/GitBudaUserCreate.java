@@ -6,8 +6,6 @@ import java.io.FileOutputStream;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ResourceFactory;
-import org.apache.jena.rdfconnection.RDFConnectionFuseki;
-import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
@@ -75,20 +73,6 @@ public class GitBudaUserCreate implements Runnable {
             git.close();
             long git4 = System.currentTimeMillis();
             log.info("Git push took {} ms", (git4 - git3));
-            RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
-            RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-            Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
-            fusConn.close();
-            // Public graph is pushed to bdrcrw
-            builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
-            fusConn = ((RDFConnectionFuseki) builder.build());
-            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-            // adding adminData graph to public dataset
-            Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
-            long fus = System.currentTimeMillis();
-            log.info("Updating fuseki dataset after git took {} ms", (fus - git4));
-            fusConn.close();
         } catch (Exception e) {
             log.error("Failed to add new Buda user :" + userName, e);
         }

@@ -62,6 +62,8 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
@@ -238,7 +240,6 @@ public class BudaUser {
         return auth0Id.equals(userAuthId);
     }
 
-    // for admin or testing purpose only
     public static Model[] createBudaUserModels(String userName, String usrId, String userEmail) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
@@ -294,12 +295,11 @@ public class BudaUser {
         return propsPolicies;
     }
 
-    public static Model[] addNewBudaUser(User user) throws GitAPIException, IOException {
+    public static void addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
         long start = System.currentTimeMillis();
         Helpers.pullOrCloneUsers();
         long start1 = System.currentTimeMillis();
         log.info("Pulling users repo took {} ms", (start1 - start));
-        RevCommit rev = null;
         Model[] mod = BudaUser.createBudaUserModels(user);
         long start2 = System.currentTimeMillis();
         log.info("Creating buda users models took {} ms", (start2 - start1));
@@ -317,7 +317,21 @@ public class BudaUser {
         GitBudaUserCreate gitTask = new GitBudaUserCreate(userId, pub, priv, user.getName());
         Thread t = new Thread(gitTask);
         t.start();
-        return mod;
+        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
+        AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
+        Model adm = ad.asModel();
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+        Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+        Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
+        fusConn.close();
+        // Public graph is pushed to bdrcrw
+        builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
+        fusConn = ((RDFConnectionFuseki) builder.build());
+        Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
+        // adding adminData graph to public dataset
+        Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
+        fusConn.close();
     }
 
     public static Repository ensureUserGitRepo() {

@@ -1,12 +1,12 @@
 package io.bdrc.edit;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
@@ -49,10 +49,9 @@ public class UserEditController {
 
     @GetMapping(value = "/resource-nc/user/me", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<StreamingResponseBody> meUser(HttpServletResponse response, HttpServletRequest request)
-            throws IOException, GitAPIException {
+            throws IOException, GitAPIException, NoSuchAlgorithmException {
         try {
             log.info("Call meUser()");
-
             String token = getToken(request.getHeader("Authorization"));
             if (token == null) {
                 HashMap<String, String> err = new HashMap<>();
@@ -66,18 +65,16 @@ public class UserEditController {
                 log.info("meUser() auth0Id >> {}", auth0Id);
                 auth0Id = auth0Id.substring(auth0Id.indexOf("|") + 1);
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
-                Model resp = null;
                 log.info("meUser() Buda usr >> {}", usr);
                 if (usr == null) {
-                    Model[] mod = BudaUser.addNewBudaUser(acc.getUser());
-                    log.info("meUser() User new created Resource for user {}", acc.getUser().getName());
-                    mod[1].write(System.out, "TURTLE");
-                    resp = mod[1];
-                } else {
-                    resp = usr.getModel();
+                    BudaUser.addNewBudaUser(acc.getUser());
+                    usr = BudaUser.getRdfProfile(auth0Id);
+                    log.info("meUser() User new created Resource >> {}", usr);
+                    usr.getModel().write(System.out, "TURTLE");
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(resp, "json"));
+                        .header("Location", "/resource-nc/user/" + usr.getLocalName())
+                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
             }
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);

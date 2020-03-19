@@ -52,7 +52,7 @@ public class UserEditController {
             throws IOException, GitAPIException {
         try {
             log.info("Call meUser()");
-            Model[] mod = null;
+
             String token = getToken(request.getHeader("Authorization"));
             if (token == null) {
                 HashMap<String, String> err = new HashMap<>();
@@ -66,14 +66,18 @@ public class UserEditController {
                 log.info("meUser() auth0Id >> {}", auth0Id);
                 auth0Id = auth0Id.substring(auth0Id.indexOf("|") + 1);
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
+                Model resp = null;
                 log.info("meUser() Buda usr >> {}", usr);
                 if (usr == null) {
-                    mod = BudaUser.addNewBudaUser(acc.getUser());
+                    Model[] mod = BudaUser.addNewBudaUser(acc.getUser());
                     log.info("meUser() User new created Resource for user {}", acc.getUser().getName());
                     mod[1].write(System.out, "TURTLE");
+                    resp = mod[1];
+                } else {
+                    resp = usr.getModel();
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(mod[1], "json"));
+                        .header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(resp, "json"));
             }
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class UserEditController {
             throws IOException, GitAPIException {
         try {
             log.info("Call meUser()");
+            Model[] mod = null;
             String token = getToken(request.getHeader("Authorization"));
             if (token == null) {
                 HashMap<String, String> err = new HashMap<>();
@@ -66,14 +68,12 @@ public class UserEditController {
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() Buda usr >> {}", usr);
                 if (usr == null) {
-                    BudaUser.addNewBudaUser(acc.getUser());
-                    usr = BudaUser.getRdfProfile(auth0Id);
-                    log.info("meUser() User new created Resource >> {}", usr);
-                    usr.getModel().write(System.out, "TURTLE");
+                    mod = BudaUser.addNewBudaUser(acc.getUser());
+                    log.info("meUser() User new created Resource for user {}", acc.getUser().getName());
+                    mod[1].write(System.out, "TURTLE");
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .header("Location", "/resource-nc/user/" + usr.getLocalName())
-                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
+                        .header("Location", "/resource-nc/user/" + usr.getLocalName()).body(StreamingHelpers.getModelStream(mod[1], "json"));
             }
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);

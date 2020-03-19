@@ -62,8 +62,6 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.sparql.QueryProcessor;
@@ -296,7 +294,7 @@ public class BudaUser {
         return propsPolicies;
     }
 
-    public static RevCommit addNewBudaUser(User user) throws GitAPIException, IOException {
+    public static Model[] addNewBudaUser(User user) throws GitAPIException, IOException {
         long start = System.currentTimeMillis();
         Helpers.pullOrCloneUsers();
         long start1 = System.currentTimeMillis();
@@ -314,62 +312,12 @@ public class BudaUser {
             userId = r.getLocalName();
         } else {
             log.error("Invalid user model for {}", user);
-            return null;
+            // return null;
         }
-        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
-        File theDir = new File(dirpath);
-        Repository r = null;
-        if (!theDir.exists()) {
-            r = ensureUserGitRepo();
-        }
-        FileOutputStream fos = null;
-        try {
-            String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
-            Model adm = ad.asModel();
-            Helpers.createDirIfNotExists(dirpath + bucket + "/");
-            fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
-            DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
-            dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
-            dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
-            dsg.addGraph(ResourceFactory.createResource(EditConstants.BDA + userId).asNode(), adm.getGraph());
-            new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
-            if (r == null) {
-                r = ensureUserGitRepo();
-            }
-            long git1 = System.currentTimeMillis();
-            Git git = new Git(r);
-            git.add().addFilepattern(".").call();
-            long git2 = System.currentTimeMillis();
-            log.info("Git add file took {} ms", (git2 - git1));
-            rev = git.commit().setMessage("User " + user.getName() + " was created").call();
-            long git3 = System.currentTimeMillis();
-            log.info("Git commit took {} ms", (git3 - git2));
-            git.push()
-                    .setCredentialsProvider(
-                            new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
-                    .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
-            git.close();
-            long git4 = System.currentTimeMillis();
-            log.info("Git push took {} ms", (git4 - git3));
-            RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
-            RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-            Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
-            fusConn.close();
-            // Public graph is pushed to bdrcrw
-            builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
-            fusConn = ((RDFConnectionFuseki) builder.build());
-            Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-            // adding adminData graph to public dataset
-            Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
-            long fus = System.currentTimeMillis();
-            log.info("Updating fuseki dataset after git took {} ms", (fus - git4));
-            fusConn.close();
-        } catch (Exception e) {
-            log.error("Failed to add new Buda user :" + user.getName(), e);
-        }
-        return rev;
+        GitBudaUserCreate gitTask = new GitBudaUserCreate(userId, pub, priv, user.getName());
+        Thread t = new Thread(gitTask);
+        t.start();
+        return mod;
     }
 
     public static Repository ensureUserGitRepo() {

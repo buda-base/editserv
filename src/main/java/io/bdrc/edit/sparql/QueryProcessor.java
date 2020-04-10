@@ -60,7 +60,7 @@ public class QueryProcessor {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
         }
-        String query = "construct {?s ?p ?o} where { {<" + fullUri + "> { ?s ?p ?o } }}";
+        String query = " construct {?s ?p ?o} where { graph <" + fullUri + "> { ?s ?p ?o } }";
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();

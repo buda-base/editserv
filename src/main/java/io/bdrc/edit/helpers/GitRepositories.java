@@ -8,7 +8,6 @@ import java.util.HashMap;
 
 import org.apache.jena.ontology.Individual;
 import org.apache.jena.ontology.OntModel;
-import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -35,7 +34,12 @@ public class GitRepositories {
             final Model reposMod = ModelFactory.createDefaultModel();
             reposMod.read(stream, "", "TURTLE");
             stream.close();
-            OntModel om = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, reposMod);
+            System.out.println("MODEL WAS LOADED");
+            reposMod.write(System.out, "TURTLE");
+            OntModel om = ModelFactory.createOntologyModel();
+            om.setDynamicImports(false);
+            om.add(reposMod);
+            System.out.println("ONT MODEL WAS LOADED TOO");
             loadRepos(om);
         } catch (IOException e) {
             log.error("GitRepositories failed to initialize", e);
@@ -52,7 +56,6 @@ public class GitRepositories {
             String url = i.getProperty(ResourceFactory.createProperty(EditConstants.ADM + "gitUrl")).getObject().toString();
             GitRepo rep = new GitRepo(i.getURI(), name, url);
             reposByType.put(rep.getRepoResType(), rep);
-            // System.out.println("GitRepositories adding :"+rep + " to )
             reposByUri.put(i.getURI(), rep);
         }
     }

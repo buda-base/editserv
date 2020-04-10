@@ -52,6 +52,10 @@ public class QueryProcessor {
         return qe.execConstruct();
     }
 
+    public static Model getGraph(String fullUri) {
+        return QueryProcessor.getGraph(fullUri, null);
+    }
+
     public static Model getGraph(String fullUri, String fusekiUrl) {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);

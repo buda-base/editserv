@@ -34,12 +34,9 @@ public class GitRepositories {
             final Model reposMod = ModelFactory.createDefaultModel();
             reposMod.read(stream, "", "TURTLE");
             stream.close();
-            System.out.println("MODEL WAS LOADED");
-            reposMod.write(System.out, "TURTLE");
             OntModel om = ModelFactory.createOntologyModel();
             om.setDynamicImports(false);
             om.add(reposMod);
-            System.out.println("ONT MODEL WAS LOADED TOO");
             loadRepos(om);
         } catch (IOException e) {
             log.error("GitRepositories failed to initialize", e);

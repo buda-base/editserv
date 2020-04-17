@@ -1,14 +1,13 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.rdf.model.ResIterator;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +27,13 @@ public class CommonsRead {
 
     public final static Logger log = LoggerFactory.getLogger("default");
     public static String SHAPES_ROOT_URI = "http://purl.bdrc.io/ontology/shapes/core/";
+    public static String SHAPES_SCHEMA = "http://purl.bdrc.io/graph/shapesSchema";
+    public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#class";
+    // public static String SHAPE_CLASS_PROP =
+    // "http://www.w3.org/ns/shacl#targetClass";
+    private static Model ALL_SHAPES;
 
-    public static DatasetGraph getGraph(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+    public static Model getGraph(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         if (!graphUri.startsWith(Models.BDR)) {
             throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
         }
@@ -49,29 +53,36 @@ public class CommonsRead {
             throw new NotModifiableException(graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
         }
         GitRepo repo = GitRepositories.getRepoByUri(gitRepo);
-        return Helpers
-                .buildGraphFromTrig(GlobalHelpers.readFileContent(EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath));
+        return ModelFactory.createModelForGraph(Helpers
+                .buildGraphFromTrig(GlobalHelpers.readFileContent(EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
+                .getUnionGraph());
+    }
+
+    private static Model getAllShapes() {
+        if (ALL_SHAPES == null) {
+            ALL_SHAPES = QueryProcessor.getGraph(SHAPES_SCHEMA);
+        }
+        return ALL_SHAPES;
     }
 
     public static Model getShapesForType(String prefixedType) throws IOException, ParameterFormatException {
-        if (!prefixedType.startsWith("bdo") || prefixedType.indexOf(":") == -1) {
-            throw new ParameterFormatException(prefixedType + " is not a valid prefixed bdo type");
+        Model m = getAllShapes();
+        String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
+        ResIterator it = m.listResourcesWithProperty(ResourceFactory.createProperty(SHAPE_CLASS_PROP), ResourceFactory.createResource(typeUri));
+        Model shape = null;
+        while (it.hasNext()) {
+            Resource r = it.next();
+            shape.add(r.getModel());
+            System.out.println("RESOURCE: " + r.getURI());
         }
-        String url = SHAPES_ROOT_URI.replace("purl.bdrc.io", EditConfig.getProperty("shapeServerRoot"))
-                + prefixedType.substring(prefixedType.lastIndexOf(":") + 1) + "Shapes.ttl";
-        log.info("getting shape from url {}", url);
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        InputStream stream = connection.getInputStream();
-        Model mod = ModelFactory.createDefaultModel();
-        mod.read(stream, null, "TTL");
-        stream.close();
-        return mod;
+        return shape;
     }
 
     public static void main(String[] arg) throws IOException, ParameterFormatException {
         EditConfig.init();
         Model m = getShapesForType("bdo:Person");
         m.write(System.out, "TURTLE");
+        // getAllShapes().write(System.out, "TURTLE");
     }
 
 }

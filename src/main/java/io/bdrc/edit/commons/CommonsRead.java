@@ -69,7 +69,7 @@ public class CommonsRead {
         Model m = getAllShapes();
         String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
         ResIterator it = m.listResourcesWithProperty(ResourceFactory.createProperty(SHAPE_CLASS_PROP), ResourceFactory.createResource(typeUri));
-        Model shape = null;
+        Model shape = ModelFactory.createDefaultModel();
         while (it.hasNext()) {
             Resource r = it.next();
             shape.add(r.getModel());

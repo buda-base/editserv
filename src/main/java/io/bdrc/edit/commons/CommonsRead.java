@@ -28,9 +28,8 @@ public class CommonsRead {
     public final static Logger log = LoggerFactory.getLogger("default");
     public static String SHAPES_ROOT_URI = "http://purl.bdrc.io/ontology/shapes/core/";
     public static String SHAPES_SCHEMA = "http://purl.bdrc.io/graph/shapesSchema";
-    public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#class";
-    // public static String SHAPE_CLASS_PROP =
-    // "http://www.w3.org/ns/shacl#targetClass";
+    // public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#class";
+    public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#targetClass";
     private static Model ALL_SHAPES;
 
     public static Model getGraph(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
@@ -78,9 +77,17 @@ public class CommonsRead {
         return shape;
     }
 
+    public static Model getAssociatedLabels(String prefixedUri) {
+        String query = "construct {\n" + "  ?s skos:preflabel ?o. \n" + "  ?s rdfs:label ?o.} \n" + "where { { \n" + prefixedUri + " ?resp ?s . \n"
+                + "  {  \n" + "  ?s skos:prefLabel ?o.\n" + "  }\n" + "  union{\n" + "      ?s rdfs:label ?o.\n" + "  }\n" + "}}";
+        return QueryProcessor.getQueryGraph(null, query);
+    }
+
     public static void main(String[] arg) throws IOException, ParameterFormatException {
         EditConfig.init();
         Model m = getShapesForType("bdo:Person");
+        // m.write(System.out, "TURTLE");
+        m = getAssociatedLabels("bdr:P1583");
         m.write(System.out, "TURTLE");
         // getAllShapes().write(System.out, "TURTLE");
     }

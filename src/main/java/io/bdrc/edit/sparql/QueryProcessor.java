@@ -66,6 +66,15 @@ public class QueryProcessor {
         return qe.execConstruct();
     }
 
+    public static Model getQueryGraph(String fusekiUrl, String query) {
+        if (fusekiUrl == null) {
+            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
+        }
+        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        return qe.execConstruct();
+    }
+
     public static ResultSet getSelectResultSet(String query, String fusekiUrl) {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);

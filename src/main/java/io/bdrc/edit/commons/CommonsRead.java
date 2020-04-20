@@ -5,8 +5,6 @@ import java.io.IOException;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.ResIterator;
-import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,17 +62,33 @@ public class CommonsRead {
         return ALL_SHAPES;
     }
 
-    public static Model getShapesForType(String prefixedType) throws IOException, ParameterFormatException {
-        Model m = getAllShapes();
+    public static Model getAllShapesForType(String prefixedType) throws IOException, ParameterFormatException {
         String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
-        ResIterator it = m.listResourcesWithProperty(ResourceFactory.createProperty(SHAPE_CLASS_PROP), ResourceFactory.createResource(typeUri));
-        Model shape = ModelFactory.createDefaultModel();
-        while (it.hasNext()) {
-            Resource r = it.next();
-            shape.add(r.getModel());
-            System.out.println("RESOURCE: " + r.getURI());
-        }
-        return shape;
+        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
+        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "Shapes");
+        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
+                ResourceFactory.createProperty(SHAPES_ROOT_URI + "rootShape"));
+        return it.next().asResource().getModel();
+    }
+
+    public static Model getShapesForType(String prefixedType) throws IOException, ParameterFormatException {
+        String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
+        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
+
+        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "Shapes");
+        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
+                ResourceFactory.createProperty(SHAPES_ROOT_URI + "rootShape"));
+        return QueryProcessor.describeModel(it.next().asResource().getURI());
+    }
+
+    public static Model getUIShapesForType(String prefixedType) throws IOException, ParameterFormatException {
+        String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
+        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
+
+        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "UIShapes");
+        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
+                ResourceFactory.createProperty(SHAPES_ROOT_URI + "rootShape"));
+        return QueryProcessor.describeModel(it.next().asResource().getURI());
     }
 
     public static Model getAssociatedLabels(String prefixedUri) {
@@ -85,10 +99,10 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException {
         EditConfig.init();
-        Model m = getShapesForType("bdo:Person");
-        // m.write(System.out, "TURTLE");
-        m = getAssociatedLabels("bdr:P1583");
+        Model m = getAllShapesForType("bdo:Person");
         m.write(System.out, "TURTLE");
+        // m = getAssociatedLabels("bdr:P1583");
+        // m.write(System.out, "TURTLE");
         // getAllShapes().write(System.out, "TURTLE");
     }
 

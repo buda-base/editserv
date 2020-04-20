@@ -28,6 +28,10 @@ public class QueryProcessor {
         return qe.execDescribe();
     }
 
+    public static Model describeModel(String fullUri) {
+        return describeModel(fullUri, null);
+    }
+
     public static void dropGraph(String graphUri, String fusekiDataUrl) {
         try {
             if (fusekiDataUrl == null) {

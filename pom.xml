@@ -111,7 +111,13 @@
       <groupId>org.apache.jena</groupId>
       <artifactId>jena-rdfconnection</artifactId>
       <version>${jena.version}</version>
-    </dependency>    
+    </dependency> 
+    <!-- https://mvnrepository.com/artifact/org.apache.jena/jena-shacl -->
+	<dependency>
+	    <groupId>org.apache.jena</groupId>
+	    <artifactId>jena-shacl</artifactId>
+	    <version>3.14.0</version>
+	</dependency>       
     <!-- https://mvnrepository.com/artifact/junit/junit -->
 	<dependency>
 	    <groupId>junit</groupId>

@@ -2,6 +2,8 @@ package io.bdrc.edit.test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -9,16 +11,22 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.jena.graph.Node;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.engine.Targets;
 import org.apache.jena.shacl.parser.Shape;
 import org.apache.jena.shacl.validation.ReportEntry;
+import org.topbraid.shacl.engine.ShapesGraph;
+import org.topbraid.shacl.validation.ValidationEngine;
+import org.topbraid.shacl.validation.ValidationEngineFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.CommonsRead;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 
@@ -33,6 +41,9 @@ public class TestShacl {
         testMod = ModelFactory.createDefaultModel();
         testMod.read(in, null, "TTL");
         // testMod.write(System.out, "TURTLE");
+
+        // testMod =
+        // QueryProcessor.getGraphWithAssoiatedResourcesType("http://purl.bdrc.io/graph/P707");
     }
 
     public void checkShapesGraph() throws IOException, ParameterFormatException {
@@ -44,12 +55,10 @@ public class TestShacl {
         return sh;
     }
 
-    public static void main(String[] args) throws IOException, ParameterFormatException {
-        EditConfig.init();
+    public void whithJenaValidator() throws IOException, ParameterFormatException {
         TestShacl ts = new TestShacl();
-        // ts.checkShapesGraph();
         Model m = ModelFactory.createDefaultModel();
-        m.read(personShapeUri, "TURTLE");
+        m.read(personShapeUri, null, "TTL");
         Shapes sh = ts.checkShapesGraph(m);
         Collection<Shape> cs = sh.getRootShapes();
         // System.out.println(cs.size());
@@ -76,6 +85,30 @@ public class TestShacl {
             // System.out.println("Msg >> " + r.message());
             System.out.println("Msg >> " + r.toString());
         }
+    }
+
+    public static void main(String[] args) throws IOException, ParameterFormatException, URISyntaxException, InterruptedException {
+        EditConfig.init();
+        TestShacl ts = new TestShacl();
+        Model m = ModelFactory.createDefaultModel();
+        m.read(personShapeUri, null, "TTL");
+        // m.add(CommonsRead.getAllShapesForType("bdo:Person"));
+        System.out.println(" model size for shapes>>" + m.size());
+        // testMod.write(System.out, "TURTLE");
+        ShapesGraph sg = new ShapesGraph(m);
+        System.out.println("Shapes graph root shapes >>" + sg.getRootShapes());
+        System.out.println("Shapes graph root Model >>" + sg.getShapesModel().size());
+        ValidationEngine ve = ValidationEngineFactory.get().create(DatasetFactory.create(testMod), new URI(EditConstants.BDG + "PersonShapes"), sg,
+                null);
+        System.out.println("Validation Engine config validateShapes >>" + ve.getConfiguration().getValidateShapes());
+        System.out.println("Validation Engine config validateShapes >>" + ve.getConfiguration().setReportDetails(true));
+        // ve.validateAll();
+        ve.validateNode(ResourceFactory.createResource(EditConstants.BDR + "P707").asNode());
+        System.out.println("Shapes graph URI >>" + ve.getShapesGraphURI());
+        System.out.println("Shapes model >>" + ve.getShapesModel().size());
+        System.out.println(ve.getValidationReport().conforms());
+        System.out.println(ve.getValidationReport().results());
+
     }
 
 }

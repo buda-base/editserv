@@ -68,8 +68,8 @@ bdr:P707  a      bdo:Person ;
    bdo:hasParent  bdr:P705 ;
    bdo:isRoot    true ;
    bdo:kinWith   bdr:P705 ;
+   bdo:personName  bdr:NM0895CB6787E8 , bdr:NM2463D933BA1F , bdr:NMC2A097019ABA , bdr:NMEA2B380AF0BB ;
    bdo:note      bdr:NT08B650B715F4 ;
    bdo:personEvent  bdr:EVD4758367CFC1 , bdr:EVFD910DBE53BC ;
-   bdo:personGender  bdr:GenderMale ;
-   bdo:personName  bdr:NM0895CB6787E8 , bdr:NM2463D933BA1F , bdr:NMC2A097019ABA , bdr:NMEA2B380AF0BB ;
+   bdo:personGender  bdr:GenderMale ;   
    bdo:personStudentOf  bdr:P705 .

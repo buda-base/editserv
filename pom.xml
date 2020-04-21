@@ -117,7 +117,13 @@
 	    <groupId>org.apache.jena</groupId>
 	    <artifactId>jena-shacl</artifactId>
 	    <version>3.14.0</version>
-	</dependency>       
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.topbraid/shacl -->
+	<dependency>
+	    <groupId>org.topbraid</groupId>
+	    <artifactId>shacl</artifactId>
+	    <version>1.3.2</version>
+	</dependency>	       
     <!-- https://mvnrepository.com/artifact/junit/junit -->
 	<dependency>
 	    <groupId>junit</groupId>

@@ -21,6 +21,7 @@ import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.engine.Targets;
 import org.apache.jena.shacl.parser.Shape;
 import org.apache.jena.shacl.validation.ReportEntry;
+import org.apache.jena.shacl.validation.ShaclSimpleValidator;
 import org.topbraid.shacl.engine.ShapesGraph;
 import org.topbraid.shacl.validation.ValidationEngine;
 import org.topbraid.shacl.validation.ValidationEngineFactory;
@@ -50,12 +51,12 @@ public class TestShacl {
         Shapes sh = Shapes.parseAll(CommonsRead.getAllShapesForType("bdo:Person").getGraph());
     }
 
-    public Shapes checkShapesGraph(Model m) throws IOException, ParameterFormatException {
+    public static Shapes checkShapesGraph(Model m) throws IOException, ParameterFormatException {
         Shapes sh = Shapes.parseAll(m.getGraph());
         return sh;
     }
 
-    public void whithJenaValidator() throws IOException, ParameterFormatException {
+    public static void whithJenaValidator() throws IOException, ParameterFormatException {
         TestShacl ts = new TestShacl();
         Model m = ModelFactory.createDefaultModel();
         m.read(personShapeUri, null, "TTL");
@@ -64,17 +65,17 @@ public class TestShacl {
         // System.out.println(cs.size());
         Iterator<Shape> it = cs.iterator();
         for (Shape s : cs) {
-            // System.out.println(s.getClass().getCanonicalName());
+            System.out.println(s.getClass().getCanonicalName());
         }
         Targets tg = sh.getTargets();
         Set<Node> sn = tg.allTargets;
         for (Object n : sn) {
-            // System.out.println(n);
+            System.out.println(n);
         }
         Map<Node, Shape> map = sh.getShapeMap();
         Set<Entry<Node, Shape>> ent = map.entrySet();
         for (Entry<Node, Shape> e : ent) {
-            // System.out.println(e);
+            System.out.println(e);
         }
 
         ShaclValidator valid = ShaclValidator.get();
@@ -82,7 +83,7 @@ public class TestShacl {
         System.out.println("IS conform :" + vr.conforms());
         Collection<ReportEntry> re = vr.getEntries();
         for (ReportEntry r : re) {
-            // System.out.println("Msg >> " + r.message());
+            System.out.println("Msg >> " + r.message());
             System.out.println("Msg >> " + r.toString());
         }
     }
@@ -92,9 +93,7 @@ public class TestShacl {
         TestShacl ts = new TestShacl();
         Model m = ModelFactory.createDefaultModel();
         m.read(personShapeUri, null, "TTL");
-        // m.add(CommonsRead.getAllShapesForType("bdo:Person"));
         System.out.println(" model size for shapes>>" + m.size());
-        // testMod.write(System.out, "TURTLE");
         ShapesGraph sg = new ShapesGraph(m);
         System.out.println("Shapes graph root shapes >>" + sg.getRootShapes());
         System.out.println("Shapes graph root Model >>" + sg.getShapesModel().size());
@@ -108,6 +107,17 @@ public class TestShacl {
         System.out.println("Shapes model >>" + ve.getShapesModel().size());
         System.out.println(ve.getValidationReport().conforms());
         System.out.println(ve.getValidationReport().results());
+        // whithJenaValidator();
+        System.out.println("****************JENA SIMPLE VALIDATOR********************************");
+        ShaclSimpleValidator ssv = new ShaclSimpleValidator();
+        boolean conforms = ssv.conforms(m.getGraph(), testMod.getGraph());
+        System.out.println("ShaclSimpleValidator conforms all>>" + conforms);
+        boolean conformsNode = ssv.conforms(checkShapesGraph(m), testMod.getGraph(),
+                ResourceFactory.createResource(EditConstants.BDR + "P707").asNode());
+        System.out.println("ShaclSimpleValidator conforms Node>>" + conformsNode);
+        ValidationReport vr = ssv.validate(checkShapesGraph(m), testMod.getGraph(),
+                ResourceFactory.createResource(EditConstants.BDR + "P707").asNode());
+        System.out.println("ValidationReport >>" + vr.getEntries());
 
     }
 

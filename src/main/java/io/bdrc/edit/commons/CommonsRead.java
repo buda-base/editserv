@@ -1,14 +1,23 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.topbraid.shacl.engine.Shape;
+import org.topbraid.shacl.engine.ShapesGraph;
+import org.topbraid.shacl.model.SHPropertyShape;
+import org.topbraid.shacl.model.SHShape;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -101,14 +110,44 @@ public class CommonsRead {
         return QueryProcessor.getQueryGraph(null, query);
     }
 
+    public static Model getFocusGraph(String prefRes, Model resMod, String shapeUri) {
+        String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
+        System.out.println("ShortName : " + shortName);
+        Model res = ModelFactory.createDefaultModel();
+        Model shapes = QueryProcessor.getGraph(shapeUri);
+        List<String> propsUri = new ArrayList<>();
+        ShapesGraph sg = new ShapesGraph(shapes);
+        for (Shape shape : sg.getRootShapes()) {
+            SHShape shs = shape.getShapeResource();
+            for (SHPropertyShape shp : shs.getPropertyShapes()) {
+                Resource path = shp.getPath();
+                if (path != null && !propsUri.contains(path.getURI())) {
+                    propsUri.add(path.getURI());
+                }
+            }
+        }
+        Iterator<Statement> it = resMod.listStatements();
+        while (it.hasNext()) {
+            Statement stmt = it.next();
+            if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
+                res.add(stmt);
+            }
+        }
+        return res;
+    }
+
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        System.out.println(getBestShape("bdr:P1583"));
-        // Model m = getAllShapesForType("bdo:Person");
-        // m.write(System.out, "TURTLE");
-        // m = getAssociatedLabels("bdr:P1583");
-        // m.write(System.out, "TURTLE");
-        // getAllShapes().write(System.out, "TURTLE");
+        // String personShapeUri =
+        // "https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/person.shapes.ttl";
+        String personShapeUri = "https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/person.event.shapes.ttl";
+        // System.out.println(getBestShape("bdr:P707"));
+        Model person = ModelFactory.createDefaultModel();
+        person.read("http://purl.bdrc.io/resource/P1583.ttl", "TTL");
+        // Model res = getFocusGraph("bdr:1583", person,
+        // "http://purl.bdrc.io/graph/PersonShapes");
+        Model res = getFocusGraph("bdr:P1583", person, "http://purl.bdrc.io/graph/PersonShapes");
+        res.write(System.out, "TTL");
     }
 
 }

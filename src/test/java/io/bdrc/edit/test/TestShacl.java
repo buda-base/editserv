@@ -11,9 +11,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.jena.graph.Node;
+import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
@@ -93,6 +95,12 @@ public class TestShacl {
         TestShacl ts = new TestShacl();
         Model m = ModelFactory.createDefaultModel();
         m.read(personShapeUri, null, "TTL");
+
+        Dataset ds = DatasetFactory.create(testMod);
+        Resource shapesGraphNm = ResourceFactory.createResource(EditConstants.BDG + "PersonShapes");
+        ds.asDatasetGraph().addGraph(shapesGraphNm.asNode(), m.getGraph());
+        URI shapesGraphUri = new URI(EditConstants.BDG + "PersonShapes");
+
         System.out.println(" model size for shapes>>" + m.size());
         ShapesGraph sg = new ShapesGraph(m);
         System.out.println("Shapes graph root shapes >>" + sg.getRootShapes());
@@ -101,6 +109,7 @@ public class TestShacl {
                 null);
         System.out.println("Validation Engine config validateShapes >>" + ve.getConfiguration().getValidateShapes());
         System.out.println("Validation Engine config validateShapes >>" + ve.getConfiguration().setReportDetails(true));
+        System.out.println("Validation Engine config ShapesGraphUri >>" + ve.getShapesGraphURI());
         // ve.validateAll();
         ve.validateNode(ResourceFactory.createResource(EditConstants.BDR + "P707").asNode());
         System.out.println("Shapes graph URI >>" + ve.getShapesGraphURI());

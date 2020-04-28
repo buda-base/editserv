@@ -1,6 +1,7 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +35,11 @@ import io.bdrc.libraries.Models;
 public class CommonsRead {
 
     public final static Logger log = LoggerFactory.getLogger("default");
+
+    public static final String GRAPH_NAME_TYPE = "graph_name_type";
+    public static final String GRAPH_URI_TYPE = "graph_uri_type";
+    public static final String GRAPH_RESOUCE = "graph_resource";
+
     public static String SHAPES_ROOT_URI = "http://purl.bdrc.io/ontology/shapes/core/";
     public static String SHAPES_SCHEMA = "http://purl.bdrc.io/graph/shapesSchema";
     // public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#class";
@@ -110,22 +116,11 @@ public class CommonsRead {
         return QueryProcessor.getQueryGraph(null, query);
     }
 
-    public static Model getFocusGraph(String prefRes, Model resMod, String shapeUri) {
+    public static Model getFocusGraph(String prefRes, Model resMod, String shapeUri) throws IOException {
         String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
         System.out.println("ShortName : " + shortName);
         Model res = ModelFactory.createDefaultModel();
-        Model shapes = QueryProcessor.getGraph(shapeUri);
-        List<String> propsUri = new ArrayList<>();
-        ShapesGraph sg = new ShapesGraph(shapes);
-        for (Shape shape : sg.getRootShapes()) {
-            SHShape shs = shape.getShapeResource();
-            for (SHPropertyShape shp : shs.getPropertyShapes()) {
-                Resource path = shp.getPath();
-                if (path != null && !propsUri.contains(path.getURI())) {
-                    propsUri.add(path.getURI());
-                }
-            }
-        }
+        List<String> propsUri = getFocusPropertiesFromShape(shapeUri, CommonsRead.GRAPH_NAME_TYPE);
         Iterator<Statement> it = resMod.listStatements();
         while (it.hasNext()) {
             Statement stmt = it.next();
@@ -134,6 +129,48 @@ public class CommonsRead {
             }
         }
         return res;
+    }
+
+    public static Model getFocusGraph(String prefRes, Model resMod, String shapeGraph, String sourceType) throws IOException {
+        String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
+        System.out.println("ShortName : " + shortName);
+        Model res = ModelFactory.createDefaultModel();
+        List<String> propsUri = getFocusPropertiesFromShape(shapeGraph, sourceType);
+        Iterator<Statement> it = resMod.listStatements();
+        while (it.hasNext()) {
+            Statement stmt = it.next();
+            if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
+                res.add(stmt);
+            }
+        }
+        return res;
+    }
+
+    public static List<String> getFocusPropertiesFromShape(String shapeGraph, String sourceType) throws IOException {
+        List<String> uris = new ArrayList<>();
+        Model shapes = ModelFactory.createDefaultModel();
+        if (sourceType.equals(CommonsRead.GRAPH_URI_TYPE)) {
+            shapes.read(shapeGraph, "TTL");
+        }
+        if (sourceType.equals(CommonsRead.GRAPH_NAME_TYPE)) {
+            shapes = QueryProcessor.getGraph(shapeGraph);
+        }
+        if (sourceType.equals(CommonsRead.GRAPH_NAME_TYPE)) {
+            InputStream in = CommonsRead.class.getClassLoader().getResourceAsStream(shapeGraph);
+            shapes.read(in, null, "TTL");
+            in.close();
+        }
+        ShapesGraph sg = new ShapesGraph(shapes);
+        for (Shape shape : sg.getRootShapes()) {
+            SHShape shs = shape.getShapeResource();
+            for (SHPropertyShape shp : shs.getPropertyShapes()) {
+                Resource path = shp.getPath();
+                if (path != null && !uris.contains(path.getURI())) {
+                    uris.add(path.getURI());
+                }
+            }
+        }
+        return uris;
     }
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {

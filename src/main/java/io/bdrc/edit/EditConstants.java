@@ -18,6 +18,7 @@ public class EditConstants {
     public static final String ADM = "http://purl.bdrc.io/ontology/admin/";
     public static final String BDA = "http://purl.bdrc.io/admindata/";
     public static final String BDG = "http://purl.bdrc.io/graph/";
+    public static final String BDS = "http://purl.bdrc.io/ontology/shapes/core/";
 
     public static Resource ADMIN_DATA = ResourceFactory.createResource("http://purl.bdrc.io/ontology/admin/AdminData");
     public static Resource STATUS_PROV = ResourceFactory.createResource("http://purl.bdrc.io/admindata/StatusProvisional");

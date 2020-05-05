@@ -1,7 +1,6 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -9,16 +8,17 @@ import java.util.List;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.topbraid.shacl.engine.Shape;
-import org.topbraid.shacl.engine.ShapesGraph;
-import org.topbraid.shacl.model.SHPropertyShape;
-import org.topbraid.shacl.model.SHShape;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -31,26 +31,44 @@ import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
+import io.bdrc.libraries.Prefixes;
 
 public class CommonsRead {
 
     public final static Logger log = LoggerFactory.getLogger("default");
 
+    public static List<Resource> FOCUS_SHAPES;
     public static final String GRAPH_NAME_TYPE = "graph_name_type";
     public static final String GRAPH_URI_TYPE = "graph_uri_type";
-    public static final String GRAPH_RESOUCE = "graph_resource";
+    public static final String GRAPH_RESOURCE = "graph_resource";
 
-    public static String SHAPES_ROOT_URI = "http://purl.bdrc.io/ontology/shapes/core/";
     public static String SHAPES_SCHEMA = "http://purl.bdrc.io/graph/shapesSchema";
-    // public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#class";
-    public static String SHAPE_CLASS_PROP = "http://www.w3.org/ns/shacl#targetClass";
-    private static Model ALL_SHAPES;
+
+    public static Property NODE_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType");
+    public static Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
+    public static Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
+    public static Resource IGNORED_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "IgnoreShape");
+
+    static {
+        FOCUS_SHAPES = new ArrayList<>();
+        FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "FacetShape"));
+        FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "InternalShape"));
+    }
 
     public static Model getGraph(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        if (!graphUri.startsWith(Models.BDR)) {
+        String rootId = "";
+        if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
             throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
         }
-        String rootId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        if (graphUri.indexOf("/") == -1 && !graphUri.startsWith("bdr:")) {
+            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
+        }
+        if (graphUri.indexOf("/") > 0) {
+            rootId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        }
+        if (graphUri.indexOf("/") == -1) {
+            rootId = graphUri.substring(graphUri.lastIndexOf(":") + 1);
+        }
         Model m = QueryProcessor.getGraph(Models.BDG + rootId);
         NodeIterator g_path = m.listObjectsOfProperty(EditConstants.GIT_PATH);
         String gitPath = null;
@@ -71,22 +89,20 @@ public class CommonsRead {
                 .getUnionGraph());
     }
 
-    private static Model getAllShapes() {
-        if (ALL_SHAPES == null) {
-            ALL_SHAPES = QueryProcessor.getGraph(SHAPES_SCHEMA);
+    public static List<String> getIgnoredUris(String prefixedType) throws IOException, ParameterFormatException {
+        Model m = getShapesForType(prefixedType);
+        List<String> shapesUris = new ArrayList<>();
+        ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), IGNORED_SHAPE);
+        while (itFacet.hasNext()) {
+            String url = itFacet.next().getURI();
+            shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
         }
-        return ALL_SHAPES;
-    }
-
-    public static Model getAllShapesForType(String prefixedType) throws IOException, ParameterFormatException {
-        String typeUri = prefixedType.replace("bdo:", EditConstants.BDO);
-        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
-        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "Shapes");
-        return m;
+        return shapesUris;
     }
 
     public static Model getShapesForType(String prefixedType) throws IOException, ParameterFormatException {
         String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
+        System.out.println("GRAPH URI : " + EditConstants.BDG + shortName + "Shapes");
         Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "Shapes");
         return m;
     }
@@ -97,17 +113,28 @@ public class CommonsRead {
         return m;
     }
 
-    public static String getBestShape(String prefixedUri)
+    public static List<String> getBestShapes(String prefixedUri)
             throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
+        List<String> shapesUris = new ArrayList<>();
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
         Model m = getGraph(EditConstants.BDR + shortName);
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         String typeUri = it.next().asResource().getURI();
         Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
-        mod.write(System.out, "TURTLE");
-        NodeIterator it1 = mod.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
-                ResourceFactory.createProperty(SHAPES_ROOT_URI + "rootShape"));
-        return it1.next().asResource().getURI();
+        // 1. Getting the uri of the rootShape resource
+        NodeIterator itRoot = mod.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
+                ResourceFactory.createProperty(EditConstants.BDS + "rootShape"));
+        String uri = itRoot.next().asResource().getURI();
+        shapesUris.add(uri.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
+        // 2. Getting uris of facetShape resources
+        for (Resource r : FOCUS_SHAPES) {
+            ResIterator itFacet = mod.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), r);
+            while (itFacet.hasNext()) {
+                String url = itFacet.next().getURI();
+                shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
+            }
+        }
+        return shapesUris;
     }
 
     public static Model getAssociatedLabels(String prefixedUri) {
@@ -116,58 +143,55 @@ public class CommonsRead {
         return QueryProcessor.getQueryGraph(null, query);
     }
 
-    public static Model getFocusGraph(String prefRes, Model resMod, String shapeUri) throws IOException {
+    public static Model getEditorGraph(String prefRes, Model resMod, List<String> shapeUris)
+            throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
-        System.out.println("ShortName : " + shortName);
         Model res = ModelFactory.createDefaultModel();
-        List<String> propsUri = getFocusPropertiesFromShape(shapeUri, CommonsRead.GRAPH_NAME_TYPE);
+        List<String> propsUri = getFocusPropsFromShape(shapeUris, CommonsRead.GRAPH_NAME_TYPE, prefRes);
         Iterator<Statement> it = resMod.listStatements();
         while (it.hasNext()) {
             Statement stmt = it.next();
-            if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
-                res.add(stmt);
-            }
-        }
-        return res;
-    }
-
-    public static Model getFocusGraph(String prefRes, Model resMod, String shapeGraph, String sourceType) throws IOException {
-        String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
-        System.out.println("ShortName : " + shortName);
-        Model res = ModelFactory.createDefaultModel();
-        List<String> propsUri = getFocusPropertiesFromShape(shapeGraph, sourceType);
-        Iterator<Statement> it = resMod.listStatements();
-        while (it.hasNext()) {
-            Statement stmt = it.next();
-            if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
-                res.add(stmt);
-            }
-        }
-        return res;
-    }
-
-    public static List<String> getFocusPropertiesFromShape(String shapeGraph, String sourceType) throws IOException {
-        List<String> uris = new ArrayList<>();
-        Model shapes = ModelFactory.createDefaultModel();
-        if (sourceType.equals(CommonsRead.GRAPH_URI_TYPE)) {
-            shapes.read(shapeGraph, "TTL");
-        }
-        if (sourceType.equals(CommonsRead.GRAPH_NAME_TYPE)) {
-            shapes = QueryProcessor.getGraph(shapeGraph);
-        }
-        if (sourceType.equals(CommonsRead.GRAPH_NAME_TYPE)) {
-            InputStream in = CommonsRead.class.getClassLoader().getResourceAsStream(shapeGraph);
-            shapes.read(in, null, "TTL");
-            in.close();
-        }
-        ShapesGraph sg = new ShapesGraph(shapes);
-        for (Shape shape : sg.getRootShapes()) {
-            SHShape shs = shape.getShapeResource();
-            for (SHPropertyShape shp : shs.getPropertyShapes()) {
-                Resource path = shp.getPath();
-                if (path != null && !uris.contains(path.getURI())) {
-                    uris.add(path.getURI());
+            String subject = stmt.getSubject().getURI();
+            subject = subject.substring(subject.lastIndexOf("/") + 1);
+            if (subject.equals(shortName)) {
+                if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
+                    res.add(stmt);
+                    if (stmt.getObject().isResource()) {
+                        SimpleSelector ss = new SimpleSelector(stmt.getObject().asResource(), (Property) null, (RDFNode) null);
+                        // looking up -in res model- the statements pertaining to the object and add
+                        // them to the focus graph for validation
+                        StmtIterator stit = resMod.listStatements(ss);
+                        while (stit.hasNext()) {
+                            Statement st = stit.next();
+                            res.add(st);
+                        }
+                    }
                 }
+            }
+        }
+        return res;
+    }
+
+    public static Model getEditorGraph(String prefRes)
+            throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+        return getEditorGraph(prefRes, getGraph(prefRes), getBestShapes(prefRes));
+    }
+
+    public static List<String> getFocusPropsFromShape(List<String> shapeGraphs, String sourceType, String prefixedUri)
+            throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
+        List<String> uris = new ArrayList<>();
+        String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
+        Model mm = getGraph(EditConstants.BDR + shortName);
+        NodeIterator it = mm.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
+        String typeUri = it.next().asResource().getURI();
+        Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
+        for (String uri : shapeGraphs) {
+            Model m = ModelFactory.createDefaultModel();
+            m.read(uri + ".ttl", "TTL");
+            NodeIterator it1 = m.listObjectsOfProperty(SHACL_PROP);
+            while (it1.hasNext()) {
+                String rdf = it1.next().asResource().getURI();
+                uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
             }
         }
         return uris;
@@ -175,15 +199,8 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        // String personShapeUri =
-        // "https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/person.shapes.ttl";
-        String personShapeUri = "https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/person.event.shapes.ttl";
-        // System.out.println(getBestShape("bdr:P707"));
-        Model person = ModelFactory.createDefaultModel();
-        person.read("http://purl.bdrc.io/resource/P1583.ttl", "TTL");
-        // Model res = getFocusGraph("bdr:1583", person,
-        // "http://purl.bdrc.io/graph/PersonShapes");
-        Model res = getFocusGraph("bdr:P1583", person, "http://purl.bdrc.io/graph/PersonShapes");
+        Model res = getEditorGraph("bdr:P707");
+        res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");
     }
 

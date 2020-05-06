@@ -134,6 +134,7 @@ public class CommonsRead {
                 shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
             }
         }
+        log.info("BEST SHAPES URIS {} ", shapesUris);
         return shapesUris;
     }
 
@@ -190,9 +191,13 @@ public class CommonsRead {
             m.read(uri + ".ttl", "TTL");
             NodeIterator it1 = m.listObjectsOfProperty(SHACL_PROP);
             while (it1.hasNext()) {
-                String rdf = it1.next().asResource().getURI();
-                System.out.println("URIS >>" + rdf);
-                uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
+                RDFNode n = it1.next();
+                log.info("NODE {} ", n);
+                if (n.isResource()) {
+                    String rdf = n.asResource().getURI();
+                    System.out.println("URIS >>" + rdf);
+                    uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
+                }
             }
         }
         System.out.println("URIS >>" + uris);

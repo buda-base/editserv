@@ -192,16 +192,12 @@ public class CommonsRead {
             NodeIterator it1 = m.listObjectsOfProperty(SHACL_PROP);
             while (it1.hasNext()) {
                 RDFNode n = it1.next();
-                log.info("NODE {} is resource {} has resource", n, n.isResource(), n.asResource());
                 if (n.asResource() != null) {
-                    log.info("NODE uri {} and resource is {} ", n.asResource().getURI(), mod.createResource(n.asResource().getURI()));
                     String rdf = n.asResource().getURI();
-                    System.out.println("URIS >>" + rdf);
                     uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
                 }
             }
         }
-        System.out.println("URIS >>" + uris);
         return uris;
     }
 

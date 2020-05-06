@@ -1,7 +1,6 @@
 package io.bdrc.edit.test;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.jena.rdf.model.Model;
 import org.junit.Test;
@@ -9,7 +8,6 @@ import org.junit.Test;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.CommonsRead;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
 public class TestCommonsRead {
@@ -45,20 +43,6 @@ public class TestCommonsRead {
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Test
-    public void getShapesForTypeTest() throws IOException, ParameterFormatException {
-        Model m = CommonsRead.getShapesForType("bdo:Person");
-        System.out.println("----------------------------------");
-        m.write(System.out, "TURTLE");
-    }
-
-    @Test
-    public void getBestShapeForResourceTest() throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
-        List<String> best = CommonsRead.getBestShapes("bdr:P1583");
-        System.out.println("----------BEST SHAPE :" + best);
-
     }
 
 }

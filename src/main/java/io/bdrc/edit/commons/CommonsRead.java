@@ -191,15 +191,17 @@ public class CommonsRead {
             NodeIterator it1 = m.listObjectsOfProperty(SHACL_PROP);
             while (it1.hasNext()) {
                 String rdf = it1.next().asResource().getURI();
+                System.out.println("URIS >>" + rdf);
                 uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
             }
         }
+        System.out.println("URIS >>" + uris);
         return uris;
     }
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        Model res = getEditorGraph("bdr:P707");
+        Model res = getEditorGraph("bdr:P1583");
         res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");
     }

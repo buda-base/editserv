@@ -58,9 +58,9 @@ import io.bdrc.libraries.GitHelpers;
 
 @Controller
 @RequestMapping("/")
-public class EditController {
+public class OldController {
 
-	public final static Logger log = LoggerFactory.getLogger(EditController.class.getName());
+	public final static Logger log = LoggerFactory.getLogger(OldController.class.getName());
 	private Reasoner bdrcReasoner = BDRCReasoner.getReasoner();
 
 	public String getUser(HttpServletRequest req) {

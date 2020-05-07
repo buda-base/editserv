@@ -113,13 +113,21 @@ public class CommonsRead {
         return m;
     }
 
-    public static List<String> getBestShapes(String prefixedUri)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
-        List<String> shapesUris = new ArrayList<>();
+    public static String getResourceTypeUri(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
         Model m = getGraph(EditConstants.BDR + shortName);
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
-        String typeUri = it.next().asResource().getURI();
+        return it.next().asResource().getURI();
+    }
+
+    public static String getFullUriResourceFromPrefixed(String prefixedUri) {
+        return (EditConstants.BDR + prefixedUri.substring(prefixedUri.indexOf(":") + 1));
+    }
+
+    public static List<String> getBestShapes(String prefixedUri)
+            throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
+        List<String> shapesUris = new ArrayList<>();
+        String typeUri = getResourceTypeUri(prefixedUri);
         Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
         // 1. Getting the uri of the rootShape resource
         NodeIterator itRoot = mod.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
@@ -136,12 +144,6 @@ public class CommonsRead {
         }
         log.info("BEST SHAPES URIS {} ", shapesUris);
         return shapesUris;
-    }
-
-    public static Model getAssociatedLabels(String prefixedUri) {
-        String query = "construct {\n" + "  ?s skos:preflabel ?o. \n" + "  ?s rdfs:label ?o.} \n" + "where { { \n" + prefixedUri + " ?resp ?s . \n"
-                + "  {  \n" + "  ?s skos:prefLabel ?o.\n" + "  }\n" + "  union{\n" + "      ?s rdfs:label ?o.\n" + "  }\n" + "}}";
-        return QueryProcessor.getQueryGraph(null, query);
     }
 
     public static Model getEditorGraph(String prefRes, Model resMod, List<String> shapeUris)
@@ -167,6 +169,23 @@ public class CommonsRead {
                             res.add(st);
                         }
                     }
+                }
+            }
+        }
+        List<String> ignoredProps = getIgnoredUris(prefRes);
+        for (String ignore : ignoredProps) {
+            SimpleSelector ss = new SimpleSelector((Resource) null, ResourceFactory.createProperty(ignore), (RDFNode) null);
+            StmtIterator ignit = res.listStatements(ss);
+            while (ignit.hasNext()) {
+                Statement st = ignit.next();
+                // first case (commented out) ignore props when the considered resource is the
+                // subject
+                // second case (active) ignore statements whose prop is to be ignored regardless
+                // its subject
+                // if(st.getSubject().getURI().equals(getFullUriResourceFromPrefixed(prefRes))
+                // && st.getPredicate().getURI().equals(ignore)) {
+                if (st.getPredicate().getURI().equals(ignore)) {
+                    res.remove(st);
                 }
             }
         }

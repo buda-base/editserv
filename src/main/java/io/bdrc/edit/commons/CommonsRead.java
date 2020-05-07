@@ -189,6 +189,7 @@ public class CommonsRead {
                 }
             }
         }
+        res.setNsPrefixes(Prefixes.getPrefixMapping());
         return res;
     }
 

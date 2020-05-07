@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import io.bdrc.edit.commons.CommonsRead;
-import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -37,7 +36,8 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                     .body(StreamingHelpers.getStream("No graph could be found for " + prefixedId));
         }
-        return ResponseEntity.ok().contentType(BudaMediaTypes.MT_TTL).body(StreamingHelpers.getModelStream(m, "ttl", null, null));
+        response.addHeader("Content-Type", "text/turtle;charset=utf-8");
+        return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null));
     }
 
 }

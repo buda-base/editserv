@@ -47,7 +47,7 @@ public class CommonsRead {
     public static Property NODE_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType");
     public static Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
     public static Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
-    public static Resource IGNORED_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "IgnoreShape");
+    public static Resource EXTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "ExternalShape");
 
     static {
         FOCUS_SHAPES = new ArrayList<>();
@@ -89,10 +89,10 @@ public class CommonsRead {
                 .getUnionGraph());
     }
 
-    public static List<String> getIgnoredUris(String prefixedType) throws IOException, ParameterFormatException {
+    public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
         Model m = getShapesForType(prefixedType);
         List<String> shapesUris = new ArrayList<>();
-        ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), IGNORED_SHAPE);
+        ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), EXTERNAL_SHAPE);
         while (itFacet.hasNext()) {
             String url = itFacet.next().getURI();
             shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
@@ -172,7 +172,7 @@ public class CommonsRead {
                 }
             }
         }
-        List<String> ignoredProps = getIgnoredUris(prefRes);
+        List<String> ignoredProps = getExternalUris(prefRes);
         for (String ignore : ignoredProps) {
             SimpleSelector ss = new SimpleSelector((Resource) null, ResourceFactory.createProperty(ignore), (RDFNode) null);
             StmtIterator ignit = res.listStatements(ss);

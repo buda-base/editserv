@@ -1,0 +1,192 @@
+@prefix :      <http://purl.bdrc.io/ontology/core/> .
+@prefix aut:   <http://purl.bdrc.io/ontology/ext/auth/> .
+@prefix bdan:  <http://purl.bdrc.io/annotation/> .
+@prefix bd:    <http://www.bigdata.com/rdf#> .
+@prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix tbr:   <http://purl.bdrc.io/ontology/toberemoved/> .
+@prefix bdou:  <http://purl.bdrc.io/ontology/ext/user/> .
+@prefix rsh:   <http://purl.bdrc.io/shacl/core/shape/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bdac:  <http://purl.bdrc.io/anncollection/> .
+@prefix oa:    <http://www.w3.org/ns/oa#> .
+@prefix bdgup: <http://purl.bdrc.io/graph-nc/user-private/> .
+@prefix mbbt:  <http://mbingenheimer.net/tools/bibls/> .
+@prefix dila:  <http://purl.dila.edu.tw/resource/> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix tmp:   <http://purl.bdrc.io/ontology/tmp/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix text:  <http://jena.apache.org/text#> .
+@prefix bdgu:  <http://purl.bdrc.io/graph-nc/user/> .
+@prefix bda:   <http://purl.bdrc.io/admindata/> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix ad:    <http://schemas.talis.com/2005/address/schema#> .
+@prefix bdd:   <http://purl.bdrc.io/data/> .
+@prefix bdg:   <http://purl.bdrc.io/graph/> .
+@prefix f:     <java:io.bdrc.ldspdi.sparql.functions.> .
+@prefix afn:   <http://jena.apache.org/ARQ/function#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
+@prefix bdo:   <http://purl.bdrc.io/ontology/core/> .
+@prefix iiif2: <http://iiif.io/api/presentation/2#> .
+@prefix iiif3: <http://iiif.io/api/presentation/3#> .
+@prefix adr:   <http://purl.bdrc.io/resource-nc/auth/> .
+@prefix bdr:   <http://purl.bdrc.io/resource/> .
+@prefix bdu:   <http://purl.bdrc.io/resource-nc/user/> .
+@prefix as:    <http://www.w3.org/ns/activitystreams#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix tm:    <http://def.seegrid.csiro.au/isotc211/iso19108/2002/temporal#> .
+@prefix ldp:   <http://www.w3.org/ns/ldp#> .
+
+bda:LG249BF27FBFAEE108
+        a               adm:LogEntry ;
+        adm:logDate     "2013-01-01T04:18:00Z"^^xsd:dateTime ;
+        adm:logMessage  "removed bad incarnation ref to P736; commented out extra incarnation of relations pending proper adding"@en ;
+        adm:logWho      bdr:U00006 .
+
+bdr:NMC144E4543D4D3842
+        a           bdo:PersonGterStonTitle ;
+        rdfs:label  "sges gter khrag ‘thung bdud ‘joms rdo rje/"@bo-x-ewts .
+
+bda:LGCF0146CE2EE9DE1F
+        a               adm:LogEntry ;
+        adm:logDate     "2009-03-02T13:10:20.71Z"^^xsd:dateTime ;
+        adm:logMessage  "added khrag 'thung bdud 'joms rdo\n            rje"@en ;
+        adm:logWho      bdr:U00021 .
+
+bda:LG29A77226003FBD82
+        a               adm:LogEntry ;
+        adm:logDate     "2009-07-20T09:35:52.281Z"^^xsd:dateTime ;
+        adm:logMessage  "created incarnation 'jigs bral ye\n            shes rdo rje"@en ;
+        adm:logWho      bdr:U00001 .
+
+bdr:NM9835426F20649241
+        a           bdo:PersonSecretInitiatoryName ;
+        rdfs:label  "bdud 'joms rdo rje gro lod rtsal/"@bo-x-ewts .
+
+bda:LGD3146AE01954AC4F
+        a            adm:LogEntry ;
+        adm:logDate  "2010-01-21T05:45:38.431Z"^^xsd:dateTime ;
+        adm:logWho   bdr:U00012 .
+
+bdr:NM6F957005AEAA88E9
+        a           bdo:PersonGterStonTitle ;
+        rdfs:label  "lcags skong gter chen bdud ‘joms rdo rje khro lod rtsal/"@bo-x-ewts .
+
+bdr:NM460A97157ACBBDAD
+        a           bdo:PersonPersonalName ;
+        rdfs:label  "'jam dbyangs bstan 'dzin grags pa/"@bo-x-ewts .
+
+bda:LGB0CEB5DAEAA89B53
+        a            adm:LogEntry ;
+        adm:logDate  "2010-01-20T21:16:52.042Z"^^xsd:dateTime ;
+        adm:logWho   bdr:U00012 .
+
+bdr:NM097E0AD36EA2723E
+        a           bdo:PersonPersonalName ;
+        rdfs:label  "khrag 'thung bdud 'joms rdo rje/"@bo-x-ewts .
+
+bdr:NM74233C8A459E6801
+        a           bdo:PersonSecretInitiatoryName ;
+        rdfs:label  "bdud 'joms rdo rje rol pa rtsal/"@bo-x-ewts .
+
+bdr:EVBE752C7DD4727AE8
+        a               bdo:PersonOccupiesSeat ;
+        bdo:eventWhere  bdr:G1AG33 .
+
+bda:LGDEA4F1AB1CAF8BC9
+        a               adm:LogEntry ;
+        adm:logDate     "2010-01-20T16:09:06.361Z"^^xsd:dateTime ;
+        adm:logMessage  "added incarnation\n            relations"@en ;
+        adm:logWho      bdr:U00020 .
+
+bda:P705  a                adm:AdminData ;
+        adm:adminAbout     bdr:P705 ;
+        adm:facetIndex     25 ;
+        adm:gitPath        "7e/P705.trig" ;
+        adm:gitRepo        bda:GR0006 ;
+        adm:gitRevision    "tttttttttttttttttttttttt787231632fd0140b" ;
+        adm:graphId        bdg:P705 ;
+        adm:logEntry       bda:LG29A77226003FBD82 , bda:LG12E8C561DAF38C88 , bda:LG62F03E4511479798 , bda:LGFA20FF10B22AEAC9 , bda:LGB0CEB5DAEAA89B53 , bda:LG249BF27FBFAEE108 , bda:LG0F2164469FE0353F , bda:LGD3146AE01954AC4F , bda:LGDEA4F1AB1CAF8BC9 , bda:LG9EA71D8082DBB05D , bda:LGCF0146CE2EE9DE1F , bda:LG384AC48A2259DBA2 ;
+        adm:metadataLegal  bda:LD_BDRC_CC0 ;
+        adm:status         bda:StatusReleased ;
+        bdo:isRoot         true .
+
+bdr:P705  a                    bdo:Person ;
+        adm:seeOtherToL        "https://www.treasuryoflives.org/biographies/view/Dudjom-Lingpa/9688"^^xsd:anyURI ;
+        bdo:hasChild           bdr:P248 , bdr:P707 ;
+        bdo:hasFather          bdr:P2MS9526 ;
+        bdo:hasMother          bdr:P2MS9527 ;
+        bdo:hasParent          bdr:P2MS9527 , bdr:P2MS9526 ;
+        bdo:hasSon             bdr:P707 , bdr:P248 ;
+        bdo:hasSpouse          bdr:P3JM8 ;
+        bdo:hasUnknownKinship  bdr:P248 ;
+        bdo:hasWife            bdr:P3JM8 ;
+        bdo:isRoot             true ;
+        bdo:kinWith            bdr:P248 , bdr:P2MS9526 , bdr:P3JM8 , bdr:P2MS9527 , bdr:P707 ;
+        bdo:note               bdr:NTFAD9B4DB46D31C77 ;
+        bdo:personEvent        bdr:EVBE752C7DD4727AE8 , bdr:EVEE02404EB256713E , bdr:EV1864C6F4BA5E1CF3 ;
+        bdo:personGender       bdr:GenderMale ;
+        bdo:personHasConsort   bdr:P2MS9535 , bdr:P3JM8 , bdr:P2MS9534 ;
+        bdo:personName         bdr:NM74233C8A459E6801 , bdr:NM097E0AD36EA2723E , bdr:NM6F957005AEAA88E9 , bdr:NM460A97157ACBBDAD , bdr:NMC144E4543D4D3842 , bdr:NM7BF48423F48A182C , bdr:NM83687CAD14B9504A , bdr:NM9835426F20649241 ;
+        bdo:personStudentOf    bdr:P382 ;
+        bdo:personTeacherOf    bdr:P3724 , bdr:P6306 , bdr:P704 , bdr:P707 , bdr:P706 , bdr:P731 ;
+        skos:prefLabel         "bdud 'joms gling pa/"@bo-x-ewts .
+
+bda:LG9EA71D8082DBB05D
+        a               adm:LogEntry ;
+        adm:logDate     "2019-01-04T16:27:07.567Z"^^xsd:dateTime ;
+        adm:logMessage  "added info sucha as sons etc."@en ;
+        adm:logWho      bdr:U00007 .
+
+bda:LGFA20FF10B22AEAC9
+        a            adm:LogEntry ;
+        adm:logDate  "2010-02-01T10:47:35.752Z"^^xsd:dateTime ;
+        adm:logWho   bdr:U00020 .
+
+bda:LG12E8C561DAF38C88
+        a               adm:LogEntry ;
+        adm:logDate     "2010-01-20T15:35:13.054Z"^^xsd:dateTime ;
+        adm:logMessage  "added relations"@en ;
+        adm:logWho      bdr:U00020 .
+
+bdr:NM83687CAD14B9504A
+        a           bdo:PersonPersonalName ;
+        rdfs:label  "lcags khung sge'u gter bdud 'joms rdo rje/"@bo-x-ewts .
+
+bdr:NM7BF48423F48A182C
+        a           bdo:PersonPrimaryName ;
+        rdfs:label  "bdud 'joms gling pa/"@bo-x-ewts .
+
+bda:LG62F03E4511479798
+        a               adm:LogEntry ;
+        adm:logDate     "2015-08-11T15:40:55.899Z"^^xsd:dateTime ;
+        adm:logMessage  "created link to Treasury of Lives"@en ;
+        adm:logWho      bdr:U00002 .
+
+bdr:EV1864C6F4BA5E1CF3
+        a           bdo:PersonBirth ;
+        bdo:onYear  "1835"^^xsd:gYear .
+
+bda:LG0F2164469FE0353F
+        a            adm:LogEntry ;
+        adm:logDate  "2007-05-10T16:03:14.633Z"^^xsd:dateTime ;
+        adm:logWho   bdr:U00017 .
+
+bda:LG384AC48A2259DBA2
+        a               adm:LogEntry ;
+        adm:logDate     "2013-07-25T14:44:43.496Z"^^xsd:dateTime ;
+        adm:logMessage  "added event & note"@en ;
+        adm:logWho      bdr:U00007 .
+
+bdr:EVEE02404EB256713E
+        a           bdo:PersonDeath ;
+        bdo:onYear  "1904"^^xsd:gYear .
+
+bdr:NTFAD9B4DB46D31C77
+        a                             bdo:Note ;
+        bdo:contentLocationStatement  "v. 2, p. 376" ;
+        bdo:noteSource                bdr:MW19997 ;
+        bdo:noteText                  "༡༨༨༠ལོར་གང་ཉིད་དགུང་གྲངས་ཞེ་དྲུག་ལ་སླེབས་དུས་གསེར་ལྗོངས་བླ་མ་རུང་དུ་རི་ཁྲོད་བཏབ་ཅིང་བཤད་སྒྲུབ་ཀྱི་སྲོལ་བཙུགས། འཁོར་སློབ་མཚན་སྙན་རྒྱས་ཤིང་རྣལ་འབྱོར་གྱི་དབང་ཕྱུག་མང་པོ་བྱོན་ཚུལ་འཁོད།"@bo .

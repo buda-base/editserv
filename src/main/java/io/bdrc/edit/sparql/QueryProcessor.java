@@ -65,26 +65,12 @@ public class QueryProcessor {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
         }
         String query = " construct {?s ?p ?o} where { graph <" + fullUri + "> { ?s ?p ?o } }";
+        log.info("Query Processor looking for graph {} ", fullUri);
+        log.info("Query Processor graph query {} ", query);
         final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
-
-    /*
-     * public static Model getGraphWithAssoiatedResourcesType(String fullUri) {
-     * return getGraphWithAssoiatedResourcesType(fullUri, null); }
-     * 
-     * public static Model getGraphWithAssoiatedResourcesType(String fullUri, String
-     * fusekiUrl) { if (fusekiUrl == null) { fusekiUrl =
-     * EditConfig.getProperty(EditConfig.FUSEKI_URL); } String shortName =
-     * fullUri.substring(fullUri.lastIndexOf("/") + 1); String query =
-     * "construct { ?s ?p ?o. ?o rdf:type ?type.} where {\n" + "  { graph <" +
-     * fullUri + "> { ?s ?p ?o }}\n" + "union {\n" + "    bdr:" + shortName +
-     * " ?p ?o.\n" + "    ?o rdf:type ?type.\n" + "  }\n" + "}"; final Query q =
-     * QueryFactory.create(Prefixes.getPrefixesString() + query); final
-     * QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q); return
-     * qe.execConstruct(); }
-     */
 
     public static Model getQueryGraph(String fusekiUrl, String query) {
         if (fusekiUrl == null) {
@@ -124,7 +110,7 @@ public class QueryProcessor {
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = QueryProcessor.getTriplesWithObject("http://purl.bdrc.io/resource/P1583", null);
+        Model m = QueryProcessor.getGraph("http://purl.bdrc.io/graph/P1583", null);
         m.write(System.out, "TURTLE");
         // dropGraph("http://purl.bdrc.io/graph/P1524X");
     }

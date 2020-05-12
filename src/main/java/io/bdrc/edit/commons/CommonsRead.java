@@ -69,7 +69,8 @@ public class CommonsRead {
         if (graphUri.indexOf("/") == -1) {
             rootId = graphUri.substring(graphUri.lastIndexOf(":") + 1);
         }
-        Model m = QueryProcessor.getGraph(Models.BDG + rootId);
+        log.info("Getting graph for {} ", Models.BDG + rootId);
+        Model m = QueryProcessor.getGraph(Models.BDG + rootId, null);
         NodeIterator g_path = m.listObjectsOfProperty(EditConstants.GIT_PATH);
         String gitPath = null;
         if (g_path.hasNext()) {
@@ -223,8 +224,8 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        Model res = getEditorGraph("bdr:P1583");
-        res.setNsPrefixes(Prefixes.getPrefixMapping());
+        Model res = getGraph("bdr:P1583");
+        // res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");
     }
 

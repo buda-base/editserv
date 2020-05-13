@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.CommonsRead;
-import io.bdrc.edit.commons.CommonsWrite;
+import io.bdrc.edit.commons.CommonsValidate;
 import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -55,9 +55,9 @@ public class TestCommons {
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, "TTL");
         in.close();
-        assert (!CommonsWrite.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
+        assert (!CommonsValidate.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
         m = QueryProcessor.getGraph("http://purl.bdrc.io/resource/P705");
-        assert (CommonsWrite.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
+        assert (CommonsValidate.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
     }
 
 }

@@ -7,6 +7,7 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.slf4j.Logger;
@@ -23,9 +24,15 @@ public class QueryProcessor {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty("fusekiData");
         }
-        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + " describe <" + fullUri.trim() + ">");
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
-        return qe.execDescribe();
+        Model m = ModelFactory.createDefaultModel();
+        try {
+            final Query q = QueryFactory.create(Prefixes.getPrefixesString() + " describe <" + fullUri.trim() + ">");
+            final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+            m = qe.execDescribe();
+        } catch (Exception ex) {
+            return m;
+        }
+        return m;
     }
 
     public static Model describeModel(String fullUri) {

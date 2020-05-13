@@ -222,6 +222,21 @@ public class CommonsRead {
         return uris;
     }
 
+    public static String getCommit(Model m, String graphUri) {
+        String commit = null;
+        String shortName = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        SimpleSelector s = new SimpleSelector(ResourceFactory.createResource(Models.BDA + shortName),
+                ResourceFactory.createProperty(Models.ADM + "gitRevision"), (RDFNode) null);
+        StmtIterator it = m.listStatements(s);
+        if (it.hasNext()) {
+            Statement st = it.next();
+            if (st.getObject().isLiteral()) {
+                commit = st.getObject().asLiteral().toString();
+            }
+        }
+        return commit;
+    }
+
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
         Model res = getGraph("bdr:P1583");

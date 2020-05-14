@@ -27,21 +27,19 @@ public class TestCommons {
         String graphUri2 = "http://purl.bdrc.io/resource/P1583XZ";
 
         try {
-            CommonsRead.getGraph(graphUri1);
+            CommonsRead.getGraphFromGit(graphUri1);
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
-            // TODO Auto-generated catch block
             assert (e instanceof UnknownBdrcResourceException);
         }
 
         try {
-            CommonsRead.getGraph(graphUri2);
+            CommonsRead.getGraphFromGit(graphUri2);
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
-            // TODO Auto-generated catch block
             assert (e instanceof NotModifiableException);
         }
 
         try {
-            Model m = CommonsRead.getGraph(graphUri);
+            Model m = CommonsRead.getGraphFromGit(graphUri);
             assert (m.size() > 0);
             m.write(System.out, "TURTLE");
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
@@ -58,6 +56,28 @@ public class TestCommons {
         assert (!CommonsValidate.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
         m = QueryProcessor.getGraph("http://purl.bdrc.io/resource/P705");
         assert (CommonsValidate.validateCommit(m, "http://purl.bdrc.io/resource/P705"));
+    }
+
+    @Test
+    public void testResourceExistence() {
+        assert (!CommonsValidate.existResource("http://purl.bdrc.io/resource/P705YYYYYYYYYYYYYYYYY"));
+        assert (CommonsValidate.existResource("http://purl.bdrc.io/resource/P705"));
+    }
+
+    @Test
+    public void testWithdrawn() throws IOException {
+        assert (!CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583", false));
+        assert (CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583uuuuuuuuuuu", false));
+        InputStream in = TestCommons.class.getClassLoader().getResourceAsStream("P705.ttl");
+        Model m = ModelFactory.createDefaultModel();
+        m.read(in, null, "TTL");
+        in.close();
+        assert (CommonsValidate.isWithdrawn(m, "http://purl.bdrc.io/resource/P705", false));
+        in = TestCommons.class.getClassLoader().getResourceAsStream("P705Released.ttl");
+        m = ModelFactory.createDefaultModel();
+        m.read(in, null, "TTL");
+        in.close();
+        assert (!CommonsValidate.isWithdrawn(m, "http://purl.bdrc.io/resource/P705", false));
     }
 
 }

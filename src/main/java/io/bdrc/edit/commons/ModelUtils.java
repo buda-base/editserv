@@ -1,5 +1,6 @@
 package io.bdrc.edit.commons;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -7,6 +8,8 @@ import java.util.Set;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 
@@ -55,6 +58,19 @@ public class ModelUtils {
     public static Model getEditedModel(Model full, Model focus, Model focusEdited) {
         Model complement = ModelComplement(full, focus);
         return mergeModel(complement, focusEdited);
+    }
+
+    // List all objects that are not literals or blank nodes
+    public List<RDFNode> getObjectResourceNodes(Model m) {
+        List<RDFNode> l = new ArrayList<>();
+        NodeIterator nit = m.listObjects();
+        while (nit.hasNext()) {
+            RDFNode n = nit.next();
+            if (n.isURIResource()) {
+                l.add(n);
+            }
+        }
+        return l;
     }
 
 }

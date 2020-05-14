@@ -111,7 +111,7 @@ bda:P705  a                adm:AdminData ;
         adm:graphId        bdg:P705 ;
         adm:logEntry       bda:LG29A77226003FBD82 , bda:LG12E8C561DAF38C88 , bda:LG62F03E4511479798 , bda:LGFA20FF10B22AEAC9 , bda:LGB0CEB5DAEAA89B53 , bda:LG249BF27FBFAEE108 , bda:LG0F2164469FE0353F , bda:LGD3146AE01954AC4F , bda:LGDEA4F1AB1CAF8BC9 , bda:LG9EA71D8082DBB05D , bda:LGCF0146CE2EE9DE1F , bda:LG384AC48A2259DBA2 ;
         adm:metadataLegal  bda:LD_BDRC_CC0 ;
-        adm:status         bda:StatusWithdrawn ;
+        adm:status         bda:StatusReleased ;
         bdo:isRoot         true .
 
 bdr:P705  a                    bdo:Person ;

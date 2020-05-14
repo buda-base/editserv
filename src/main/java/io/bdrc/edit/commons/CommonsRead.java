@@ -55,7 +55,7 @@ public class CommonsRead {
         FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "InternalShape"));
     }
 
-    public static Model getGraph(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+    public static Model getGraphFromGit(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String rootId = "";
         if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
             throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
@@ -116,7 +116,7 @@ public class CommonsRead {
 
     public static String getResourceTypeUri(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model m = getGraph(EditConstants.BDR + shortName);
+        Model m = getGraphFromGit(EditConstants.BDR + shortName);
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         return it.next().asResource().getURI();
     }
@@ -196,14 +196,14 @@ public class CommonsRead {
 
     public static Model getEditorGraph(String prefRes)
             throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        return getEditorGraph(prefRes, getGraph(prefRes), getBestShapes(prefRes));
+        return getEditorGraph(prefRes, getGraphFromGit(prefRes), getBestShapes(prefRes));
     }
 
     public static List<String> getFocusPropsFromShape(List<String> shapeGraphs, String sourceType, String prefixedUri)
             throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         List<String> uris = new ArrayList<>();
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model mm = getGraph(EditConstants.BDR + shortName);
+        Model mm = getGraphFromGit(EditConstants.BDR + shortName);
         NodeIterator it = mm.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         String typeUri = it.next().asResource().getURI();
         Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
@@ -239,9 +239,10 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        Model res = getGraph("bdr:P1583");
+        // Model res = getGraphFromGit("bdr:P1583");
         // res.setNsPrefixes(Prefixes.getPrefixMapping());
-        res.write(System.out, "TTL");
+        // res.write(System.out, "TTL");
+        System.out.println(getResourceTypeUri("bdr:P1583"));
     }
 
 }

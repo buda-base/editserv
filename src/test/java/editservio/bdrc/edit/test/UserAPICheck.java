@@ -285,7 +285,7 @@ public class UserAPICheck {
     }
 
     public static String getResourceFileContent(String file) throws IOException {
-        InputStream stream = PostTaskTest.class.getClassLoader().getResourceAsStream(file);
+        InputStream stream = PostTaskCheck.class.getClassLoader().getResourceAsStream(file);
         StringWriter writer = new StringWriter();
         IOUtils.copy(stream, writer, "UTF-8");
         return writer.toString();

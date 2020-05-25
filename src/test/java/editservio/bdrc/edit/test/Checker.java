@@ -23,7 +23,7 @@ public class Checker {
 
     // Checks the resource ID is now the object of a given ?s ?p
     public static boolean checkResourceInConstruct(String checkFile, String resId) throws IOException {
-        String q = PostTaskTest.getResourceFileContent(checkFile);
+        String q = PostTaskCheck.getResourceFileContent(checkFile);
         final Query qy = QueryFactory.create(Prefixes.getPrefixesString() + " " + q);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(EditConfig.getProperty(EditConfig.FUSEKI_URL), qy);
         Model m = qe.execConstruct();

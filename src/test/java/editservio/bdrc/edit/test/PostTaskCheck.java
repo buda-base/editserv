@@ -43,7 +43,7 @@ import io.bdrc.libraries.BDRCReasoner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EditApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class PostTaskTest {
+public class PostTaskCheck {
 
     @Autowired
     Environment environment;
@@ -164,7 +164,7 @@ public class PostTaskTest {
     }
 
     public static String getResourceFileContent(String file) throws IOException {
-        InputStream stream = PostTaskTest.class.getClassLoader().getResourceAsStream(file);
+        InputStream stream = PostTaskCheck.class.getClassLoader().getResourceAsStream(file);
         StringWriter writer = new StringWriter();
         IOUtils.copy(stream, writer, "UTF-8");
         return writer.toString();

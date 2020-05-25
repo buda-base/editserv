@@ -30,6 +30,7 @@ public class QueryProcessor {
             final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
             m = qe.execDescribe();
         } catch (Exception ex) {
+            log.error("could not get describe", ex);
             return m;
         }
         return m;
@@ -117,7 +118,7 @@ public class QueryProcessor {
 
     public static void main(String[] args) {
         EditConfig.init();
-        Model m = QueryProcessor.getGraph("http://purl.bdrc.io/graph/P1583", null);
+        Model m = QueryProcessor.describeModel("http://purl.bdrc.io/resource/P1583", null);
         m.write(System.out, "TURTLE");
         // dropGraph("http://purl.bdrc.io/graph/P1524X");
     }

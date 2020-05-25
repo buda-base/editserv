@@ -1,5 +1,6 @@
 package io.bdrc.edit.commons;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,12 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+
+import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.txn.exceptions.NotModifiableException;
+import io.bdrc.edit.txn.exceptions.ParameterFormatException;
+import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
+import io.bdrc.libraries.Prefixes;
 
 public class ModelUtils {
 
@@ -71,6 +78,25 @@ public class ModelUtils {
             }
         }
         return l;
+    }
+
+    public static String checkToFullUri(String resourceUri) {
+        try {
+            int prefixIndex = resourceUri.indexOf(":");
+            if (prefixIndex < 0) {
+                return resourceUri;
+            } else {
+                String prefix = resourceUri.substring(0, prefixIndex);
+                return Prefixes.getFullIRI(prefix) + resourceUri.substring(prefixIndex + 1);
+            }
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
+        EditConfig.init();
+        System.out.println(checkToFullUri("bdr:P1583"));
     }
 
 }

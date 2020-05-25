@@ -2,6 +2,7 @@ package io.bdrc.edit.commons;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,11 +49,86 @@ public class CommonsRead {
     public static Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
     public static Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
     public static Resource EXTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "ExternalShape");
+    public static Property LOCAL_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "localShapeGraph");
+    public static Property TOP_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "topShapeGraph");
+    public static Property UI_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "uiShapeGraph");
+    public static HashMap<String, Model> ENTITY_MAP;
+    static final String ONT_GRAPH_URL = "/graph/ontologySchema.ttl";
 
     static {
         FOCUS_SHAPES = new ArrayList<>();
         FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "FacetShape"));
         FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "InternalShape"));
+        ENTITY_MAP = new HashMap<>();
+    }
+
+    public static Model getEntityModel(String prefixedUri) {
+        Model m = ENTITY_MAP.get(prefixedUri);
+        if (m == null) {
+            String shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
+            m = QueryProcessor.describeModel(EditConstants.BDO + shortName);
+            ENTITY_MAP.put(prefixedUri, m);
+        }
+        return m;
+    }
+
+    public static String getLocalShapeUri(String entityPrefixedUri) {
+        Model ent = getEntityModel(entityPrefixedUri);
+        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
+        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), LOCAL_SHAPE);
+        if (st != null) {
+            return st.getObject().asNode().getURI();
+        }
+        return null;
+    }
+
+    public static String getTopShapeUri(String entityPrefixedUri) {
+        Model ent = getEntityModel(entityPrefixedUri);
+        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
+        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), TOP_SHAPE);
+        if (st != null) {
+            return st.getObject().asNode().getURI();
+        }
+        return null;
+    }
+
+    public static String getUIShapeUri(String entityPrefixedUri) {
+        Model ent = getEntityModel(entityPrefixedUri);
+        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
+        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), UI_SHAPE);
+        if (st != null) {
+            return st.getObject().asNode().getURI();
+        }
+        return null;
+    }
+
+    public static Model getLocalShapeModel(String entityPrefixedUri) {
+        Model m = QueryProcessor.getGraph(getLocalShapeUri(entityPrefixedUri));
+        return m;
+    }
+
+    public static Model getTopShapeModel(String entityPrefixedUri) {
+        Model m = QueryProcessor.getGraph(getTopShapeUri(entityPrefixedUri));
+        return m;
+    }
+
+    public static Model getUIShapeModel(String entityPrefixedUri) {
+        Model m = QueryProcessor.getGraph(getUIShapeUri(entityPrefixedUri));
+        return m;
+    }
+
+    public static Model getValidationShapesForType(String entityPrefixedUri) {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(getTopShapeModel(entityPrefixedUri));
+        m.add(getLocalShapeModel(entityPrefixedUri));
+        return m;
+    }
+
+    public static Model getFullValidationShapesModelForType(String entityPrefixedUri) {
+        Model m = ModelFactory.createDefaultModel();
+        m.read("http://" + EditConfig.getProperty("shapeServerRoot") + ONT_GRAPH_URL, "TTL");
+        m.add(getValidationShapesForType(entityPrefixedUri));
+        return m;
     }
 
     public static Model getGraphFromGit(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
@@ -116,7 +192,9 @@ public class CommonsRead {
 
     public static String getResourceTypeUri(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model m = getGraphFromGit(EditConstants.BDR + shortName);
+        // Model m = getGraphFromGit(EditConstants.BDR + shortName);
+        Model m = QueryProcessor.describeModel(EditConstants.BDR + shortName);
+        m.write(System.out, "TURTLE");
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         return it.next().asResource().getURI();
     }
@@ -239,10 +317,16 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        // Model res = getGraphFromGit("bdr:P1583");
+        // Model res = getEditorGraph("bdr:P707");
         // res.setNsPrefixes(Prefixes.getPrefixMapping());
         // res.write(System.out, "TTL");
-        System.out.println(getResourceTypeUri("bdr:P1583"));
+        System.out.println(getLocalShapeUri("bdo:Person"));
+        System.out.println(getTopShapeUri("bdo:Person"));
+        System.out.println(getUIShapeUri("bdo:Person"));
+        System.out.println(getLocalShapeModel("bdo:Person"));
+        Model mm = getValidationShapesForType("bdo:Person");
+        mm.setNsPrefixes(Prefixes.getMap());
+        mm.write(System.out, "TURTLE");
     }
 
 }

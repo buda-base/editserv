@@ -10,6 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,8 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import io.bdrc.edit.commons.CommonsGit;
 import io.bdrc.edit.commons.CommonsRead;
-import io.bdrc.edit.commons.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -57,7 +60,7 @@ public class MainEditController {
     @PutMapping(value = "/putresource/{prefixedId}")
     public ResponseEntity<String> putResource(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req, HttpServletResponse response,
             @RequestBody String model) throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException,
-            ValidationException, ParameterFormatException {
+            ValidationException, ParameterFormatException, InvalidRemoteException, TransportException, GitAPIException {
         InputStream in = new ByteArrayInputStream(model.getBytes());
         // for testing purpose
         // InputStream in =
@@ -75,7 +78,7 @@ public class MainEditController {
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, jenaLang.getLabel());
         // m.write(System.out, "TURTLE");
-        CommonsValidate.putResource(m, prefixedId);
+        CommonsGit.putResource(m, prefixedId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("OK");
     }

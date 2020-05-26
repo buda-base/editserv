@@ -12,6 +12,10 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.revwalk.RevCommit;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -23,14 +27,14 @@ import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.edit.txn.exceptions.ValidationException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.jena.sttl.STriGWriter;
+import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.Models;
 
 public class CommonsGit {
 
-    public static void putResource(Model newModel, String prefixedId) throws UnknownBdrcResourceException, NotModifiableException, IOException,
-            VersionConflictException, ParameterFormatException, ValidationException {
-        // String prefixedResType = CommonsRead.getResourceTypeUri(prefixedId, newModel,
-        // true);
+    public static String putResource(Model newModel, String prefixedId) throws UnknownBdrcResourceException, NotModifiableException, IOException,
+            VersionConflictException, ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
+        String prefixedResType = CommonsRead.getResourceTypeUri(prefixedId, newModel, true);
         Model current = CommonsRead.getGraphFromGit(prefixedId);
         if (!CommonsValidate.validateCommit(newModel, prefixedId)) {
             throw new VersionConflictException("Version conflict while trying to save " + prefixedId);
@@ -57,7 +61,14 @@ public class CommonsGit {
         FileOutputStream fos = new FileOutputStream(
                 EditConfig.getProperty("gitLocalRoot") + GitRepositories.getRepoByUri(Models.ADM + gitRepo).getGitRepoName() + "/" + gitPath);
         modelToOutputStream(merged, fos, Models.BDR + (prefixedId.substring(prefixedId.lastIndexOf(":") + 1)));
-
+        RevCommit rev = GitHelpers.commitChanges(prefixedResType.substring(prefixedResType.lastIndexOf(":") + 1).toLowerCase(),
+                "Committed model :" + prefixedId);
+        if (rev != null) {
+            GitHelpers.push(prefixedResType.substring(prefixedResType.lastIndexOf(":") + 1).toLowerCase(), EditConfig.getProperty("gitRemoteBase"),
+                    EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
+            return rev.getName();
+        }
+        return null;
     }
 
     private static void modelToOutputStream(Model m, OutputStream out, String resId) throws IOException {

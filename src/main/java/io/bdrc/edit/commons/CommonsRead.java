@@ -36,7 +36,7 @@ import io.bdrc.libraries.Prefixes;
 
 public class CommonsRead {
 
-    public final static Logger log = LoggerFactory.getLogger("default");
+    public final static Logger log = LoggerFactory.getLogger(CommonsRead.class);
 
     public static List<Resource> FOCUS_SHAPES;
     public static final String GRAPH_NAME_TYPE = "graph_name_type";
@@ -167,7 +167,7 @@ public class CommonsRead {
     }
 
     public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
-        Model m = getShapesForType(prefixedType);
+        Model m = getValidationShapesForType(prefixedType);
         List<String> shapesUris = new ArrayList<>();
         ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), EXTERNAL_SHAPE);
         while (itFacet.hasNext()) {
@@ -177,26 +177,19 @@ public class CommonsRead {
         return shapesUris;
     }
 
-    public static Model getShapesForType(String prefixedType) throws IOException, ParameterFormatException {
-        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
-        System.out.println("GRAPH URI : " + EditConstants.BDG + shortName + "Shapes");
-        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "Shapes");
-        return m;
-    }
-
-    public static Model getUIShapesForType(String prefixedType) throws IOException, ParameterFormatException {
-        String shortName = prefixedType.substring(prefixedType.indexOf(":") + 1);
-        Model m = QueryProcessor.getGraph(EditConstants.BDG + shortName + "UIShapes");
-        return m;
-    }
-
-    public static String getResourceTypeUri(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+    public static String getResourceTypeUri(String prefixedUri, boolean prefixed)
+            throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        // Model m = getGraphFromGit(EditConstants.BDR + shortName);
         Model m = QueryProcessor.describeModel(EditConstants.BDR + shortName);
-        m.write(System.out, "TURTLE");
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
-        return it.next().asResource().getURI();
+        RDFNode n = it.next();
+        if (prefixed) {
+            String tmp = n.asResource().getURI();
+            return "bdo:" + tmp.substring(tmp.lastIndexOf("/") + 1);
+
+        } else {
+            return n.asResource().getURI();
+        }
     }
 
     public static String getFullUriResourceFromPrefixed(String prefixedUri) {
@@ -206,21 +199,9 @@ public class CommonsRead {
     public static List<String> getBestShapes(String prefixedUri)
             throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
         List<String> shapesUris = new ArrayList<>();
-        String typeUri = getResourceTypeUri(prefixedUri);
-        Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
-        // 1. Getting the uri of the rootShape resource
-        NodeIterator itRoot = mod.listObjectsOfProperty(ResourceFactory.createResource(typeUri),
-                ResourceFactory.createProperty(EditConstants.BDS + "rootShape"));
-        String uri = itRoot.next().asResource().getURI();
-        shapesUris.add(uri.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
-        // 2. Getting uris of facetShape resources
-        for (Resource r : FOCUS_SHAPES) {
-            ResIterator itFacet = mod.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), r);
-            while (itFacet.hasNext()) {
-                String url = itFacet.next().getURI();
-                shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
-            }
-        }
+        String typeUri = getResourceTypeUri(prefixedUri, true);
+        shapesUris.add(getLocalShapeUri(typeUri));
+        shapesUris.add(getTopShapeUri(typeUri));
         log.info("BEST SHAPES URIS {} ", shapesUris);
         return shapesUris;
     }
@@ -257,12 +238,6 @@ public class CommonsRead {
             StmtIterator ignit = res.listStatements(ss);
             while (ignit.hasNext()) {
                 Statement st = ignit.next();
-                // first case (commented out) ignore props when the considered resource is the
-                // subject
-                // second case (active) ignore statements whose prop is to be ignored regardless
-                // its subject
-                // if(st.getSubject().getURI().equals(getFullUriResourceFromPrefixed(prefRes))
-                // && st.getPredicate().getURI().equals(ignore)) {
                 if (st.getPredicate().getURI().equals(ignore)) {
                     res.remove(st);
                 }
@@ -284,7 +259,7 @@ public class CommonsRead {
         Model mm = getGraphFromGit(EditConstants.BDR + shortName);
         NodeIterator it = mm.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         String typeUri = it.next().asResource().getURI();
-        Model mod = getShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
+        Model mod = getValidationShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
         for (String uri : shapeGraphs) {
             Model m = ModelFactory.createDefaultModel();
             m.read(uri + ".ttl", "TTL");
@@ -317,16 +292,17 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        // Model res = getEditorGraph("bdr:P707");
-        // res.setNsPrefixes(Prefixes.getPrefixMapping());
-        // res.write(System.out, "TTL");
-        System.out.println(getLocalShapeUri("bdo:Person"));
-        System.out.println(getTopShapeUri("bdo:Person"));
-        System.out.println(getUIShapeUri("bdo:Person"));
-        System.out.println(getLocalShapeModel("bdo:Person"));
-        Model mm = getValidationShapesForType("bdo:Person");
-        mm.setNsPrefixes(Prefixes.getMap());
-        mm.write(System.out, "TURTLE");
+        Model res = getEditorGraph("bdr:P707");
+        res.setNsPrefixes(Prefixes.getPrefixMapping());
+        res.write(System.out, "TTL");
+        /*
+         * System.out.println(getLocalShapeUri("bdo:Person"));
+         * System.out.println(getTopShapeUri("bdo:Person"));
+         * System.out.println(getUIShapeUri("bdo:Person"));
+         * System.out.println(getLocalShapeModel("bdo:Person")); Model mm =
+         * getValidationShapesForType("bdo:Person");
+         * mm.setNsPrefixes(Prefixes.getMap()); mm.write(System.out, "TURTLE");
+         */
     }
 
 }

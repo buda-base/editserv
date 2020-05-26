@@ -1,15 +1,12 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
@@ -99,21 +96,14 @@ public class CommonsValidate {
         return false;
     }
 
-    private static List<String> getValidationCandidates(Model m) {
-        List<String> l = new ArrayList<>();
-        ResIterator rit = m.listSubjects();
-        while (rit.hasNext()) {
-            Resource r = rit.next();
-            System.out.println("RESOURCEE >>> " + r);
-            l.add(r.getURI());
-        }
-        return l;
+    public static void putResource(Model m, String prefixedId) {
+
     }
 
     public static boolean validateShacl(Model newModel, String resUri)
             throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
-        Resource r = validateNode(newModel, CommonsRead.getShapesForType(CommonsRead.getResourceTypeUri("bdr:" + shortName)),
+        Resource r = validateNode(newModel, CommonsRead.getValidationShapesForType(CommonsRead.getResourceTypeUri("bdr:" + shortName, false)),
                 ResourceFactory.createResource(resUri), true);
         log.info("PRINTING report.getModel() for " + resUri);
         RDFDataMgr.write(System.out, r.getModel(), Lang.TTL);

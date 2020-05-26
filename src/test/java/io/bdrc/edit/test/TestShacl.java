@@ -50,7 +50,7 @@ public class TestShacl {
     }
 
     public void checkShapesGraph() throws IOException, ParameterFormatException {
-        Shapes sh = Shapes.parseAll(CommonsRead.getShapesForType("bdo:Person").getGraph());
+        Shapes sh = Shapes.parseAll(CommonsRead.getValidationShapesForType("bdo:Person").getGraph());
     }
 
     public static Shapes checkShapesGraph(Model m) throws IOException, ParameterFormatException {

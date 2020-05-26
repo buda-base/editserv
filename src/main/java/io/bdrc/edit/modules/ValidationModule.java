@@ -11,7 +11,7 @@ import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
-import io.bdrc.edit.txn.exceptions.ValidationModuleException;
+import io.bdrc.edit.txn.exceptions.ValidationException;
 
 public class ValidationModule implements BUDAEditModule {
 
@@ -40,7 +40,7 @@ public class ValidationModule implements BUDAEditModule {
     }
 
     @Override
-    public void run() throws ValidationModuleException {
+    public void run() throws ValidationException {
 
         switch (validation) {
         case PRE_VALIDATION:
@@ -48,7 +48,7 @@ public class ValidationModule implements BUDAEditModule {
             List<String> create = data.getCreate();
             for (String uri : create) {
                 if (QueryProcessor.resourceExist(uri, null)) {
-                    throw new ValidationModuleException("Cannot create the resource " + uri + " as it already exists in the main dataset");
+                    throw new ValidationException("Cannot create the resource " + uri + " as it already exists in the main dataset");
                 }
             }
             // Checking for the existence of updated graphs is already done in DataUpdate

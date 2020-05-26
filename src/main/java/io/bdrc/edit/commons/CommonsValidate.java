@@ -2,6 +2,7 @@ package io.bdrc.edit.commons;
 
 import java.io.IOException;
 
+import org.apache.jena.graph.Graph;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
@@ -12,8 +13,9 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.shacl.ShaclValidator;
+import org.apache.jena.shacl.Shapes;
+import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,18 +98,17 @@ public class CommonsValidate {
         return false;
     }
 
-    public static void putResource(Model m, String prefixedId) {
-
-    }
-
     public static boolean validateShacl(Model newModel, String resUri)
             throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
-        Resource r = validateNode(newModel, CommonsRead.getValidationShapesForType(CommonsRead.getResourceTypeUri("bdr:" + shortName, false)),
-                ResourceFactory.createResource(resUri), true);
-        log.info("PRINTING report.getModel() for " + resUri);
-        RDFDataMgr.write(System.out, r.getModel(), Lang.TTL);
-        return true;
+        Resource res = ResourceFactory.createResource(Models.BDR + shortName);
+        ShaclValidator sv = ShaclValidator.get();
+        Graph shapesGraph = CommonsRead.getValidationShapesForResource("bdr:" + shortName).getGraph();
+        Shapes shapes = Shapes.parse(shapesGraph);
+        Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
+        log.info("Validating Node {} with {}", res.getLocalName(), shapes);
+        ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
+        return report.conforms();
     }
 
     private static boolean test() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

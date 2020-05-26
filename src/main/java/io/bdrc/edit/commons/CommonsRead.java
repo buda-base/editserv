@@ -124,10 +124,18 @@ public class CommonsRead {
         return m;
     }
 
-    public static Model getFullValidationShapesModelForType(String entityPrefixedUri) {
+    public static Model getValidationShapesForResource(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+        String entityPrefixedUri = getResourceTypeUri(prefixedUri, true);
+        Model m = ModelFactory.createDefaultModel();
+        m.add(getTopShapeModel(entityPrefixedUri));
+        m.add(getLocalShapeModel(entityPrefixedUri));
+        return m;
+    }
+
+    public static Model getFullDataValidationModel(Model model) {
         Model m = ModelFactory.createDefaultModel();
         m.read("http://" + EditConfig.getProperty("shapeServerRoot") + ONT_GRAPH_URL, "TTL");
-        m.add(getValidationShapesForType(entityPrefixedUri));
+        m.add(model);
         return m;
     }
 
@@ -181,6 +189,20 @@ public class CommonsRead {
             throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
         Model m = QueryProcessor.describeModel(EditConstants.BDR + shortName);
+        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
+        RDFNode n = it.next();
+        if (prefixed) {
+            String tmp = n.asResource().getURI();
+            return "bdo:" + tmp.substring(tmp.lastIndexOf("/") + 1);
+
+        } else {
+            return n.asResource().getURI();
+        }
+    }
+
+    public static String getResourceTypeUri(String prefixedUri, Model m, boolean prefixed)
+            throws UnknownBdrcResourceException, NotModifiableException, IOException {
+        String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
         NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         RDFNode n = it.next();
         if (prefixed) {

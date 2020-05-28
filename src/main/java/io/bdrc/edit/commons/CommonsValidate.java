@@ -5,8 +5,10 @@ import java.io.IOException;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -33,6 +35,14 @@ import io.bdrc.libraries.Models;
 public class CommonsValidate {
 
     public static Logger log = LoggerFactory.getLogger(CommonsValidate.class);
+
+    static final String SH = "http://www.w3.org/ns/shacl#";
+    static final Property SH_CONFORMS = ResourceFactory.createProperty(SH + "conforms");
+    static final Property SH_RESULT = ResourceFactory.createProperty(SH + "result");
+    static final Property SH_VALUE = ResourceFactory.createProperty(SH + "value");
+
+    static final Literal FALSE = ModelFactory.createDefaultModel().createTypedLiteral(false);
+    static final Literal TRUE = ModelFactory.createDefaultModel().createTypedLiteral(true);
 
     public static boolean validateCommit(Model newModel, String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         Model current = QueryProcessor.getGraph(graphUri);
@@ -98,6 +108,35 @@ public class CommonsValidate {
         return false;
     }
 
+    static Model completeReport(Shapes shapes, Graph dataGraph, Model top) {
+        Model complete = ModelFactory.createDefaultModel();
+        complete.add(top);
+
+        if (top.contains((Resource) null, SH_CONFORMS, FALSE)) {
+            StmtIterator valItr = top.listStatements((Resource) null, SH_VALUE, (RDFNode) null);
+            while (valItr.hasNext()) {
+                Statement valStmt = valItr.removeNext();
+                RDFNode valNode = valStmt.getObject();
+
+                if (valNode.isResource()) {
+                    Model subReport = process(shapes, dataGraph, (Resource) valNode);
+                    // subReport.remove(subReport.listStatements(null, SH_CONFORMS, (RDFNode)
+                    // null));
+                    complete.add(subReport);
+                }
+            }
+        }
+
+        return complete;
+    }
+
+    static Model process(Shapes shapes, Graph dataGraph, Resource rez) {
+        log.info("Validating Node {} with {}", rez.getLocalName(), shapes);
+        ValidationReport report = ShaclValidator.get().validate(shapes, dataGraph, rez.asNode());
+        Model reportModel = report.getModel();
+        return reportModel;
+    }
+
     public static boolean validateShacl(Model newModel, String resUri)
             throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
@@ -108,7 +147,10 @@ public class CommonsValidate {
         Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
         log.info("Validating Node {} with {}", res.getLocalName(), shapes);
         ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
-        return report.conforms();
+        Model finalReport = completeReport(shapes, dataGraph, report.getModel());
+        SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
+        StmtIterator it = finalReport.listStatements(ss);
+        return Boolean.getBoolean(it.next().getObject().asLiteral().getString());
     }
 
     private static boolean test() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

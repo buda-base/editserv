@@ -24,7 +24,11 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import io.bdrc.edit.commons.CommonsGit;
 import io.bdrc.edit.commons.CommonsRead;
+import io.bdrc.edit.commons.CommonsValidate;
+import io.bdrc.edit.txn.exceptions.ValidationException;
+import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;
+import io.bdrc.libraries.Models;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -68,9 +72,15 @@ public class MainEditController {
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, jenaLang.getLabel());
         // m.write(System.out, "TURTLE");
-        String commitId = CommonsGit.putResource(m, prefixedId);
+        if (!CommonsValidate.validateCommit(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
+            throw new VersionConflictException("Version conflict while trying to save " + prefixedId);
+        }
+        if (!CommonsValidate.validateShacl(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
+            throw new ValidationException("Could not validate " + prefixedId);
+        }
+        String commitId = CommonsGit.putResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
         if (commitId == null) {
-
+            ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body(commitId);

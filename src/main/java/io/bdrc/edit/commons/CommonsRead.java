@@ -302,6 +302,7 @@ public class CommonsRead {
         String shortName = graphUri.substring(graphUri.lastIndexOf("/") + 1);
         SimpleSelector s = new SimpleSelector(ResourceFactory.createResource(Models.BDA + shortName),
                 ResourceFactory.createProperty(Models.ADM + "gitRevision"), (RDFNode) null);
+        log.info("Selector {}", ResourceFactory.createProperty(Models.ADM + "gitRevision"));
         StmtIterator it = m.listStatements(s);
         if (it.hasNext()) {
             Statement st = it.next();

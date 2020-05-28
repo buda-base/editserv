@@ -36,12 +36,6 @@ public class CommonsGit {
             VersionConflictException, ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
         String prefixedResType = CommonsRead.getResourceTypeUri(prefixedId, newModel, true);
         Model current = CommonsRead.getGraphFromGit(prefixedId);
-        if (!CommonsValidate.validateCommit(newModel, prefixedId)) {
-            throw new VersionConflictException("Version conflict while trying to save " + prefixedId);
-        }
-        if (!CommonsValidate.validateShacl(newModel, prefixedId)) {
-            throw new ValidationException("Could not validate " + prefixedId);
-        }
         // at this point, there's no conflict and the newModel is validated.
         // we are now merging the new model and the current one to apply the changes
         Model merged = ModelUtils.mergeModel(current, newModel);

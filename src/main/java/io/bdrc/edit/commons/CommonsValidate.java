@@ -45,9 +45,13 @@ public class CommonsValidate {
     static final Literal TRUE = ModelFactory.createDefaultModel().createTypedLiteral(true);
 
     public static boolean validateCommit(Model newModel, String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        Model current = QueryProcessor.getGraph(graphUri);
+        String shortName = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        Model current = QueryProcessor.getGraph(Models.BDG + shortName);
+        current.write(System.out, "TURTLE");
         try {
-            if (CommonsRead.getCommit(newModel, graphUri).equals(CommonsRead.getCommit(current, graphUri))) {
+            log.info("New model commit >> {}", CommonsRead.getCommit(newModel, graphUri));
+            log.info("Current model commit >> {}", CommonsRead.getCommit(current, graphUri));
+            if (!CommonsRead.getCommit(newModel, graphUri).equals(CommonsRead.getCommit(current, graphUri))) {
                 return false;
             }
         } catch (Exception ex) {
@@ -183,6 +187,12 @@ public class CommonsValidate {
         } catch (InterruptedException ex) {
             return null;
         }
+    }
+
+    public static boolean reportConforms(Model m) {
+        SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
+        StmtIterator it = m.listStatements(ss);
+        return Boolean.getBoolean(it.next().getObject().asLiteral().getString());
     }
 
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

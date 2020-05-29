@@ -1,0 +1,153 @@
+@prefix :      <http://purl.bdrc.io/ontology/core/> .
+@prefix LegalData: <http://purl.bdrc.io/ontology/adm/LegalData/> .
+@prefix OutlineType: <http://purl.bdrc.io/ontology/adm/types/OutlineType/> .
+@prefix Transliteration: <http://purl.bdrc.io/ontology/types/Transliteration/> .
+@prefix PlaceType: <http://purl.bdrc.io/ontology/types/PlaceType/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix bdou:  <http://purl.bdrc.io/ontology/ext/user/> .
+@prefix Access: <http://purl.bdrc.io/ontology/adm/types/Access/> .
+@prefix License: <http://purl.bdrc.io/ontology/adm/types/License/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix Creator: <http://purl.bdrc.io/ontology/roles/Creator/> .
+@prefix Gender: <http://purl.bdrc.io/ontology/types/Gender/> .
+@prefix LangScript: <http://purl.bdrc.io/ontology/types/LangScript/> .
+@prefix IdentifierScheme: <http://purl.bdrc.io/ontology/schemes/core/IdentifierScheme/> .
+@prefix Unknown: <http://purl.bdrc.io/ontology/core/Unknown/> .
+@prefix dila:  <http://purl.dila.edu.tw/resource/> .
+@prefix tmp:   <http://purl.bdrc.io/ontology/tmp/> .
+@prefix xml:   <http://www.w3.org/XML/1998/namespace> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix text:  <http://jena.apache.org/text#> .
+@prefix bdgu:  <http://purl.bdrc.io/graph-nc/user/> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix ContentMethodScheme: <http://purl.bdrc.io/ontology/schemes/core/ContentMethodScheme/> .
+@prefix Binding: <http://purl.bdrc.io/ontology/types/Binding/> .
+@prefix Status: <http://purl.bdrc.io/ontology/adm/types/Status/> .
+@prefix Script: <http://purl.bdrc.io/ontology/types/Script/> .
+@prefix obda:  <https://w3id.org/obda/vocabulary#> .
+@prefix TermsOfUse: <http://purl.bdrc.io/ontology/adm/types/TermsOfUse/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
+@prefix adr:   <http://purl.bdrc.io/resource-nc/auth/> .
+@prefix viaf:  <http://viaf.org/viaf/> .
+@prefix PrintMethod: <http://purl.bdrc.io/ontology/types/PrintMethod/> .
+@prefix AdmBo: <http://purl.bdrc.io/ontology/translations/AdmBo/> .
+@prefix dash:  <http://datashapes.org/dash#> .
+@prefix LineageType: <http://purl.bdrc.io/ontology/types/LineageType/> .
+@prefix lcsh:  <http://id.loc.gov/authorities/subjects/> .
+@prefix PartType: <http://purl.bdrc.io/ontology/types/PartType/> .
+@prefix aut:   <http://purl.bdrc.io/ontology/ext/auth/> .
+@prefix bd:    <http://www.bigdata.com/rdf#> .
+@prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
+@prefix Taxonomy: <http://purl.bdrc.io/ontology/types/Taxonomy/> .
+@prefix Tradition: <http://purl.bdrc.io/ontology/types/Tradition/> .
+@prefix tbr:   <http://purl.bdrc.io/ontology/toberemoved/> .
+@prefix ContentProvider: <http://purl.bdrc.io/ontology/adm/ContentProvider/> .
+@prefix DateIndication: <http://purl.bdrc.io/ontology/types/DateIndication/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix CoreBo: <http://purl.bdrc.io/ontology/translations/CoreBo/> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix FEMCScheme: <http://purl.bdrc.io/ontology/schemes/taxonomy/FEMCScheme/> .
+@prefix bdgup: <http://purl.bdrc.io/graph-nc/user-private/> .
+@prefix Language: <http://purl.bdrc.io/ontology/types/Language/> .
+@prefix GitRepo: <http://purl.bdrc.io/ontology/adm/types/GitRepo/> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix PaginationType: <http://purl.bdrc.io/ontology/types/PaginationType/> .
+@prefix ChineseMonastic: <http://purl.bdrc.io/ontology/roles/ChineseMonastic/> .
+@prefix bda:   <http://purl.bdrc.io/admindata/> .
+@prefix cc:    <http://creativecommons.org/ns#> .
+@prefix bdd:   <http://purl.bdrc.io/data/> .
+@prefix bdg:   <http://purl.bdrc.io/graph/> .
+@prefix WorkType: <http://purl.bdrc.io/ontology/types/WorkType/> .
+@prefix Material: <http://purl.bdrc.io/ontology/types/Material/> .
+@prefix bdo:   <http://purl.bdrc.io/ontology/core/> .
+@prefix iiif2: <http://iiif.io/api/presentation/2#> .
+@prefix iiif3: <http://iiif.io/api/presentation/3#> .
+@prefix bds:   <http://purl.bdrc.io/ontology/shapes/core/> .
+@prefix eftr:  <http://purl.84000.co/resource/core/> .
+@prefix bdr:   <http://purl.bdrc.io/resource/> .
+@prefix bdu:   <http://purl.bdrc.io/resource-nc/user/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+bdr:NMC2A097019ABA499F
+        a           bdo:FruitCake ;
+        rdfs:label  "dri med 'od zer/"@bo-x-ewts ;
+.
+
+bdr:NM0895CB6787E8AC6E
+        a           bdo:PersonPrimaryTitle ;
+        skos:prefLabel  "sprul sku dri med/"@bo-x-ewts ;
+.
+
+bdr:NM2463D933BA1F9A38
+        a           bdo:PersonPrimaryTitle ;
+        rdfs:label  "bdud 'joms gter sras dri med 'od zer/"@bo-x-ewts ;
+.
+
+bdr:NMEA2B380AF0BBFB1B
+        a           bdo:PersonGterStonTitle ;
+        rdfs:label  "pad+ma 'gro 'dul gsang sngags gling pa/"@bo-x-ewts ;
+.
+
+bdr:EVFD910DBE53BCE208
+        a           bdo:PersonDeath ;
+        bdo:onYear  "1924"^^xsd:gYear ;
+.
+
+bda:P707  a                adm:AdminData ;
+        adm:adminAbout     bdr:P707 ;
+        adm:facetIndex     11 ;
+        adm:gitPath        "23/P707.trig" ;
+        adm:gitRepo        bda:GR0006 ;
+        adm:gitRevision    "f6093911bf0b371896cc0378f002799d75b3a766" ;
+        adm:graphId        bdg:P707 ;
+        adm:logEntry       bda:LGA03CD63EE699D6F6 , bda:LG29B76373BAD55E40 , bda:LG72478F481A249B1E ;
+        adm:metadataLegal  bda:LD_BDRC_CC0 ;
+        adm:status         bda:StatusReleased ;
+        bdo:isRoot         true ;
+.
+
+bdr:EVD4758367CFC1276C
+        a              bdo:PersonBirth ;
+        bdo:notAfter   "1882"^^xsd:gYear ;
+        bdo:notBefore  "1881"^^xsd:gYear ;
+.
+
+bdr:P707  a                  bdo:Person ;
+        bdo:hasFather        bdr:P707 ;
+        bdo:hasParent        bdr:P705 ;
+        bdo:isRoot           true ;
+        bdo:kinWith          bdr:P705 ;
+        bdo:note             bdr:NT08B650B715F414F1 ;
+        bdo:personEvent      bdr:EVFD910DBE53BCE208 , bdr:EVD4758367CFC1276C ;
+        bdo:personGender     bdr:GenderMale ;
+        bdo:personName       bdr:NM0895CB6787E8AC6E , bdr:NM2463D933BA1F9A38 , bdr:NMEA2B380AF0BBFB1B , bdr:NMC2A097019ABA499F ;
+        bdo:personStudentOf  bdr:P705 ;
+        skos:prefLabel       "dri med 'od zer/"@bo-x-ewts ;
+.
+
+bdr:NT08B650B715F414F1
+        a             bdo:Note ;
+        bdo:noteText  "this son of bdud 'joms gling pa was an important gter ston in his own right. so far his gter chos have not been found."@en ;
+.
+
+bda:LGA03CD63EE699D6F6
+        a               adm:LogEntry ;
+        adm:logDate     "2008-11-10T15:35:57.68Z"^^xsd:dateTime ;
+        adm:logMessage  "published"@en ;
+        adm:logWho      bdr:U00001 ;
+.
+
+bda:LG72478F481A249B1E
+        a               adm:LogEntry ;
+        adm:logDate     "2010-01-21T10:36:03.562Z"^^xsd:dateTime ;
+        adm:logMessage  "withdrew P6609 in favor of P707, changed relations"@en ;
+        adm:logWho      bdr:U00020 ;
+.
+
+bda:LG29B76373BAD55E40
+        a               adm:LogEntry ;
+        adm:logDate     "2019-01-04T16:22:17.304Z"^^xsd:dateTime ;
+        adm:logMessage  "added father"@en ;
+        adm:logWho      bdr:U00007 ;
+.

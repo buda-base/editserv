@@ -1,4 +1,4 @@
-@base          <file:///usr/local/ldspdi/> .
+BASE           <file:///usr/local/ldspdi/>
 @prefix :      <http://purl.bdrc.io/ontology/core/> .
 @prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
 @prefix adr:   <http://purl.bdrc.io/resource-nc/auth/> .
@@ -13,6 +13,7 @@
 @prefix bdo:   <http://purl.bdrc.io/ontology/core/> .
 @prefix bdou:  <http://purl.bdrc.io/ontology/ext/user/> .
 @prefix bdr:   <http://purl.bdrc.io/resource/> .
+@prefix bds:   <http://purl.bdrc.io/ontology/shapes/core/> .
 @prefix bdu:   <http://purl.bdrc.io/resource-nc/user/> .
 @prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -32,6 +33,12 @@
 @prefix rsh:   <http://purl.bdrc.io/shacl/core/shape/> .
 @prefix sh:    <http://www.w3.org/ns/shacl#> .
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix srcd:  <https://sakyaresearch.org/deities/> .
+@prefix srcl:  <https://sakyaresearch.org/literary_forms/> .
+@prefix srcpe: <https://sakyaresearch.org/persons/> .
+@prefix srcpl: <https://sakyaresearch.org/places/> .
+@prefix srcs:  <https://sakyaresearch.org/sources/> .
+@prefix srct:  <https://sakyaresearch.org/topics/> .
 @prefix tbr:   <http://purl.bdrc.io/ontology/toberemoved/> .
 @prefix text:  <http://jena.apache.org/text#> .
 @prefix tmp:   <http://purl.bdrc.io/ontology/tmp/> .
@@ -40,26 +47,63 @@
 @prefix wd:    <http://www.wikidata.org/entity/> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
-bdr:EVD4758367CFC1  a  bdo:PersonBirth ;
+bda:LG29B76373BAD55E40
+   a             adm:LogEntry ;
+   adm:logDate   "2019-01-04T16:22:17.304Z"^^xsd:dateTime ;
+   adm:logMessage  "added father"@en ;
+   adm:logWho    bdr:U00007 .
+
+bda:LG72478F481A249B1E
+   a             adm:LogEntry ;
+   adm:logDate   "2010-01-21T10:36:03.562Z"^^xsd:dateTime ;
+   adm:logMessage  "withdrew P6609 in favor of P707, changed relations"@en ;
+   adm:logWho    bdr:U00020 .
+
+bda:LGA03CD63EE699D6F6
+   a             adm:LogEntry ;
+   adm:logDate   "2008-11-10T15:35:57.68Z"^^xsd:dateTime ;
+   adm:logMessage  "published"@en ;
+   adm:logWho    bdr:U00001 .
+
+bda:P707  a      adm:AdminData ;
+   bdo:isRoot    true ;
+   adm:adminAbout  bdr:P707 ;
+   adm:facetIndex  11 ;
+   adm:gitPath   "23/P707.trig" ;
+   adm:gitRepo   bda:GR0006 ;
+   adm:gitRevision  "f6093911bf0b371896cc0378f002799d75b3a766" ;
+   adm:graphId   bdg:P707 ;
+   adm:logEntry  bda:LG29B76373BAD55E40 , bda:LG72478F481A249B1E , bda:LGA03CD63EE699D6F6 ;
+   adm:metadataLegal  bda:LD_BDRC_CC0 ;
+   adm:status    bda:StatusReleased .
+
+bdr:EVD4758367CFC1276C
+   a             bdo:PersonBirth ;
    bdo:notAfter  "1882"^^xsd:gYear ;
    bdo:notBefore  "1881"^^xsd:gYear .
 
-bdr:EVFD910DBE53BC  a  bdo:PersonDeath ;
+bdr:EVFD910DBE53BCE208
+   a             bdo:PersonDeath ;
    bdo:onYear    "1924"^^xsd:gYear .
 
-bdr:NM0895CB6787E8  a  bdo:PersonPrimaryTitle ;
+bdr:NM0895CB6787E8AC6E
+   a             bdo:PersonPrimaryTitle ;
    rdfs:label    "sprul sku dri med/"@bo-x-ewts .
 
-bdr:NM2463D933BA1F  a  bdo:PersonPrimaryTitle ;
+bdr:NM2463D933BA1F9A38
+   a             bdo:PersonPrimaryTitle ;
    rdfs:label    "bdud 'joms gter sras dri med 'od zer/"@bo-x-ewts .
 
-bdr:NMC2A097019ABA  a  bdo:PersonPrimaryName ;
+bdr:NMC2A097019ABA499F
+   a             bdo:PersonPrimaryName ;
    rdfs:label    "dri med 'od zer/"@bo-x-ewts .
 
-bdr:NMEA2B380AF0BB  a  bdo:PersonGterStonTitle ;
+bdr:NMEA2B380AF0BBFB1B
+   a             bdo:PersonGterStonTitle ;
    rdfs:label    "pad+ma 'gro 'dul gsang sngags gling pa/"@bo-x-ewts .
 
-bdr:NT08B650B715F4  a  bdo:Note ;
+bdr:NT08B650B715F414F1
+   a             bdo:Note ;
    bdo:noteText  "this son of bdud 'joms gling pa was an important gter ston in his own right. so far his gter chos have not been found."@en .
 
 bdr:P707  a      bdo:Person ;
@@ -68,8 +112,8 @@ bdr:P707  a      bdo:Person ;
    bdo:hasParent  bdr:P705 ;
    bdo:isRoot    true ;
    bdo:kinWith   bdr:P705 ;
-   bdo:personName  bdr:NM0895CB6787E8 , bdr:NM2463D933BA1F , bdr:NMC2A097019ABA , bdr:NMEA2B380AF0BB ;
-   bdo:note      bdr:NT08B650B715F4 ;
-   bdo:personEvent  bdr:EVD4758367CFC1 , bdr:EVFD910DBE53BC ;
-   bdo:personGender  bdr:GenderMale ;   
+   bdo:note      bdr:NT08B650B715F414F1 ;
+   bdo:personEvent  bdr:EVD4758367CFC1276C , bdr:EVFD910DBE53BCE208 ;
+   bdo:personGender  bdr:GenderMale ;
+   bdo:personName  bdr:NM0895CB6787E8AC6E , bdr:NM2463D933BA1F9A38 , bdr:NMC2A097019ABA499F , bdr:NMEA2B380AF0BBFB1B ;
    bdo:personStudentOf  bdr:P705 .

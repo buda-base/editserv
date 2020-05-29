@@ -200,18 +200,30 @@ public class CommonsRead {
         }
     }
 
-    public static String getResourceTypeUri(String prefixedUri, Model m, boolean prefixed)
+    public static String getFullResourceTypeUri(String prefixedUri, Model m, boolean prefixed)
             throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
-        RDFNode n = it.next();
+        log.info("Getting type of {} - prefixed= {}  model.size= {}", prefixedUri, prefixed, m.size());
+        String shortName = "";
         if (prefixed) {
-            String tmp = n.asResource().getURI();
-            return "bdo:" + tmp.substring(tmp.lastIndexOf("/") + 1);
-
+            shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
         } else {
-            return n.asResource().getURI();
+            shortName = prefixedUri.substring(prefixedUri.lastIndexOf("/") + 1);
         }
+        log.info("ShortName of {} is {} - building Selector  with {}", prefixedUri, shortName, EditConstants.BDR + shortName);
+        SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type, (RDFNode) null);
+        StmtIterator stit = m.listStatements(ss);
+        // NodeIterator it =
+        // m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR +
+        // shortName), RDF.type);
+        Statement n = stit.next();
+        /*
+         * if (prefixed) { String tmp = n.asResource().getURI(); return "bdo:" +
+         * tmp.substring(tmp.lastIndexOf("/") + 1);
+         * 
+         * } else {
+         */
+        return n.getObject().asResource().getURI();
+        // }
     }
 
     public static String getFullUriResourceFromPrefixed(String prefixedUri) {
@@ -267,6 +279,11 @@ public class CommonsRead {
         }
         res.setNsPrefixes(Prefixes.getPrefixMapping());
         return res;
+    }
+
+    public static Model getEditorGraph(String prefRes, Model m)
+            throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+        return getEditorGraph(prefRes, m, getBestShapes(prefRes));
     }
 
     public static Model getEditorGraph(String prefRes)

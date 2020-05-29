@@ -16,6 +16,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -32,9 +34,11 @@ import io.bdrc.libraries.Models;
 
 public class CommonsGit {
 
+    public static Logger log = LoggerFactory.getLogger(CommonsGit.class);
+
     public static String putResource(Model newModel, String prefixedId) throws UnknownBdrcResourceException, NotModifiableException, IOException,
             VersionConflictException, ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
-        String prefixedResType = CommonsRead.getResourceTypeUri(prefixedId, newModel, true);
+        String resType = CommonsRead.getFullResourceTypeUri(prefixedId, newModel, false);
         Model current = CommonsRead.getGraphFromGit(prefixedId);
         // at this point, there's no conflict and the newModel is validated.
         // we are now merging the new model and the current one to apply the changes
@@ -52,13 +56,14 @@ public class CommonsGit {
         if (ni.hasNext()) {
             gitRepo = ni.next().asResource().getLocalName();
         }
+        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"), Models.BDA + gitRepo, gitPath);
+        log.info("Gitrepository object {}", GitRepositories.getRepoByUri(Models.ADM + gitRepo));
         FileOutputStream fos = new FileOutputStream(
-                EditConfig.getProperty("gitLocalRoot") + GitRepositories.getRepoByUri(Models.ADM + gitRepo).getGitRepoName() + "/" + gitPath);
+                EditConfig.getProperty("gitLocalRoot") + GitRepositories.getRepoByUri(Models.BDA + gitRepo).getGitRepoName() + "/" + gitPath);
         modelToOutputStream(merged, fos, Models.BDR + (prefixedId.substring(prefixedId.lastIndexOf(":") + 1)));
-        RevCommit rev = GitHelpers.commitChanges(prefixedResType.substring(prefixedResType.lastIndexOf(":") + 1).toLowerCase(),
-                "Committed model :" + prefixedId);
+        RevCommit rev = GitHelpers.commitChanges(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(), "Committed model :" + prefixedId);
         if (rev != null) {
-            GitHelpers.push(prefixedResType.substring(prefixedResType.lastIndexOf(":") + 1).toLowerCase(), EditConfig.getProperty("gitRemoteBase"),
+            GitHelpers.push(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(), EditConfig.getProperty("gitRemoteBase"),
                     EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
             return rev.getName();
         }

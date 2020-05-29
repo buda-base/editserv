@@ -142,19 +142,34 @@ public class CommonsValidate {
     }
 
     public static boolean validateShacl(Model newModel, String resUri)
-            throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
-        String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
-        Resource res = ResourceFactory.createResource(Models.BDR + shortName);
-        ShaclValidator sv = ShaclValidator.get();
-        Graph shapesGraph = CommonsRead.getValidationShapesForResource("bdr:" + shortName).getGraph();
-        Shapes shapes = Shapes.parse(shapesGraph);
-        Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
-        log.info("Validating Node {} with {}", res.getLocalName(), shapes);
-        ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
-        Model finalReport = completeReport(shapes, dataGraph, report.getModel());
-        SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
-        StmtIterator it = finalReport.listStatements(ss);
-        return Boolean.getBoolean(it.next().getObject().asLiteral().getString());
+    /*
+     * throws IOException, ParameterFormatException, UnknownBdrcResourceException,
+     * NotModifiableException
+     */ {
+        try {
+            String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
+            Resource res = ResourceFactory.createResource(Models.BDR + shortName);
+            ShaclValidator sv = ShaclValidator.get();
+            Graph shapesGraph = CommonsRead.getValidationShapesForResource("bdr:" + shortName).getGraph();
+            Shapes shapes = Shapes.parse(shapesGraph);
+            Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
+            log.info("Validating Node {} with {}", res.getLocalName(), shapes);
+            ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
+            Model finalReport = completeReport(shapes, dataGraph, report.getModel());
+            finalReport.write(System.out, "TURTLE");
+            SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
+            StmtIterator it = finalReport.listStatements(ss);
+            boolean b = true;
+            while (it.hasNext()) {
+                Statement st = it.next();
+                System.out.println("STMT >>" + st);
+                b = b && Boolean.valueOf(st.getObject().asLiteral().getString());
+            }
+            return b;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return false;
     }
 
     private static boolean test() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

@@ -75,7 +75,10 @@ public class MainEditController {
         if (!CommonsValidate.validateCommit(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
             throw new VersionConflictException("Version conflict while trying to save " + prefixedId);
         }
-        if (!CommonsValidate.validateShacl(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
+        // if (!CommonsValidate.validateShacl(m, Models.BDR +
+        // prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
+        if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(prefixedId, m),
+                Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
             throw new ValidationException("Could not validate " + prefixedId);
         }
         String commitId = CommonsGit.putResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));

@@ -38,6 +38,8 @@ public class GitRepositories {
             om.setDynamicImports(false);
             om.add(reposMod);
             loadRepos(om);
+            log.info("Repos by Uri {}", reposByUri);
+            log.info("Repos by Type {}", reposByType);
         } catch (IOException e) {
             log.error("GitRepositories failed to initialize", e);
         }

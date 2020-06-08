@@ -19,6 +19,7 @@ public class EditConstants {
     public static final String BDA = "http://purl.bdrc.io/admindata/";
     public static final String BDG = "http://purl.bdrc.io/graph/";
     public static final String BDS = "http://purl.bdrc.io/ontology/shapes/core/";
+    public static final String OWL = "http://www.w3.org/2002/07/owl#";
 
     public static Resource ADMIN_DATA = ResourceFactory.createResource("http://purl.bdrc.io/ontology/admin/AdminData");
     public static Resource STATUS_PROV = ResourceFactory.createResource("http://purl.bdrc.io/admindata/StatusProvisional");
@@ -28,5 +29,8 @@ public class EditConstants {
     public static Property ADMIN_ABOUT = ResourceFactory.createProperty(EditConstants.ADM + "adminAbout");
     public static Property ADMIN_STATUS = ResourceFactory.createProperty(EditConstants.ADM + "status");
     public static Property ADMIN_GRAPH_ID = ResourceFactory.createProperty(EditConstants.ADM + "graphId");
+
+    public static Property INVERSE_OF = ResourceFactory.createProperty(EditConstants.OWL + "inverseOf");
+    public static Resource SymmetricPROP = ResourceFactory.createResource(EditConstants.OWL + "SymmetricProperty");
 
 }

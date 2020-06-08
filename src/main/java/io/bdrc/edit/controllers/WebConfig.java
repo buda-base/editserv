@@ -1,4 +1,4 @@
-package io.bdrc.edit;
+package io.bdrc.edit.controllers;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

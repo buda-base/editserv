@@ -20,7 +20,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.MainEditController;
+import io.bdrc.edit.controllers.MainEditController;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { MainEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

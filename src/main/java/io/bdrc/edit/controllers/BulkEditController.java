@@ -1,4 +1,4 @@
-package io.bdrc.edit;
+package io.bdrc.edit.controllers;
 
 import java.util.ArrayList;
 import java.util.Arrays;

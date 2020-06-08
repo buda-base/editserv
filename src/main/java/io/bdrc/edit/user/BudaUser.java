@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.QueryProcessor;
+import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;

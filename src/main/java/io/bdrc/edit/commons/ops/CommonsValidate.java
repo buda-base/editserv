@@ -1,4 +1,4 @@
-package io.bdrc.edit.commons;
+package io.bdrc.edit.commons.ops;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +27,7 @@ import org.topbraid.shacl.validation.ValidationEngineConfiguration;
 import org.topbraid.shacl.validation.ValidationUtil;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;

@@ -1,4 +1,4 @@
-package io.bdrc.edit.commons;
+package io.bdrc.edit.commons.ops;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.helpers.GitRepo;
 import io.bdrc.edit.helpers.GitRepositories;
 import io.bdrc.edit.helpers.Helpers;

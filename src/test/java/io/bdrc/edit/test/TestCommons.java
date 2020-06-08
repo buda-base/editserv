@@ -8,8 +8,8 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.commons.CommonsRead;
-import io.bdrc.edit.commons.CommonsValidate;
+import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 

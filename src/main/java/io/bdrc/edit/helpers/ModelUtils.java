@@ -1,4 +1,4 @@
-package io.bdrc.edit.commons;
+package io.bdrc.edit.helpers;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -43,7 +43,7 @@ import io.bdrc.auth.TokenValidation;
 import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.UserEditController;
+import io.bdrc.edit.controllers.UserEditController;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.GlobalHelpers;
 

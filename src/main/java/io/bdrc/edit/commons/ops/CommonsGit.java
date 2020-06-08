@@ -1,4 +1,4 @@
-package io.bdrc.edit.commons;
+package io.bdrc.edit.commons.ops;
 
 import static io.bdrc.libraries.Models.BDG;
 
@@ -23,6 +23,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.GitRepositories;
 import io.bdrc.edit.helpers.Helpers;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;

@@ -1,4 +1,4 @@
-package io.bdrc.edit.commons;
+package io.bdrc.edit.commons.data;
 
 import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.query.Query;

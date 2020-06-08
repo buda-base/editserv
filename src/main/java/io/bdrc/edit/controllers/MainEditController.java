@@ -1,4 +1,4 @@
-package io.bdrc.edit;
+package io.bdrc.edit.controllers;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import io.bdrc.edit.commons.CommonsGit;
-import io.bdrc.edit.commons.CommonsRead;
-import io.bdrc.edit.commons.CommonsValidate;
+import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.ValidationException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;

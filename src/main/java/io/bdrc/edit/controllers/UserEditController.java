@@ -1,4 +1,4 @@
-package io.bdrc.edit;
+package io.bdrc.edit.controllers;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +29,7 @@ import io.bdrc.auth.model.AuthDataModelBuilder;
 import io.bdrc.auth.model.BudaRdfUser;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.Types;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.edit.user.GitUserPatchModule;

@@ -7,7 +7,7 @@ import java.util.Properties;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
-import io.bdrc.edit.users.UsersCache;
+import io.bdrc.edit.user.UsersCache;
 
 public class EditConfig {
 

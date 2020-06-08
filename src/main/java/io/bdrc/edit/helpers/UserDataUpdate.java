@@ -12,9 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.patch.PatchContent;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
-import io.bdrc.edit.users.BudaUser;
+import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.GitHelpers;
 
 public class UserDataUpdate {
@@ -54,7 +53,8 @@ public class UserDataUpdate {
                 String repoName = EditConfig.getProperty("usersGitLocalRoot");
                 dsg = Helpers.buildGraphFromTrig(GitHelpers.getGitHeadFileContent(repoName, ad.getGitPath()));
                 dsg.addGraph(graphUri, dsg.getGraph(NodeFactory.createURI(BudaUser.PUBLIC_PFX + userId)));
-                dsg.addGraph(NodeFactory.createURI(st.replace("/user/", "/user-private/")), dsg.getGraph(NodeFactory.createURI(BudaUser.PRIVATE_PFX + userId)));
+                dsg.addGraph(NodeFactory.createURI(st.replace("/user/", "/user-private/")),
+                        dsg.getGraph(NodeFactory.createURI(BudaUser.PRIVATE_PFX + userId)));
 
             }
         } catch (Exception ex) {

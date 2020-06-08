@@ -1,4 +1,4 @@
-package io.bdrc.edit.modules;
+package io.bdrc.edit.user;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -17,16 +17,16 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.TransactionLog;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
-import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
-import io.bdrc.edit.users.BudaUser;
 
 public class UserPatchModule implements BUDAEditModule {
 
+    public static String NL = System.lineSeparator();
     UserDataUpdate data;
     int status;
     TransactionLog log;
@@ -37,6 +37,17 @@ public class UserPatchModule implements BUDAEditModule {
         this.data = data;
         this.log = log;
         setStatus(Types.STATUS_PREPARED);
+    }
+
+    public static String getSetActivePatch(String userId, boolean active) {
+        StringBuffer buff = new StringBuffer();
+        buff.append("TX ." + NL);
+        buff.append(" D <" + BudaUser.BDU_PFX + userId + "> <http://purl.bdrc.io/ontology/ext/user/isActive> \"" + Boolean.toString(!active) + "\" <"
+                + BudaUser.PRIVATE_PFX + userId + "> .");
+        buff.append(NL + " A <" + BudaUser.BDU_PFX + userId + "> <http://purl.bdrc.io/ontology/ext/user/isActive> \"" + Boolean.toString(active)
+                + "\" <" + BudaUser.PRIVATE_PFX + userId + "> .");
+        buff.append(NL + "TC ." + NL);
+        return buff.toString();
     }
 
     @Override

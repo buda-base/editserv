@@ -1,4 +1,4 @@
-package io.bdrc.edit.txn;
+package io.bdrc.edit.user;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,17 +15,20 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.TransactionLog;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.Helpers;
+import io.bdrc.edit.helpers.PatchContent;
 import io.bdrc.edit.helpers.UserDataUpdate;
-import io.bdrc.edit.patch.PatchContent;
 import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.ServiceSequenceException;
 import io.bdrc.libraries.EmailNotification;
 import io.bdrc.libraries.GlobalHelpers;
 
-public class UserTransaction extends EditTransaction {
+public class UserTransaction {
 
     public final static Logger logger = LoggerFactory.getLogger(UserTransaction.class.getName());
+    protected TreeMap<Integer, BUDAEditModule> modulesMap;
 
     private TransactionLog log;
     Date commitTime;
@@ -50,7 +53,7 @@ public class UserTransaction extends EditTransaction {
             log.addError(name, e.getMessage());
             setStatus(Types.STATUS_FAILED);
             try {
-                finalizeLog(log, name);
+                Helpers.finalizeLog(log, name);
             } catch (Exception e1) {
                 logger.error("UserTransaction failed to initialized", e);
                 throw new Exception(e1);
@@ -59,7 +62,14 @@ public class UserTransaction extends EditTransaction {
 
     }
 
-    @Override
+    public boolean addModule(BUDAEditModule module, int order) throws ServiceSequenceException {
+        if (modulesMap.containsKey(order)) {
+            throw new ServiceSequenceException();
+        }
+        modulesMap.put(order, module);
+        return true;
+    }
+
     public boolean commit() throws IOException, ModuleException {
         setStatus(Status.STATUS_COMMITTED);
         commitTime = new Date();
@@ -71,26 +81,29 @@ public class UserTransaction extends EditTransaction {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
                 try {
-                    sendNotification("User Transaction " + name + " failed :" + System.lineSeparator() + TransactionLog.asString(log), "User Transaction failure");
+                    sendNotification("User Transaction " + name + " failed :" + System.lineSeparator() + TransactionLog.asString(log),
+                            "User Transaction failure");
                 } catch (MessagingException e1) {
                     logger.error("Email notification failure", e1);
                 }
                 return modulesMap.get(currentModule).rollback();
             } finally {
-                finalizeLog(log, name);
+                Helpers.finalizeLog(log, name);
             }
         }
         setStatus(Types.STATUS_SUCCESS);
         try {
             try {
-                sendNotification("User Transaction " + name + " succeeded :" + System.lineSeparator() + TransactionLog.asString(log), "User Transaction Success");
+                sendNotification("User Transaction " + name + " succeeded :" + System.lineSeparator() + TransactionLog.asString(log),
+                        "User Transaction Success");
             } catch (MessagingException e1) {
                 logger.error("Email notification failure", e1);
             }
-            finalizeLog(log, name);
+            Helpers.finalizeLog(log, name);
         } catch (Exception e) {
             logger.error("UserTransaction commit failed", e);
-            Log.error(this, "Edit User Transaction Manager failed to close log properly for User Transaction " + getName() + "finishing with status:" + Types.getStatus(getStatus()), e);
+            Log.error(this, "Edit User Transaction Manager failed to close log properly for User Transaction " + getName() + "finishing with status:"
+                    + Types.getStatus(getStatus()), e);
         }
         return true;
     }

@@ -29,13 +29,12 @@ import io.bdrc.auth.model.AuthDataModelBuilder;
 import io.bdrc.auth.model.BudaRdfUser;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
-import io.bdrc.edit.modules.GitUserPatchModule;
-import io.bdrc.edit.modules.GitUserRevisionModule;
-import io.bdrc.edit.modules.UserPatchModule;
-import io.bdrc.edit.patch.UserPatches;
-import io.bdrc.edit.txn.UserTransaction;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
-import io.bdrc.edit.users.BudaUser;
+import io.bdrc.edit.user.BudaUser;
+import io.bdrc.edit.user.GitUserPatchModule;
+import io.bdrc.edit.user.GitUserRevisionModule;
+import io.bdrc.edit.user.UserPatchModule;
+import io.bdrc.edit.user.UserTransaction;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -103,7 +102,7 @@ public class UserEditController {
                 // case user unlock
                 if (type.equals("unblock")) {
                     // first update the Buda User rdf profile
-                    BudaUser.update(res, UserPatches.getSetActivePatch(res, true));
+                    BudaUser.update(res, UserPatchModule.getSetActivePatch(res, true));
                     // next, mark (patch) the corresponding Auth0 user as "unblocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":false}");
                     // next, update RdfAuthModel (auth0 users)
@@ -183,7 +182,7 @@ public class UserEditController {
                     auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
                     User usr = RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1));
                     // first update the Buda User rdf profile
-                    BudaUser.update(res, UserPatches.getSetActivePatch(res, false));
+                    BudaUser.update(res, UserPatchModule.getSetActivePatch(res, false));
                     // next, mark (patch) the corresponding Auth0 user as "blocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":true}");
                     // next, update RdfAuthModel (auth0 users)

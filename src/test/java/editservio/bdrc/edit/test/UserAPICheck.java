@@ -44,7 +44,7 @@ import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.UserEditController;
-import io.bdrc.edit.users.BudaUser;
+import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.GlobalHelpers;
 
 @RunWith(SpringRunner.class)
@@ -285,7 +285,7 @@ public class UserAPICheck {
     }
 
     public static String getResourceFileContent(String file) throws IOException {
-        InputStream stream = PostTaskCheck.class.getClassLoader().getResourceAsStream(file);
+        InputStream stream = UserAPICheck.class.getClassLoader().getResourceAsStream(file);
         StringWriter writer = new StringWriter();
         IOUtils.copy(stream, writer, "UTF-8");
         return writer.toString();

@@ -1,4 +1,4 @@
-package io.bdrc.edit.users;
+package io.bdrc.edit.user;
 
 import org.apache.commons.jcs.access.exception.CacheException;
 import org.ehcache.Cache;

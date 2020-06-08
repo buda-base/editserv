@@ -28,7 +28,8 @@ import io.bdrc.edit.MainEditController;
 public class TestValidation {
 
     String validModel = "P707.ttl";
-    String nameErrModel = "P707_nameErrs.ttl";
+    String nameErrModel = "P707_missingName.ttl";
+    // String nameErrModel = "P707_nameErrs.ttl";
 
     @Autowired
     Environment environment;
@@ -38,9 +39,25 @@ public class TestValidation {
         EditConfig.init();
     }
 
-    @Test
-    public void validateAndSave() throws IOException {
+    // @Test
+    public void validateValidModelAndSave() throws IOException {
         InputStream in = TestValidation.class.getClassLoader().getResourceAsStream(validModel);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(in, writer, "UTF-8");
+        String model = writer.toString();
+        // System.out.println("Read Model to validate >>" + model);
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPut put = new HttpPut("http://localhost:" + environment.getProperty("local.server.port") + "/putresource/bdr:P707");
+        StringEntity entity = new StringEntity(model);
+        put.setEntity(entity);
+        put.setHeader("Content-type", "text/turtle");
+        HttpResponse response = client.execute(put);
+        System.out.println(response);
+    }
+
+    @Test
+    public void validateMissingNameErrorModelAndSave() throws IOException {
+        InputStream in = TestValidation.class.getClassLoader().getResourceAsStream(nameErrModel);
         StringWriter writer = new StringWriter();
         IOUtils.copy(in, writer, "UTF-8");
         String model = writer.toString();

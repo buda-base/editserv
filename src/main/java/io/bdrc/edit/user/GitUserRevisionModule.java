@@ -1,4 +1,4 @@
-package io.bdrc.edit.modules;
+package io.bdrc.edit.user;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -16,10 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.TransactionLog;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
-import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitRevisionModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
@@ -46,7 +46,8 @@ public class GitUserRevisionModule implements BUDAEditModule {
         try {
             sb.append("TX .");
             String resId = data.getUserId();
-            String line = "A <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + rev + "\" <" + EditConstants.BDA + resId + "> .";
+            String line = "A <" + EditConstants.BDA + resId + "> <http://purl.bdrc.io/ontology/admin/gitRevision> \"" + rev + "\" <"
+                    + EditConstants.BDA + resId + "> .";
             sb.append(System.lineSeparator());
             sb.append(line);
             sb.append(System.lineSeparator());

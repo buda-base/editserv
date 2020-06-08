@@ -1,4 +1,4 @@
-package io.bdrc.edit.patch;
+package io.bdrc.edit.helpers;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,9 +15,6 @@ import org.assertj.core.util.Arrays;
 import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.helpers.EditPatchHeaders;
 
 public class PatchContent {
 
@@ -53,7 +50,8 @@ public class PatchContent {
         } else {
             obj = q.asTriple().getObject().getURI();
         }
-        String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " " + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + obj + " " + PatchContent.tag(q.getGraph().getURI()) + " .";
+        String to_append = command + " " + PatchContent.tag(q.asTriple().getSubject().getURI()) + " "
+                + PatchContent.tag(q.asTriple().getPredicate().getURI()) + " " + obj + " " + PatchContent.tag(q.getGraph().getURI()) + " .";
         String deb = content.substring(0, content.lastIndexOf("TC ."));
         content = normalizeContent(deb + System.lineSeparator() + to_append + System.lineSeparator() + "TC .");
         log.info("New CONTENT >> {}", content);
@@ -149,13 +147,6 @@ public class PatchContent {
     @Override
     public String toString() {
         return "PatchContent [content=" + content + ", ph=" + ph + "]";
-    }
-
-    public static void main(String[] args) throws IOException {
-        EditConfig.init();
-        Task tk = TaskGitManager.getTask("abcdef-ghijk-lmnopq-rstuvwxyz", "marc");
-        PatchContent pc = new PatchContent(tk.getPatch());
-        System.out.println(pc.getContent());
     }
 
 }

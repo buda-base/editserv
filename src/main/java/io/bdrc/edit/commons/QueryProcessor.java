@@ -1,4 +1,4 @@
-package io.bdrc.edit.sparql;
+package io.bdrc.edit.commons;
 
 import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.query.Query;

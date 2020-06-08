@@ -26,7 +26,6 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.GitRepo;
 import io.bdrc.edit.helpers.GitRepositories;
 import io.bdrc.edit.helpers.Helpers;
-import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -278,6 +277,8 @@ public class CommonsRead {
             }
         }
         res.setNsPrefixes(Prefixes.getPrefixMapping());
+        log.info("EDITOR GRAPH >>:");
+        res.write(System.out, "TURTLE");
         return res;
     }
 

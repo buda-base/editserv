@@ -1,6 +1,7 @@
 package io.bdrc.edit.commons;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.jena.graph.Graph;
 import org.apache.jena.query.QuerySolution;
@@ -26,7 +27,6 @@ import org.topbraid.shacl.validation.ValidationEngineConfiguration;
 import org.topbraid.shacl.validation.ValidationUtil;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.sparql.QueryProcessor;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -141,11 +141,7 @@ public class CommonsValidate {
         return reportModel;
     }
 
-    public static boolean validateShacl(Model newModel, String resUri)
-    /*
-     * throws IOException, ParameterFormatException, UnknownBdrcResourceException,
-     * NotModifiableException
-     */ {
+    public static boolean validateShacl(Model newModel, String resUri) {
         try {
             String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
             Resource res = ResourceFactory.createResource(Models.BDR + shortName);
@@ -155,6 +151,8 @@ public class CommonsValidate {
             Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
             log.info("Validating Node {} with {}", res.getLocalName(), shapes);
             ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
+            log.info("Validating Node {} with {} returns {}", res.getLocalName(), shapes, report.conforms());
+            report.getModel().write(System.out, "TURTLE");
             Model finalReport = completeReport(shapes, dataGraph, report.getModel());
             finalReport.write(System.out, "TURTLE");
             SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
@@ -173,15 +171,13 @@ public class CommonsValidate {
     }
 
     private static boolean test() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        Model full = ModelFactory.createDefaultModel();
-        full.read("http://ldspdi-dev.bdrc.io/resource/P707", "TTL");
-        // full.write(System.out, "TURTLE");
-        Model focus = CommonsRead.getEditorGraph("bdr:P707");
-        focus.write(System.out, "TURTLE");
-        // Resource r = validateNode(focus,
-        // CommonsRead.getShapesForType(CommonsRead.getResourceTypeUri("bdr:P707")),
-        // ResourceFactory.createResource("http://purl.bdrc.io/resource/P707"), true);
+        InputStream in = CommonsValidate.class.getClassLoader().getResourceAsStream("P707_missingName.ttl");
+        Model m = ModelFactory.createDefaultModel();
+        m.read(in, null, "TTL");
+        boolean b = validateShacl(m, "http://purl.bdrc.io/resource/P707");
+
         log.info("PRINTING report.getModel()");
+        log.info("Is Model Valid ? {}", b);
         // RDFDataMgr.write(System.out, r.getModel(), Lang.TTL);
         return true;
     }

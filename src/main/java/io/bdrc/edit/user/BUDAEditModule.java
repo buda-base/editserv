@@ -1,4 +1,4 @@
-package io.bdrc.edit.modules;
+package io.bdrc.edit.user;
 
 import io.bdrc.edit.txn.exceptions.ModuleException;
 

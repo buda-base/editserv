@@ -9,8 +9,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import io.bdrc.edit.txn.BUDATransactionManager;
-
 @SpringBootApplication
 @Configuration
 @EnableAutoConfiguration
@@ -22,8 +20,6 @@ public class EditApplication extends SpringBootServletInitializer {
     public static void main(String[] args) throws Exception {
         EditConfig.init();
         SpringApplication.run(EditApplication.class, args);
-        Thread t = new Thread(BUDATransactionManager.getInstance());
-        t.start();
     }
 
     @Override

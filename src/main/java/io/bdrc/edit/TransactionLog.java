@@ -1,9 +1,6 @@
-package io.bdrc.edit.txn;
+package io.bdrc.edit;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -13,9 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.patch.Task;
 
 public class TransactionLog {
 
@@ -46,17 +40,6 @@ public class TransactionLog {
         error = new HashMap<>();
         addHeader(EDITOR_ID, editor_Name);
         addHeader(USER_ID, userId);
-    }
-
-    public TransactionLog(String path, Task tk) {
-        this.path = path;
-        header = new HashMap<>();
-        content = new HashMap<>();
-        error = new HashMap<>();
-        addHeader(USER_ID, tk.getUser());
-        addHeader(TASK_ID, tk.getId());
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        addHeader(DATE, dateFormat.format(new Date()));
     }
 
     public void setLastStatus(String value) {
@@ -155,19 +138,6 @@ public class TransactionLog {
 
     public String getPath() {
         return path;
-    }
-
-    public static void main(String[] args) throws IOException {
-        EditConfig.init();
-        Task tk = new Task("saveMsg", "message", "uuid:1xxx3c4d-5yyyf-7a8b-9c0d-e1kkk3b4c5r6", "shortName", "patch content", "marc");
-        TransactionLog log = new TransactionLog(EditConfig.getProperty("logRootDir") + "marc/", tk);
-        log.addContent("test", "whatever");
-        log.addContent("test", "whatever");
-        String json = TransactionLog.asJson(log);
-        System.out.println(json);
-        TransactionLog log1 = TransactionLog.create(json);
-        System.out.println(log1);
-        System.out.println(TransactionLog.asJson(log1));
     }
 
 }

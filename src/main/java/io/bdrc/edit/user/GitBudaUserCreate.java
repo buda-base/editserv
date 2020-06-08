@@ -1,4 +1,4 @@
-package io.bdrc.edit.users;
+package io.bdrc.edit.user;
 
 import java.io.File;
 import java.io.FileOutputStream;

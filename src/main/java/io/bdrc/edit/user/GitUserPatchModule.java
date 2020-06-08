@@ -1,15 +1,14 @@
-package io.bdrc.edit.modules;
+package io.bdrc.edit.user;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.bdrc.edit.TransactionLog;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.helpers.UserDataUpdate;
-import io.bdrc.edit.txn.TransactionLog;
 import io.bdrc.edit.txn.exceptions.GitPatchModuleException;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.PatchModuleException;
-import io.bdrc.edit.users.BudaUser;
 
 public class GitUserPatchModule implements BUDAEditModule {
 

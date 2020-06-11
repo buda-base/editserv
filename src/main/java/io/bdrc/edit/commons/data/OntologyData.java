@@ -46,6 +46,11 @@ public class OntologyData {
         if (it.hasNext()) {
             return it.next().getObject().asResource();
         }
+        ss = new SimpleSelector(null, EditConstants.INVERSE_OF, ResourceFactory.createResource(fullPropUri));
+        it = ONTOLOGY.listStatements(ss);
+        if (it.hasNext()) {
+            return it.next().getSubject().asResource();
+        }
         return null;
     }
 
@@ -56,7 +61,7 @@ public class OntologyData {
         // OntologyData.ONTOLOGY.write(System.out, "TURTLE");
         System.out.println(OntologyData.isSymmetric("http://purl.bdrc.io/ontology/core/hasSpouse"));
         Resource res = ResourceFactory.createResource("http://purl.bdrc.io/ontology/core/partOf");
-        Resource res1 = OntologyData.getInverse("http://purl.bdrc.io/ontology/core/hasPart");
+        Resource res1 = OntologyData.getInverse("http://purl.bdrc.io/ontology/core/personTeacherOf");
         System.out.println(res1);
         System.out.println(res1.getURI().equals(res.getURI()));
     }

@@ -25,7 +25,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
-import io.bdrc.edit.txn.exceptions.ValidationException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.Models;
@@ -77,10 +76,11 @@ public class MainEditController {
         }
         // if (!CommonsValidate.validateShacl(m, Models.BDR +
         // prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
-        if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(prefixedId, m),
-                Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
-            throw new ValidationException("Could not validate " + prefixedId);
-        }
+        /*
+         * if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(prefixedId, m),
+         * Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) { throw
+         * new ValidationException("Could not validate " + prefixedId); }
+         */
         String commitId = CommonsGit.putResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");

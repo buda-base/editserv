@@ -20,12 +20,14 @@ import java.util.SortedMap;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
+import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
@@ -135,6 +137,27 @@ public class Helpers {
         fusConn.put(graph, m);
         fusConn.commit();
         fusConn.end();
+    }
+
+    public static void deleteTriples(String graphUri, List<Triple> tps, String fusekiDataUrl) {
+        if (fusekiDataUrl == null) {
+            fusekiDataUrl = EditConfig.getProperty("fusekiData");
+        }
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
+        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+        String query = "DELETE DATA {GRAPH <" + graphUri + "> {";
+        for (Triple tp : tps) {
+            query = query + tp.getSubject().getURI() + " " + tp.getPredicate().getURI() + " ";
+            if (tp.getObject().isURI()) {
+                query = query + tp.getObject().getURI() + "  .";
+            }
+            if (tp.getObject().isLiteral()) {
+                query = query + tp.getObject().getLiteralValue().toString() + "  .";
+            }
+        }
+        query = query + "} }";
+        fusConn.update(query);
+        fusConn.close();
     }
 
     public static void createDirIfNotExists(String dir) {

@@ -39,7 +39,7 @@ public class TestModelUtils {
     }
 
     @Test
-    public void checkComplement() throws IOException {
+    public void checkRemovedTriples() throws IOException {
         // DIFFERENCES ARE:
         // missing (symetric):
         // bdo:kinWith , bdr:P1585 , bdr:P8528

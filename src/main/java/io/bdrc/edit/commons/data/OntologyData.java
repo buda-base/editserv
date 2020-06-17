@@ -20,6 +20,7 @@ public class OntologyData {
     static Model ONTOLOGY;
 
     public static void init() {
+        EditConfig.init();
         ONTOLOGY = loadOntologyData();
     }
 

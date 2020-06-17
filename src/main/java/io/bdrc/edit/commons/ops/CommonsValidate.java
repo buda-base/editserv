@@ -1,9 +1,12 @@
 package io.bdrc.edit.commons.ops;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
-import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
@@ -16,18 +19,15 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.shacl.ShaclValidator;
-import org.apache.jena.shacl.Shapes;
-import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.topbraid.shacl.validation.ValidationEngine;
-import org.topbraid.shacl.validation.ValidationEngineConfiguration;
-import org.topbraid.shacl.validation.ValidationUtil;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -113,104 +113,64 @@ public class CommonsValidate {
         return false;
     }
 
-    static Model completeReport(Shapes shapes, Graph dataGraph, Model top) {
-        Model complete = ModelFactory.createDefaultModel();
-        complete.add(top);
-
-        if (top.contains((Resource) null, SH_CONFORMS, FALSE)) {
-            StmtIterator valItr = top.listStatements((Resource) null, SH_VALUE, (RDFNode) null);
-            while (valItr.hasNext()) {
-                Statement valStmt = valItr.removeNext();
-                RDFNode valNode = valStmt.getObject();
-
-                if (valNode.isResource()) {
-                    Model subReport = process(shapes, dataGraph, (Resource) valNode);
-                    // subReport.remove(subReport.listStatements(null, SH_CONFORMS, (RDFNode)
-                    // null));
-                    complete.add(subReport);
-                }
+    public static List<Statement> getNeighboursFromSymmetric(Set<Statement> diff) {
+        ArrayList<Statement> symetricStmt = new ArrayList<>();
+        for (Statement st : diff) {
+            if (OntologyData.isSymmetric(st.getPredicate().getURI())) {
+                symetricStmt.add(st);
             }
         }
-
-        return complete;
+        return symetricStmt;
     }
 
-    static Model process(Shapes shapes, Graph dataGraph, Resource rez) {
-        log.info("Validating Node {} with {}", rez.getLocalName(), shapes);
-        ValidationReport report = ShaclValidator.get().validate(shapes, dataGraph, rez.asNode());
-        Model reportModel = report.getModel();
-        return reportModel;
-    }
-
-    public static boolean validateShacl(Model newModel, String resUri) {
-        try {
-            String shortName = resUri.substring(resUri.lastIndexOf("/") + 1);
-            Resource res = ResourceFactory.createResource(Models.BDR + shortName);
-            ShaclValidator sv = ShaclValidator.get();
-            Graph shapesGraph = CommonsRead.getValidationShapesForResource("bdr:" + shortName).getGraph();
-            Shapes shapes = Shapes.parse(shapesGraph);
-            Graph dataGraph = CommonsRead.getFullDataValidationModel(newModel).getGraph();
-            log.info("Validating Node {} with {}", res.getLocalName(), shapes);
-            ValidationReport report = sv.validate(shapes, dataGraph, res.asNode());
-            log.info("Validating Node {} with {} returns {}", res.getLocalName(), shapes, report.conforms());
-            report.getModel().write(System.out, "TURTLE");
-            Model finalReport = completeReport(shapes, dataGraph, report.getModel());
-            finalReport.write(System.out, "TURTLE");
-            SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
-            StmtIterator it = finalReport.listStatements(ss);
-            boolean b = true;
-            while (it.hasNext()) {
-                Statement st = it.next();
-                System.out.println("STMT >>" + st);
-                b = b && Boolean.valueOf(st.getObject().asLiteral().getString());
+    public static List<Statement> getNeighboursFromInverse(Set<Statement> diff) {
+        ArrayList<Statement> inverseStmt = new ArrayList<>();
+        for (Statement st : diff) {
+            Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
+            if (rs != null) {
+                inverseStmt.add(st);
             }
-            return b;
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
-        return false;
+        return inverseStmt;
     }
 
-    private static boolean test() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        InputStream in = CommonsValidate.class.getClassLoader().getResourceAsStream("P707_missingName.ttl");
-        Model m = ModelFactory.createDefaultModel();
-        m.read(in, null, "TTL");
-        boolean b = validateShacl(m, "http://purl.bdrc.io/resource/P707");
-
-        log.info("PRINTING report.getModel()");
-        log.info("Is Model Valid ? {}", b);
-        // RDFDataMgr.write(System.out, r.getModel(), Lang.TTL);
-        return true;
-    }
-
-    public static Resource validateNode(Model dataModel, Model shapesModel, Resource focus, boolean validateShapes) {
-        return validateNode(dataModel, shapesModel, focus, new ValidationEngineConfiguration().setValidateShapes(validateShapes));
-    }
-
-    public static Resource validateNode(Model dataModel, Model shapesModel, Resource focus, ValidationEngineConfiguration configuration) {
-
-        ValidationEngine engine = ValidationUtil.createValidationEngine(dataModel, shapesModel, configuration);
-        engine.setConfiguration(configuration);
-        log.info("ValidationEngine Shapes graph {}", engine.getShapesGraphURI());
-        log.info("ValidationEngine .getShapesModel().size() = {}", engine.getShapesModel().size());
-        try {
-            engine.applyEntailments();
-            return engine.validateNode(focus.asNode());
-        } catch (InterruptedException ex) {
-            return null;
+    public static HashMap<String, List<Triple>> getTriplesToRemove(Set<Statement> diffSymetric, Set<Statement> diffInverse) {
+        HashMap<String, List<Triple>> map = new HashMap<>();
+        List<Statement> symetrics = getNeighboursFromSymmetric(diffSymetric);
+        List<Statement> inverses = getNeighboursFromInverse(diffInverse);
+        for (Statement st : symetrics) {
+            String graphUri = st.getObject().asResource().getURI();
+            graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
+            List<Triple> tp = map.get(graphUri);
+            if (tp == null) {
+                tp = new ArrayList<Triple>();
+            }
+            Triple t = Triple.create(st.getObject().asNode(), st.getPredicate().asNode(), st.getSubject().asNode());
+            tp.add(t);
+            map.put(graphUri, tp);
         }
+        for (Statement st : inverses) {
+            String graphUri = st.getObject().asResource().getURI();
+            graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
+            Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
+            List<Triple> tp = map.get(graphUri);
+            if (tp == null) {
+                tp = new ArrayList<Triple>();
+            }
+            Triple t = Triple.create(st.getObject().asNode(), rs.asNode(), st.getSubject().asNode());
+            tp.add(t);
+            map.put(graphUri, tp);
+        }
+        return map;
     }
 
-    public static boolean reportConforms(Model m) {
-        SimpleSelector ss = new SimpleSelector(null, ResourceFactory.createProperty(SH + "conforms"), (RDFNode) null);
-        StmtIterator it = m.listStatements(ss);
-        return Boolean.getBoolean(it.next().getObject().asLiteral().getString());
+    public static Set<Statement> getRemovedTriples(Model graphEditor, Model edited) {
+        return ModelUtils.ModelComplementAsSet(graphEditor, edited);
     }
 
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
         EditConfig.init();
         // System.out.println(existResource(Models.BDR + "P1583"));
-        test();
 
     }
 

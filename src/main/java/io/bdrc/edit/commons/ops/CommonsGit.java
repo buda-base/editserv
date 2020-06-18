@@ -10,6 +10,7 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.helpers.GitRepo;
 import io.bdrc.edit.helpers.GitRepositories;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
@@ -31,16 +34,18 @@ import io.bdrc.edit.txn.exceptions.ValidationException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
+import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
 
 public class CommonsGit {
 
     public static Logger log = LoggerFactory.getLogger(CommonsGit.class);
 
-    public static String putResource(Model newModel, String prefixedId) throws UnknownBdrcResourceException, NotModifiableException, IOException,
-            VersionConflictException, ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
+    public static String putAndCommitSingleResource(Model newModel, String prefixedId)
+            throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException, ParameterFormatException,
+            ValidationException, InvalidRemoteException, TransportException, GitAPIException {
         String resType = CommonsRead.getFullResourceTypeUri(prefixedId, newModel, false);
-        Model current = CommonsRead.getGraphFromGit(prefixedId);
+        Model current = CommonsGit.getGraphFromGit(prefixedId);
         // at this point, there's no conflict and the newModel is validated.
         // we are now merging the new model and the current one to apply the changes
         Model merged = ModelUtils.mergeModel(current, newModel);
@@ -69,6 +74,43 @@ public class CommonsGit {
             return rev.getName();
         }
         return null;
+    }
+
+    public static Model getGraphFromGit(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+        String rootId = "";
+        if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
+            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
+        }
+        if (graphUri.indexOf("/") == -1 && !graphUri.startsWith("bdr:")) {
+            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
+        }
+        if (graphUri.indexOf("/") > 0) {
+            rootId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        }
+        if (graphUri.indexOf("/") == -1) {
+            rootId = graphUri.substring(graphUri.lastIndexOf(":") + 1);
+        }
+        log.info("Getting graph for {} ", Models.BDG + rootId);
+        Model m = QueryProcessor.getGraph(Models.BDG + rootId, null);
+        NodeIterator g_path = m.listObjectsOfProperty(EditConstants.GIT_PATH);
+        String gitPath = null;
+        if (g_path.hasNext()) {
+            gitPath = g_path.next().asLiteral().getString();
+        }
+        NodeIterator g_repo = m.listObjectsOfProperty(EditConstants.GIT_REPO);
+        String gitRepo = null;
+        if (g_repo.hasNext()) {
+            gitRepo = g_repo.next().asResource().getURI();
+        }
+        if (gitPath == null || gitRepo == null) {
+            throw new NotModifiableException(graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
+        }
+        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"), Models.BDA + gitRepo, gitPath);
+
+        GitRepo repo = GitRepositories.getRepoByUri(gitRepo);
+        return ModelFactory.createModelForGraph(Helpers
+                .buildGraphFromTrig(GlobalHelpers.readFileContent(EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
+                .getUnionGraph());
     }
 
     private static void modelToOutputStream(Model m, OutputStream out, String resId) throws IOException {

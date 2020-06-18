@@ -160,6 +160,27 @@ public class Helpers {
         fusConn.close();
     }
 
+    public static void insertTriples(String graphUri, List<Triple> tps, String fusekiDataUrl) {
+        if (fusekiDataUrl == null) {
+            fusekiDataUrl = EditConfig.getProperty("fusekiData");
+        }
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
+        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+        String query = "INSERT DATA {GRAPH <" + graphUri + "> {";
+        for (Triple tp : tps) {
+            query = query + tp.getSubject().getURI() + " " + tp.getPredicate().getURI() + " ";
+            if (tp.getObject().isURI()) {
+                query = query + tp.getObject().getURI() + "  .";
+            }
+            if (tp.getObject().isLiteral()) {
+                query = query + tp.getObject().getLiteralValue().toString() + "  .";
+            }
+        }
+        query = query + "} }";
+        fusConn.update(query);
+        fusConn.close();
+    }
+
     public static void createDirIfNotExists(String dir) {
         File theDir = new File(dir);
         if (!theDir.exists()) {
@@ -230,6 +251,10 @@ public class Helpers {
         mapper.writerWithDefaultPrettyPrinter().writeValue(fos, obj);
         fos.close();
         return ok;
+    }
+
+    public static String getShortName(String fullResUri) {
+        return fullResUri.substring(fullResUri.lastIndexOf("/") + 1);
     }
 
     public static void main(String[] args) throws GitAPIException, IOException {

@@ -31,8 +31,9 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.MainEditController;
-import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
+import io.bdrc.edit.txn.exceptions.NotModifiableException;
+import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { MainEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -85,7 +86,7 @@ public class TestValidation {
     }
 
     @Test
-    public void processRemovedTriples() throws IOException {
+    public void processRemovedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
         Model edited = ModelFactory.createDefaultModel();
@@ -103,7 +104,13 @@ public class TestValidation {
         HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(new HashSet<>(symetrics), new HashSet<>(inverses));
         System.out.println("ToDelete >>" + toDelete);
         for (String graph : toDelete.keySet()) {
-            Helpers.deleteTriples(graph, toDelete.get(graph), "http://buda1.bdrc.io:13180/fuseki/testrw/");
+            // Helpers.deleteTriples(graph, toDelete.get(graph),
+            // "http://buda1.bdrc.io:13180/fuseki/testrw/");
+            System.out.println("-----------REMOVING TRIPLES IN GRAPH ----------->>" + graph);
+            Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
+            // and here
+            // put to fuseki
+            // put to git
         }
     }
 

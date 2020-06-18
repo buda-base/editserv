@@ -24,13 +24,9 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.QueryProcessor;
-import io.bdrc.edit.helpers.GitRepo;
-import io.bdrc.edit.helpers.GitRepositories;
-import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
 import io.bdrc.libraries.Prefixes;
 
@@ -137,41 +133,6 @@ public class CommonsRead {
         m.read("http://" + EditConfig.getProperty("shapeServerRoot") + ONT_GRAPH_URL, "TTL");
         m.add(model);
         return m;
-    }
-
-    public static Model getGraphFromGit(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String rootId = "";
-        if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
-            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
-        }
-        if (graphUri.indexOf("/") == -1 && !graphUri.startsWith("bdr:")) {
-            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
-        }
-        if (graphUri.indexOf("/") > 0) {
-            rootId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        }
-        if (graphUri.indexOf("/") == -1) {
-            rootId = graphUri.substring(graphUri.lastIndexOf(":") + 1);
-        }
-        log.info("Getting graph for {} ", Models.BDG + rootId);
-        Model m = QueryProcessor.getGraph(Models.BDG + rootId, null);
-        NodeIterator g_path = m.listObjectsOfProperty(EditConstants.GIT_PATH);
-        String gitPath = null;
-        if (g_path.hasNext()) {
-            gitPath = g_path.next().asLiteral().getString();
-        }
-        NodeIterator g_repo = m.listObjectsOfProperty(EditConstants.GIT_REPO);
-        String gitRepo = null;
-        if (g_repo.hasNext()) {
-            gitRepo = g_repo.next().asResource().getURI();
-        }
-        if (gitPath == null || gitRepo == null) {
-            throw new NotModifiableException(graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
-        }
-        GitRepo repo = GitRepositories.getRepoByUri(gitRepo);
-        return ModelFactory.createModelForGraph(Helpers
-                .buildGraphFromTrig(GlobalHelpers.readFileContent(EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
-                .getUnionGraph());
     }
 
     public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
@@ -290,14 +251,14 @@ public class CommonsRead {
 
     public static Model getEditorGraph(String prefRes)
             throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        return getEditorGraph(prefRes, getGraphFromGit(prefRes), getBestShapes(prefRes));
+        return getEditorGraph(prefRes, CommonsGit.getGraphFromGit(prefRes), getBestShapes(prefRes));
     }
 
     public static List<String> getFocusPropsFromShape(List<String> shapeGraphs, String sourceType, String prefixedUri)
             throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         List<String> uris = new ArrayList<>();
         String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model mm = getGraphFromGit(EditConstants.BDR + shortName);
+        Model mm = CommonsGit.getGraphFromGit(EditConstants.BDR + shortName);
         NodeIterator it = mm.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
         String typeUri = it.next().asResource().getURI();
         Model mod = getValidationShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));

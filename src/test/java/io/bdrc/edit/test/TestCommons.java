@@ -8,7 +8,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -26,19 +26,19 @@ public class TestCommons {
         String graphUri2 = "http://purl.bdrc.io/resource/P1583XZ";
 
         try {
-            CommonsRead.getGraphFromGit(graphUri1);
+            CommonsGit.getGraphFromGit(graphUri1);
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
             assert (e instanceof UnknownBdrcResourceException);
         }
 
         try {
-            CommonsRead.getGraphFromGit(graphUri2);
+            CommonsGit.getGraphFromGit(graphUri2);
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
             assert (e instanceof NotModifiableException);
         }
 
         try {
-            Model m = CommonsRead.getGraphFromGit(graphUri);
+            Model m = CommonsGit.getGraphFromGit(graphUri);
             assert (m.size() > 0);
             m.write(System.out, "TURTLE");
         } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {

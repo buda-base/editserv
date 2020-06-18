@@ -3,6 +3,7 @@ package io.bdrc.edit.commons.ops;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -19,7 +20,12 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.rdfconnection.RDFConnectionFactory;
+import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.vocabulary.RDF;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +33,13 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
+import io.bdrc.edit.txn.exceptions.ValidationException;
+import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.Models;
 
 public class CommonsValidate {
@@ -166,6 +175,36 @@ public class CommonsValidate {
 
     public static Set<Statement> getRemovedTriples(Model graphEditor, Model edited) {
         return ModelUtils.ModelComplementAsSet(graphEditor, edited);
+    }
+
+    public static void completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
+            ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
+        Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
+        Set<Statement> removed = CommonsValidate.getRemovedTriples(editorGraph, edited);
+        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
+        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(new HashSet<>(symetrics), new HashSet<>(inverses));
+        HashMap<String, Model> models = new HashMap<>();
+        for (String graph : toDelete.keySet()) {
+            Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
+            models.put(graph, m);
+        }
+        RDFConnectionFuseki rvf = null;
+        try {
+            rvf = RDFConnectionFactory.connectFuseki(EditConfig.getProperty("fusekiUrl"));
+            for (String graph : models.keySet()) {
+                String name = CommonsGit.putAndCommitSingleResource(models.get(graph), Helpers.getShortName(graph));
+                Model updated = ModelUtils.updateGitRevision(graphUri, models.get(graph), name);
+                rvf.put(graph, updated);
+            }
+            rvf.close();
+        } catch (Exception ex) {
+            if (!rvf.isClosed()) {
+                rvf.close();
+            }
+            log.error("completeNeighbours failed ", ex);
+            // eventually send an email;
+        }
     }
 
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

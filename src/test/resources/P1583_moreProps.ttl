@@ -96,8 +96,9 @@ bdr:NMFB54273C9888  a  bdo:PersonCommonName ;
         rdfs:label  "klong chen pa/"@bo-x-ewts .
 
 bdr:P1583  bdo:hasFather     bdr:P1584 ;
-        bdo:hasMother        bdr:P1585 ;        
-        bdo:hasSon           bdr:P8528 ;
+        bdo:hasMother        bdr:P1585 ;
+        bdo:kinWith          bdr:P2JM206;   
+        bdo:hasSon           bdr:P8528, bdr:P2JM206 ;
         bdo:note             bdr:NTDAA95D67ECFA , bdr:NTF24F5C4DD814 , bdr:NTB25CDA7F0516 , bdr:NT93D338F6A346 , bdr:NTABB307C08F28 , bdr:NTE1C8F77F6AFC ;
         bdo:personEvent      bdr:EVDD9AB2BD104D , bdr:EV81A442B676BC , bdr:EV00B857229AAA ;
         bdo:personGender     bdr:GenderMale ;

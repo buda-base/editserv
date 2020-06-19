@@ -63,6 +63,7 @@ public class CommonsRead {
         if (m == null) {
             String shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
             m = QueryProcessor.describeModel(EditConstants.BDO + shortName);
+            m.write(System.out, "TURTLE");
             ENTITY_MAP.put(prefixedUri, m);
         }
         return m;
@@ -173,18 +174,7 @@ public class CommonsRead {
         log.info("ShortName of {} is {} - building Selector  with {}", prefixedUri, shortName, EditConstants.BDR + shortName);
         SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type, (RDFNode) null);
         StmtIterator stit = m.listStatements(ss);
-        // NodeIterator it =
-        // m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR +
-        // shortName), RDF.type);
-        Statement n = stit.next();
-        /*
-         * if (prefixed) { String tmp = n.asResource().getURI(); return "bdo:" +
-         * tmp.substring(tmp.lastIndexOf("/") + 1);
-         * 
-         * } else {
-         */
-        return n.getObject().asResource().getURI();
-        // }
+        return stit.next().getObject().asResource().getURI();
     }
 
     public static String getFullUriResourceFromPrefixed(String prefixedUri) {
@@ -195,7 +185,9 @@ public class CommonsRead {
             throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
         List<String> shapesUris = new ArrayList<>();
         String typeUri = getResourceTypeUri(prefixedUri, true);
+        log.info("BEST SHAPES TYPE URIS {} ", typeUri);
         shapesUris.add(getLocalShapeUri(typeUri));
+        log.info("BEST SHAPES LOCAL SHAPES URIS {} ", getLocalShapeUri(typeUri));
         shapesUris.add(getTopShapeUri(typeUri));
         log.info("BEST SHAPES URIS {} ", shapesUris);
         return shapesUris;
@@ -239,8 +231,6 @@ public class CommonsRead {
             }
         }
         res.setNsPrefixes(Prefixes.getPrefixMapping());
-        log.info("EDITOR GRAPH >>:");
-        res.write(System.out, "TURTLE");
         return res;
     }
 
@@ -270,7 +260,10 @@ public class CommonsRead {
                 RDFNode n = it1.next();
                 if (n.asResource() != null) {
                     String rdf = n.asResource().getURI();
-                    uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
+                    Resource r = mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH);
+                    if (r != null) {
+                        uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
+                    }
                 }
             }
         }
@@ -295,7 +288,10 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-        Model res = getEditorGraph("bdr:P707");
+
+        System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707"));
+        Model res = getEditorGraph("bdr:P1583");
+        System.out.println("---------------------------------------------------");
         res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");
         /*

@@ -119,6 +119,23 @@ public class ModelUtils {
         return m;
     }
 
+    public static Model addTriples(String graphUri, List<Triple> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+        String shortGraph = graphUri.substring(graphUri.lastIndexOf("/") + 1);
+        String URI = "http://" + EditConfig.getProperty("shapeServerRoot") + "/graph/" + shortGraph + ".ttl";
+        // Model m = ModelFactory.createDefaultModel();
+        Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
+        m.setNsPrefixes(Prefixes.getPrefixMapping());
+        Dataset ds = DatasetFactory.create();
+        ds.addNamedModel(graphUri, m);
+        DatasetGraph dg = ds.asDatasetGraph();
+        for (Triple t : tps) {
+            dg.add(NodeFactory.createURI(graphUri), t.getSubject(), t.getPredicate(), t.getObject());
+        }
+        m = ModelFactory.createModelForGraph(dg.getGraph(NodeFactory.createURI(graphUri)));
+        // m.write(System.out, "TURTLE");
+        return m;
+    }
+
     public static Model updateGitRevision(String graphUri, Model m, String gitRev) {
         Dataset ds = DatasetFactory.create(m);
         DatasetGraph dsg = ds.asDatasetGraph();

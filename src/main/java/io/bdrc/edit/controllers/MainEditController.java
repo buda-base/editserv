@@ -81,7 +81,7 @@ public class MainEditController {
          * Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) { throw
          * new ValidationException("Could not validate " + prefixedId); }
          */
-        String commitId = CommonsGit.putResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
+        String commitId = CommonsGit.putAndCommitSingleResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }

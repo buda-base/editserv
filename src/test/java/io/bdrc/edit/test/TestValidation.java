@@ -3,6 +3,7 @@ package io.bdrc.edit.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -42,7 +44,8 @@ public class TestValidation {
 
     String validModel = "P707.ttl";
     String nameErrModel = "P707_missingName.ttl";
-    // String nameErrModel = "P707_nameErrs.ttl";
+    static List<Triple> removed = new ArrayList<Triple>();
+    static HashMap<String, List<Triple>> removedByGraph = new HashMap<>();
 
     @Autowired
     Environment environment;
@@ -51,6 +54,7 @@ public class TestValidation {
     public static void init() throws Exception {
         EditConfig.init();
         OntologyData.init();
+        prepareData();
     }
 
     // @Test
@@ -85,7 +89,7 @@ public class TestValidation {
         System.out.println(response);
     }
 
-    @Test
+    // @Test
     public void processRemovedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
@@ -101,7 +105,7 @@ public class TestValidation {
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
         System.out.println("Neighbours Inverse >>" + inverses);
         System.out.println("Neighbours Symmetric >>" + symetrics);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(new HashSet<>(symetrics), new HashSet<>(inverses));
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToProcess(new HashSet<>(symetrics), new HashSet<>(inverses));
         System.out.println("ToDelete >>" + toDelete);
         for (String graph : toDelete.keySet()) {
             // Helpers.deleteTriples(graph, toDelete.get(graph),
@@ -112,6 +116,73 @@ public class TestValidation {
             // put to fuseki
             // put to git
         }
+    }
+
+    @Test
+    public void processAddedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
+
+        Model initial = ModelFactory.createDefaultModel();
+        Model edited = ModelFactory.createDefaultModel();
+        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
+        initial.read(in, null, "TTL");
+        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583_moreProps.ttl");
+        edited.read(in, null, "TTL");
+        in.close();
+        Set<Statement> added = CommonsValidate.getAddedTriples(initial, edited);
+        System.out.println("Removed >>" + added);
+        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(added);
+        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
+        System.out.println("Neighbours Inverse >>" + inverses);
+        System.out.println("Neighbours Symmetric >>" + symetrics);
+        // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToRemove(new
+        // HashSet<>(symetrics), new HashSet<>(inverses));
+        // System.out.println("ToDelete >>" + toDelete);
+        // for (String graph : toDelete.keySet()) {
+        // Helpers.deleteTriples(graph, toDelete.get(graph),
+        // "http://buda1.bdrc.io:13180/fuseki/testrw/");
+        // System.out.println("-----------REMOVING TRIPLES IN GRAPH ----------->>" +
+        // graph);
+        // Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
+        // and here
+        // put to fuseki
+        // put to git
+        // }
+    }
+
+    public static void prepareData() {
+        Triple t = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P8528"),
+                NodeFactory.createURI("http://purl.bdrc.io/ontology/core/kinWith"), NodeFactory.createURI("http://purl.bdrc.io/resource/P1583"));
+        removed.add(t);
+        List<Triple> ltp = new ArrayList<Triple>();
+        ltp.add(t);
+        removedByGraph.put("http://purl.bdrc.io/resource/P8528", ltp);
+        t = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P1585"),
+                NodeFactory.createURI("http://purl.bdrc.io/ontology/core/kinWith"), NodeFactory.createURI("http://purl.bdrc.io/resource/P1583"));
+        ltp = new ArrayList<Triple>();
+        ltp.add(t);
+        removedByGraph.put("http://purl.bdrc.io/resource/P1585", ltp);
+        removed.add(t);
+        t = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P2JM192"),
+                NodeFactory.createURI("http://purl.bdrc.io/ontology/core/personStudentOf"),
+                NodeFactory.createURI("http://purl.bdrc.io/resource/P1583"));
+        ltp = new ArrayList<Triple>();
+        ltp.add(t);
+        removedByGraph.put("http://purl.bdrc.io/resource/P2JM192", ltp);
+        removed.add(t);
+        t = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P2JM193"),
+                NodeFactory.createURI("http://purl.bdrc.io/ontology/core/personStudentOf"),
+                NodeFactory.createURI("http://purl.bdrc.io/resource/P1583"));
+        ltp = new ArrayList<Triple>();
+        ltp.add(t);
+        removedByGraph.put("http://purl.bdrc.io/resource/P2JM193", ltp);
+        removed.add(t);
+        t = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P2JM194"),
+                NodeFactory.createURI("http://purl.bdrc.io/ontology/core/personStudentOf"),
+                NodeFactory.createURI("http://purl.bdrc.io/resource/P1583"));
+        ltp = new ArrayList<Triple>();
+        ltp.add(t);
+        removedByGraph.put("http://purl.bdrc.io/resource/P2JM194", ltp);
+        removed.add(t);
     }
 
 }

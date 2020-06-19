@@ -143,7 +143,7 @@ public class CommonsValidate {
         return inverseStmt;
     }
 
-    public static HashMap<String, List<Triple>> getTriplesToRemove(Set<Statement> diffSymetric, Set<Statement> diffInverse) {
+    public static HashMap<String, List<Triple>> getTriplesToProcess(Set<Statement> diffSymetric, Set<Statement> diffInverse) {
         HashMap<String, List<Triple>> map = new HashMap<>();
         List<Statement> symetrics = getNeighboursFromSymmetric(diffSymetric);
         List<Statement> inverses = getNeighboursFromInverse(diffInverse);
@@ -177,17 +177,30 @@ public class CommonsValidate {
         return ModelUtils.ModelComplementAsSet(graphEditor, edited);
     }
 
+    public static Set<Statement> getAddedTriples(Model graphEditor, Model edited) {
+        return ModelUtils.ModelComplementAsSet(edited, graphEditor);
+    }
+
     public static void completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
         Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
         Set<Statement> removed = CommonsValidate.getRemovedTriples(editorGraph, edited);
+        Set<Statement> added = CommonsValidate.getRemovedTriples(editorGraph, edited);
         List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(new HashSet<>(symetrics), new HashSet<>(inverses));
+        List<Statement> added_inverses = CommonsValidate.getNeighboursFromInverse(added);
+        List<Statement> added_symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToProcess(new HashSet<>(symetrics), new HashSet<>(inverses));
+        HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToProcess(new HashSet<>(added_symetrics), new HashSet<>(added_inverses));
         HashMap<String, Model> models = new HashMap<>();
+        HashMap<String, Model> added_models = new HashMap<>();
         for (String graph : toDelete.keySet()) {
             Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
             models.put(graph, m);
+        }
+        for (String graph : toAdd.keySet()) {
+            Model m = ModelUtils.addTriples(graph, toAdd.get(graph));
+            added_models.put(graph, m);
         }
         RDFConnectionFuseki rvf = null;
         try {
@@ -195,6 +208,11 @@ public class CommonsValidate {
             for (String graph : models.keySet()) {
                 String name = CommonsGit.putAndCommitSingleResource(models.get(graph), Helpers.getShortName(graph));
                 Model updated = ModelUtils.updateGitRevision(graphUri, models.get(graph), name);
+                rvf.put(graph, updated);
+            }
+            for (String graph : added_models.keySet()) {
+                String name = CommonsGit.putAndCommitSingleResource(added_models.get(graph), Helpers.getShortName(graph));
+                Model updated = ModelUtils.updateGitRevision(graphUri, added_models.get(graph), name);
                 rvf.put(graph, updated);
             }
             rvf.close();

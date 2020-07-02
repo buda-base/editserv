@@ -31,10 +31,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.OntologyData;
+import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.MainEditController;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
+import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
 @RunWith(SpringRunner.class)
@@ -118,7 +120,7 @@ public class TestValidation {
         }
     }
 
-    @Test
+    // @Test
     public void processAddedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
@@ -183,6 +185,39 @@ public class TestValidation {
         ltp.add(t);
         removedByGraph.put("http://purl.bdrc.io/resource/P2JM194", ltp);
         removed.add(t);
+    }
+
+    @Test
+    public void straightModelValidation() throws IOException {
+        Model initial = ModelFactory.createDefaultModel();
+        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
+        initial.read(in, null, "TTL");
+        boolean conforms = CommonsValidate.validate(initial, "bdr:P1583");
+        System.out.println("Conforms >> " + conforms);
+        assert (conforms);
+        initial = ModelFactory.createDefaultModel();
+        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_missingName.ttl");
+        initial.read(in, null, "TTL");
+        in.close();
+        conforms = CommonsValidate.validate(initial, "bdr:P707");
+        System.out.println("Conforms >> " + conforms);
+        assert (!conforms);
+    }
+
+    @Test
+    public void editorModelValidation() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+        Model initial = CommonsRead.getEditorGraph("bdr:P707");
+        initial.write(System.out, "TURTLE");
+        boolean conforms = CommonsValidate.validate(initial, "bdr:P707");
+        System.out.println("Conforms >> " + conforms);
+        assert (conforms);
+        initial = ModelFactory.createDefaultModel();
+        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
+        initial.read(in, null, "TTL");
+        in.close();
+        conforms = CommonsValidate.validate(initial, "bdr:P707");
+        System.out.println("Conforms >> " + conforms);
+        assert (!conforms);
     }
 
 }

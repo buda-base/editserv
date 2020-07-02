@@ -1,0 +1,74 @@
+@prefix :      <http://purl.bdrc.io/ontology/core/> .
+@prefix aut:   <http://purl.bdrc.io/ontology/ext/auth/> .
+@prefix bdan:  <http://purl.bdrc.io/annotation/> .
+@prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix tbr:   <http://purl.bdrc.io/ontology/toberemoved/> .
+@prefix bdou:  <http://purl.bdrc.io/ontology/ext/user/> .
+@prefix rsh:   <http://purl.bdrc.io/shacl/core/shape/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bdac:  <http://purl.bdrc.io/anncollection/> .
+@prefix wd:    <http://www.wikidata.org/entity/> .
+@prefix srcpe: <https://sakyaresearch.org/persons/> .
+@prefix oa:    <http://www.w3.org/ns/oa#> .
+@prefix bdgup: <http://purl.bdrc.io/graph-nc/user-private/> .
+@prefix mbbt:  <http://mbingenheimer.net/tools/bibls/> .
+@prefix dila:  <http://purl.dila.edu.tw/resource/> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix tmp:   <http://purl.bdrc.io/ontology/tmp/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix text:  <http://jena.apache.org/text#> .
+@prefix bdgu:  <http://purl.bdrc.io/graph-nc/user/> .
+@prefix bda:   <http://purl.bdrc.io/admindata/> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix bdg:   <http://purl.bdrc.io/graph/> .
+@prefix srct:  <https://sakyaresearch.org/topics/> .
+@prefix ola:   <https://openlibrary.org/authors/> .
+@prefix f:     <java:io.bdrc.ldspdi.sparql.functions.> .
+@prefix srcpl: <https://sakyaresearch.org/places/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
+@prefix bdo:   <http://purl.bdrc.io/ontology/core/> .
+@prefix iiif2: <http://iiif.io/api/presentation/2#> .
+@prefix iiif3: <http://iiif.io/api/presentation/3#> .
+@prefix adr:   <http://purl.bdrc.io/resource-nc/auth/> .
+@prefix viaf:  <http://viaf.org/viaf/> .
+@prefix eftr:  <http://purl.84000.co/resource/core/> .
+@prefix bds:   <http://purl.bdrc.io/ontology/shapes/core/> .
+@prefix bdr:   <http://purl.bdrc.io/resource/> .
+@prefix bdu:   <http://purl.bdrc.io/resource-nc/user/> .
+@prefix as:    <http://www.w3.org/ns/activitystreams#> .
+@prefix srcd:  <https://sakyaresearch.org/deities/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ldp:   <http://www.w3.org/ns/ldp#> .
+@prefix srcs:  <https://sakyaresearch.org/sources/> .
+@prefix srcl:  <https://sakyaresearch.org/literary_forms/> .
+
+bdr:EVD4758367CFC1  a  bdo:PersonBirth ;
+        bdo:notAfter   "1882"^^xsd:gYear ;
+        bdo:notBefore  "1881"^^xsd:gYear .
+
+bdr:NMEA2B380AF0BB  a  bdo:PersonGterStonTitle ;
+        rdfs:label  "pad+ma 'gro 'dul gsang sngags gling pa/"@bo-x-ewts .
+
+bdr:NM0895CB6787E8  a  bdo:PersonPrimaryTitle ;
+        rdfs:label  "sprul sku dri med/"@bo-x-ewts .
+
+bdr:P707  bdo:hasFather      bdr:P705 ;
+        bdo:note             bdr:NT08B650B715F4 ;
+        bdo:personEvent      bdr:EVD4758367CFC1 , bdr:EVFD910DBE53BC ;
+        bdo:personGender     bdr:GenderMale ;
+        bdo:personName       bdr:NM2463D933BA1F , bdr:NMEA2B380AF0BB , bdr:NMC2A097019ABA , bdr:NM0895CB6787E8 ;
+        bdo:personStudentOf  bdr:P705 ;
+        skos:prefLabel       "dri med 'od zer/"@bo-x-ewts .
+
+bdr:EVFD910DBE53BC  a  bdo:PersonDeath ;
+        bdo:onYear  "1924"^^xsd:gYear .
+
+bdr:NMC2A097019ABA  a  bdo:PersonPrimaryName ;
+        rdfs:label  "dri med 'od zer/"@bo-x-ewts .
+
+bdr:NT08B650B715F4  a  bdo:Note ;
+        bdo:noteText  "this son of bdud 'joms gling pa was an important gter ston in his own right. so far his gter chos have not been found."@en .

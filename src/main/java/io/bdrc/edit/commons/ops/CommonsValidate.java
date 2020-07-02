@@ -22,6 +22,9 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.rdfconnection.RDFConnectionFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
+import org.apache.jena.shacl.ShaclValidator;
+import org.apache.jena.shacl.Shapes;
+import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
@@ -223,6 +226,15 @@ public class CommonsValidate {
             log.error("completeNeighbours failed ", ex);
             // eventually send an email;
         }
+    }
+
+    public static boolean validate(Model m_data, String prefixedId) {
+        Model shapes_mod = CommonsRead.getValidationShapesForType(prefixedId);
+        Shapes shapes = Shapes.parse(shapes_mod.getGraph());
+        Model data = CommonsRead.getFullDataValidationModel(m_data);
+        ShaclValidator sv = ShaclValidator.get();
+        ValidationReport report = sv.validate(shapes, data.getGraph());
+        return report.conforms();
     }
 
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {

@@ -31,6 +31,7 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.topbraid.shacl.validation.ValidationUtil;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -228,17 +229,26 @@ public class CommonsValidate {
         }
     }
 
-    public static boolean validate(Model m_data, String prefixedId) {
+    public static ValidationReport validate(Model m_data, String prefixedId) {
         Model shapes_mod = CommonsRead.getValidationShapesForType(prefixedId);
+        shapes_mod.write(System.out, "TURTLE");
         Shapes shapes = Shapes.parse(shapes_mod.getGraph());
         Model data = CommonsRead.getFullDataValidationModel(m_data);
         ShaclValidator sv = ShaclValidator.get();
         ValidationReport report = sv.validate(shapes, data.getGraph());
-        return report.conforms();
+        return report;
+    }
+
+    public static Resource validateTQ(Model m_data, String prefixedId) {
+        Model shapes_mod = CommonsRead.getValidationShapesForType(prefixedId);
+        Resource r = ValidationUtil.validateModel(m_data, shapes_mod, true);
+        return r;
     }
 
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
         EditConfig.init();
+        Model m = CommonsRead.getEditorGraph("P:707");
+        Resource r = validateTQ(m, "bdo:Person");
         // System.out.println(existResource(Models.BDR + "P1583"));
 
     }

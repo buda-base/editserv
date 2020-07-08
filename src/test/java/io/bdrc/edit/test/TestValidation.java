@@ -1,5 +1,7 @@
 package io.bdrc.edit.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -19,10 +21,17 @@ import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +57,7 @@ public class TestValidation {
     String nameErrModel = "P707_missingName.ttl";
     static List<Triple> removed = new ArrayList<Triple>();
     static HashMap<String, List<Triple>> removedByGraph = new HashMap<>();
+    public static Logger log = LoggerFactory.getLogger(TestValidation.class);
 
     @Autowired
     Environment environment;
@@ -187,37 +197,61 @@ public class TestValidation {
         removed.add(t);
     }
 
+    // Using full graph and ontology data
     @Test
-    public void straightModelValidation() throws IOException {
+    public void straightModelTQValidation() throws IOException {
         Model initial = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
-        initial.read(in, null, "TTL");
-        boolean conforms = CommonsValidate.validate(initial, "bdr:P1583");
-        System.out.println("Conforms >> " + conforms);
-        assert (conforms);
-        initial = ModelFactory.createDefaultModel();
-        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_missingName.ttl");
-        initial.read(in, null, "TTL");
-        in.close();
-        conforms = CommonsValidate.validate(initial, "bdr:P707");
-        System.out.println("Conforms >> " + conforms);
-        assert (!conforms);
+        InputStream in = null;
+        initial.read("http://purl.bdrc.io/resource/P707.ttl", null, "TTL");
+        initial = CommonsRead.getFullDataValidationModel(initial);
+        Resource valid = CommonsValidate.validateTQ(initial, "bdo:Person");
+        valid.getModel().write(System.out, "TURTLE");
+        assert (!conforms(valid));
     }
 
-    @Test
-    public void editorModelValidation() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+    // shapes graph parsing error for now
+    // @Test
+    public void editorModelValidationJenaShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
         Model initial = CommonsRead.getEditorGraph("bdr:P707");
         initial.write(System.out, "TURTLE");
-        boolean conforms = CommonsValidate.validate(initial, "bdr:P707");
+        boolean conforms = CommonsValidate.validate(initial, "bdr:P707").conforms();
         System.out.println("Conforms >> " + conforms);
         assert (conforms);
         initial = ModelFactory.createDefaultModel();
         InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
         initial.read(in, null, "TTL");
         in.close();
-        conforms = CommonsValidate.validate(initial, "bdr:P707");
+        conforms = CommonsValidate.validate(initial, "bdr:P707").conforms();
         System.out.println("Conforms >> " + conforms);
-        assert (!conforms);
+        assertTrue(!conforms);
+    }
+
+    // Using pre-processed graph (editor graph) and ontology data
+    @Test
+    public void editorModelValidationTQShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+        log.info("Running validation test on graph editor + ont data with valid graph");
+        Model initial = CommonsRead.getEditorGraph("bdr:P707");
+        initial = CommonsRead.getFullDataValidationModel(initial);
+        Resource r = CommonsValidate.validateTQ(initial, "bdo:Person");
+        r.getModel().write(System.out, "TURTLE");
+        assertTrue(conforms(r));
+        log.info("Running validation test on graph editor + ont data with missing name");
+        Model err = ModelFactory.createDefaultModel();
+        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
+        err.read(in, null, "TTL");
+        err = CommonsRead.getFullDataValidationModel(err);
+        in.close();
+        r = CommonsValidate.validateTQ(err, "bdo:Person");
+        r.getModel().write(System.out, "TURTLE");
+        assertTrue(!conforms(r));
+    }
+
+    public boolean conforms(Resource r) {
+        Model m = r.getModel();
+        Property conforms = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#conforms");
+        SimpleSelector ss = new SimpleSelector((Resource) null, conforms, (RDFNode) null);
+        Statement st = m.listStatements(ss).next();
+        return st.getObject().asLiteral().getString().equals("true");
     }
 
 }

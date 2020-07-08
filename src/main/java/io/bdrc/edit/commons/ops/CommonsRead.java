@@ -59,6 +59,7 @@ public class CommonsRead {
     }
 
     public static Model getEntityModel(String prefixedUri) {
+        log.info("Getting entity model for {}", prefixedUri);
         Model m = ENTITY_MAP.get(prefixedUri);
         if (m == null) {
             String shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
@@ -117,7 +118,7 @@ public class CommonsRead {
     public static Model getValidationShapesForType(String entityPrefixedUri) {
         Model m = ModelFactory.createDefaultModel();
         m.add(getTopShapeModel(entityPrefixedUri));
-        m.add(getLocalShapeModel(entityPrefixedUri));
+        // m.add(getLocalShapeModel(entityPrefixedUri));
         return m;
     }
 
@@ -288,9 +289,8 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
-
         System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707"));
-        Model res = getEditorGraph("bdr:P1583");
+        Model res = getEditorGraph("bdr:P707");
         System.out.println("---------------------------------------------------");
         res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");

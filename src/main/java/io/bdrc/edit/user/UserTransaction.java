@@ -80,12 +80,12 @@ public class UserTransaction {
             } catch (Exception e) {
                 setStatus(Status.STATUS_MARKED_ROLLBACK);
                 log.addError(name, e.getMessage());
-                try {
-                    sendNotification("User Transaction " + name + " failed :" + System.lineSeparator() + TransactionLog.asString(log),
-                            "User Transaction failure");
-                } catch (MessagingException e1) {
-                    logger.error("Email notification failure", e1);
-                }
+                /*
+                 * try { sendNotification("User Transaction " + name + " failed :" +
+                 * System.lineSeparator() + TransactionLog.asString(log),
+                 * "User Transaction failure"); } catch (MessagingException e1) {
+                 * logger.error("Email notification failure", e1); }
+                 */
                 return modulesMap.get(currentModule).rollback();
             } finally {
                 Helpers.finalizeLog(log, name);
@@ -93,12 +93,12 @@ public class UserTransaction {
         }
         setStatus(Types.STATUS_SUCCESS);
         try {
-            try {
-                sendNotification("User Transaction " + name + " succeeded :" + System.lineSeparator() + TransactionLog.asString(log),
-                        "User Transaction Success");
-            } catch (MessagingException e1) {
-                logger.error("Email notification failure", e1);
-            }
+            /*
+             * try { sendNotification("User Transaction " + name + " succeeded :" +
+             * System.lineSeparator() + TransactionLog.asString(log),
+             * "User Transaction Success"); } catch (MessagingException e1) {
+             * logger.error("Email notification failure", e1); }
+             */
             Helpers.finalizeLog(log, name);
         } catch (Exception e) {
             logger.error("UserTransaction commit failed", e);

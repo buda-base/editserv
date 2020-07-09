@@ -185,7 +185,7 @@ public class CommonsValidate {
         return ModelUtils.ModelComplementAsSet(edited, graphEditor);
     }
 
-    public static void completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
+    public static boolean completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
         Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
         Set<Statement> removed = CommonsValidate.getRemovedTriples(editorGraph, edited);
@@ -225,8 +225,10 @@ public class CommonsValidate {
                 rvf.close();
             }
             log.error("completeNeighbours failed ", ex);
+            return false;
             // eventually send an email;
         }
+        return true;
     }
 
     public static ValidationReport validate(Model m_data, String prefixedId) {

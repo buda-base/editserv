@@ -130,7 +130,7 @@ public class TestValidation {
         }
     }
 
-    // @Test
+    @Test
     public void processAddedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
@@ -141,7 +141,7 @@ public class TestValidation {
         edited.read(in, null, "TTL");
         in.close();
         Set<Statement> added = CommonsValidate.getAddedTriples(initial, edited);
-        System.out.println("Removed >>" + added);
+        System.out.println("added >>" + added);
         List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(added);
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
         System.out.println("Neighbours Inverse >>" + inverses);

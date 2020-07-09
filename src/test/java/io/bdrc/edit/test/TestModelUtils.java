@@ -38,7 +38,7 @@ public class TestModelUtils {
         missingObjects = new ArrayList<>(Arrays.asList(P1585, P8528, P2JM192, P2JM193, P2JM194));
     }
 
-    @Test
+    // @Test
     public void checkRemovedTriples() throws IOException {
         // DIFFERENCES ARE:
         // missing (symetric):

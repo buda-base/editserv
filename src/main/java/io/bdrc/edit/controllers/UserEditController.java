@@ -26,7 +26,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import io.bdrc.auth.Access;
 import io.bdrc.auth.model.AuthDataModelBuilder;
-import io.bdrc.auth.model.BudaRdfUser;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.Types;
@@ -61,9 +60,9 @@ public class UserEditController {
                 return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(err));
             } else {
                 Access acc = (Access) request.getAttribute("access");
-                BudaRdfUser bru = acc.getUser().getBudaUser();
-                log.info("meUser() Access >> {} with BudaRdfUser {}", acc, bru);
-                String auth0Id = bru.auth0Id.substring(bru.auth0Id.lastIndexOf("/") + 1);
+                log.info("meUser() Access >> {} ", acc);
+                String authId = acc.getUser().getAuthId();
+                String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
                 log.info("meUser() auth0Id >> {}", auth0Id);
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() Buda usr >> {}", usr);

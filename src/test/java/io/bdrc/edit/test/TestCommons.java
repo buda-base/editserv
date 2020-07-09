@@ -52,7 +52,7 @@ public class TestCommons {
         assert (CommonsValidate.existResource("http://purl.bdrc.io/resource/P705") != null);
     }
 
-    @Test
+    // @Test
     public void testWithdrawn() throws IOException {
         assert (!CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583", false));
         assert (CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583uuuuuuuuuuu", false));

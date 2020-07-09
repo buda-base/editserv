@@ -23,7 +23,7 @@ public class TestShapes {
         OntologyData.init();
     }
 
-    @Test
+    // @Test
     public void testEntityShapes() {
         Model shapes_mod = CommonsRead.getValidationShapesForType("bdo:Person");
         shapes_mod.write(System.out, "TURTLE");

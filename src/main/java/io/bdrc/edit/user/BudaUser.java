@@ -301,9 +301,13 @@ public class BudaUser {
     public static void addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
         // This call updates the global rdf Model from auth0 since a new user has been
         // added
-        HttpClient client = HttpClientBuilder.create().build();
-        HttpPost post = new HttpPost(EditConfig.getProperty("serverRoot") + "/callbacks/github/bdrc-auth");
-        client.execute(post);
+        try {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpPost post = new HttpPost("http://" + EditConfig.getProperty("serverRoot") + "/callbacks/github/bdrc-auth");
+            client.execute(post);
+        } catch (Exception ex) {
+            log.error("Could not update Auth Model when creating buda user", ex);
+        }
         long start = System.currentTimeMillis();
         Helpers.pullOrCloneUsers();
         long start1 = System.currentTimeMillis();

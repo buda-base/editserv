@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Dataset;
@@ -296,6 +299,11 @@ public class BudaUser {
     }
 
     public static void addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
+        // This call updates the global rdf Model from auth0 since a new user has been
+        // added
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpPost post = new HttpPost(EditConfig.getProperty("serverRoot") + "/callbacks/github/bdrc-auth");
+        client.execute(post);
         long start = System.currentTimeMillis();
         Helpers.pullOrCloneUsers();
         long start1 = System.currentTimeMillis();

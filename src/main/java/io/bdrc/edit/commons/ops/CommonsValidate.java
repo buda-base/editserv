@@ -129,7 +129,8 @@ public class CommonsValidate {
     public static List<Statement> getNeighboursFromSymmetric(Set<Statement> diff) {
         ArrayList<Statement> symetricStmt = new ArrayList<>();
         for (Statement st : diff) {
-            if (OntologyData.isSymmetric(st.getPredicate().getURI())) {
+            String tmp = st.getPredicate().getURI();
+            if (tmp != null && OntologyData.isSymmetric(tmp)) {
                 symetricStmt.add(st);
             }
         }
@@ -139,7 +140,11 @@ public class CommonsValidate {
     public static List<Statement> getNeighboursFromInverse(Set<Statement> diff) {
         ArrayList<Statement> inverseStmt = new ArrayList<>();
         for (Statement st : diff) {
-            Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
+            String tmp = st.getPredicate().getURI();
+            Resource rs = null;
+            if (tmp != null) {
+                rs = OntologyData.getInverse(tmp);
+            }
             if (rs != null) {
                 inverseStmt.add(st);
             }

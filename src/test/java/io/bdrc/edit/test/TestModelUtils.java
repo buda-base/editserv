@@ -9,10 +9,16 @@ import java.util.Set;
 
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.ontology.OntDocumentManager;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.ontology.OntModelSpec;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
@@ -29,7 +35,6 @@ import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.Prefixes;
 
 public class TestModelUtils {
@@ -41,26 +46,41 @@ public class TestModelUtils {
     static Resource P2JM193 = ResourceFactory.createResource("http://purl.bdrc.io/resource/P2JM193");
     static Resource P2JM194 = ResourceFactory.createResource("http://purl.bdrc.io/resource/P2JM194");
     static Property kinWith = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/kinWith");
+    static Property hasFather = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/hasFather");
+    static Property hasSon = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/hasSon");
+    static Property hasBrother = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/hasBrother");
     static Property personTeacherOf = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/core/personTeacherOf");
+    static String BDO = "http://purl.bdrc.io/ontology/core/";
+    static String BDR = "http://purl.bdrc.io/resource/";
     static ArrayList<Resource> missingObjects;
     static Triple T1;
+    static String owlSchemaBase = "/home/eroux/BUDA/softs/owl-schema/";
+    
+    static Resource fatherR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PFATHER");
+    static Resource sonR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PSON");
+    
+    static Model ontmodel = null;
+    static Reasoner bdrcReasoner = null;
 
     @BeforeClass
     public static void init() throws Exception {
-        EditConfig.init();
         // OntologyData.init();
         missingObjects = new ArrayList<>(Arrays.asList(P1585, P8528, P2JM192, P2JM193, P2JM194));
         T1 = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P705"),
                 NodeFactory.createURI("http://purl.bdrc.io/ontology/core/hasFather"), NodeFactory.createURI("http://purl.bdrc.io/resource/P2MS9526"));
+        OntDocumentManager ontManager = new OntDocumentManager(owlSchemaBase+"ont-policy.rdf");
+        // not really needed since ont-policy sets it, but what if someone changes the
+        // policy
+        ontManager.setProcessImports(true);
+        OntModelSpec ontSpec = new OntModelSpec(OntModelSpec.OWL_DL_MEM);
+        ontSpec.setDocumentManager(ontManager);
+        ontmodel = ontManager.getOntology("http://purl.bdrc.io/ontology/admin/", ontSpec);
+        bdrcReasoner = BDRCReasoner.getReasoner(ontmodel, owlSchemaBase+"reasoning/kinship.rules", true);
+        
     }
 
     // @Test
     public void checkRemovedTriples() throws IOException {
-        // DIFFERENCES ARE:
-        // missing (symetric):
-        // bdo:kinWith , bdr:P1585 , bdr:P8528
-        // missing (inverseOf):
-        // bdo:personTeacherOf bdr:P2JM192 , bdr:P2JM193 , bdr:P2JM194
         Model initial = ModelFactory.createDefaultModel();
         Model edited = ModelFactory.createDefaultModel();
         InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
@@ -99,26 +119,41 @@ public class TestModelUtils {
 
     @Test
     public void findInverseTriple() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        String subject = T1.getSubject().getURI();
-        Model sub = CommonsGit.getGraphFromGit(EditConstants.BDR + subject.substring(subject.lastIndexOf("/") + 1));
-        String object = T1.getObject().getURI();
-        Model obj = CommonsGit.getGraphFromGit(EditConstants.BDR + object.substring(object.lastIndexOf("/") + 1));
-        SimpleSelector ss1 = new SimpleSelector(ResourceFactory.createResource(T1.getObject().getURI()), (Property) null,
-                ResourceFactory.createResource(T1.getSubject().getURI()));
-        List<Statement> st1 = obj.listStatements(ss1).toList();
-        System.out.println("IN OBJECT Model Before inference >>" + st1);
-        Model union = ModelFactory.createDefaultModel();
-        union.add(obj);
-        union.add(sub);
-        // union.write(System.out, "TURTLE");
-        Reasoner reasoner = BDRCReasoner.getReasonerWithSymetry();
-        InfModel inf = ModelFactory.createInfModel(reasoner, obj);
-        // Model inferred = inf.getDeductionsModel();
-        inf.setNsPrefixes(Prefixes.getPrefixMapping());
-        // inf.write(System.out, "TURTLE");
-        System.out.println("After inference List of relevant triples to process further ?");
-        List<Statement> st = inf.listStatements(ss1).toList();
-        System.out.println(st);
+        Model fatherM = ModelFactory.createDefaultModel();
+        Model sonM = ModelFactory.createDefaultModel();
+        fatherM.add(fatherR, fatherM.createProperty(BDO, "personGender"), fatherM.createResource(BDR+"GenderMale"));
+        sonM.add(sonR, sonM.createProperty(BDO, "personGender"), sonM.createResource(BDR+"GenderMale"));
+        System.out.println("we have the father:");
+        System.out.println(fatherM.listStatements().toList());
+        System.out.println("and the son:");
+        System.out.println(sonM.listStatements().toList());
+        System.out.println("we receive an update that makes the father look like:");
+        Model fatherUpdateM = ModelFactory.createDefaultModel().add(fatherM);
+        fatherUpdateM.add(fatherR, hasSon, sonR);
+        System.out.println(fatherUpdateM.listStatements().toList());
+        System.out.println("we apply the reasoner on (non-updated father)+son and get:");
+        Dataset originalFatherSon = DatasetFactory.create();
+        originalFatherSon.addNamedModel("http://example.com/neighbour", sonM);
+        originalFatherSon.addNamedModel("http://example.com/updated", fatherM);
+        Model oldInferredModel = ModelFactory.createInfModel(bdrcReasoner, originalFatherSon.getUnionModel()).getDeductionsModel();
+        System.out.println(oldInferredModel.listStatements().toList());
+        System.out.println("we apply the reasoner to (updated father)+son and get:");
+        Dataset updatedFatherSon = DatasetFactory.create();
+        updatedFatherSon.addNamedModel("http://example.com/neighbour", sonM);
+        updatedFatherSon.addNamedModel("http://example.com/updated", fatherUpdateM);
+        Model newInferredModel = ModelFactory.createInfModel(bdrcReasoner, updatedFatherSon.getUnionModel()).getDeductionsModel();
+        System.out.println(newInferredModel.listStatements().toList());
+        System.out.println("we simply the inferred triples to clean things up a bit and obtain:");
+        newInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, newInferredModel));
+        System.out.println(newInferredModel.listStatements().toList());
+        System.out.println("then we diff that with the original inferred model and select the triples related to the son.");
+        Model triplesToRemove = oldInferredModel.difference(newInferredModel);
+        Model triplesToAdd = newInferredModel.difference(oldInferredModel);
+        SimpleSelector ssSon = new SimpleSelector(sonR, null, (RDFNode) null);
+        System.out.println("we should add the following triples to the son model:");
+        System.out.println(triplesToAdd.listStatements(ssSon).toList());
+        System.out.println("we should remove the following triples from the son model:");
+        System.out.println(triplesToRemove.listStatements(ssSon).toList());
     }
 
 }

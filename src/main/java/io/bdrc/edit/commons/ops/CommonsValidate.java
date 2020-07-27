@@ -141,11 +141,8 @@ public class CommonsValidate {
         ArrayList<Statement> inverseStmt = new ArrayList<>();
         for (Statement st : diff) {
             String tmp = st.getPredicate().getURI();
-            Resource rs = null;
-            if (tmp != null) {
-                // rs = OntologyData.getInverse(tmp);
-            }
-            if (rs != null) {
+            List<Property> sts = OntologyData.getInverseListProperty(tmp);
+            if (sts.size() > 0) {
                 inverseStmt.add(st);
             }
         }
@@ -185,19 +182,19 @@ public class CommonsValidate {
         return map;
     }
 
-    public static Set<Statement> getRemovedTriples(Model graphEditor, Model edited) {
+    public static Set<Statement> getDiffRemovedTriples(Model graphEditor, Model edited) {
         return ModelUtils.ModelComplementAsSet(graphEditor, edited);
     }
 
-    public static Set<Statement> getAddedTriples(Model graphEditor, Model edited) {
+    public static Set<Statement> getDiffAddedTriples(Model graphEditor, Model edited) {
         return ModelUtils.ModelComplementAsSet(edited, graphEditor);
     }
 
     public static boolean completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
         Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
-        Set<Statement> removed = CommonsValidate.getRemovedTriples(editorGraph, edited);
-        Set<Statement> added = CommonsValidate.getRemovedTriples(editorGraph, edited);
+        Set<Statement> removed = CommonsValidate.getDiffRemovedTriples(editorGraph, edited);
+        Set<Statement> added = CommonsValidate.getDiffRemovedTriples(editorGraph, edited);
         List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
         List<Statement> added_inverses = CommonsValidate.getNeighboursFromInverse(added);

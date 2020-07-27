@@ -140,7 +140,7 @@ public class TestValidation {
         in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583_moreProps.ttl");
         edited.read(in, null, "TTL");
         in.close();
-        Set<Statement> added = CommonsValidate.getAddedTriples(initial, edited);
+        Set<Statement> added = CommonsValidate.getDiffAddedTriples(initial, edited);
         System.out.println("added >>" + added);
         List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(added);
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
@@ -198,7 +198,7 @@ public class TestValidation {
     }
 
     // Using full graph and ontology data
-    @Test
+    // @Test
     public void straightModelTQValidation() throws IOException {
         Model initial = ModelFactory.createDefaultModel();
         InputStream in = null;
@@ -227,7 +227,7 @@ public class TestValidation {
     }
 
     // Using pre-processed graph (editor graph) and ontology data
-    @Test
+    // @Test
     public void editorModelValidationTQShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
         log.info("Running validation test on graph editor + ont data with valid graph");
         Model initial = CommonsRead.getEditorGraph("bdr:P707");

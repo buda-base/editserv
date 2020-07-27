@@ -15,12 +15,12 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
 import org.apache.jena.reasoner.rulesys.Rule;
+import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.ReasonerVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.libraries.Prefixes;
 
 public class OntologyData {
 
@@ -46,29 +46,41 @@ public class OntologyData {
         reasoner.setParameter(ReasonerVocabulary.PROPruleMode, "hybrid");
         InfModel core = ModelFactory.createInfModel(reasoner, m);
         m.add(core);
-        System.out.println("Deductions model --->");
-        Model ded = core.getDeductionsModel().setNsPrefixes(Prefixes.getPrefixMapping());
-        ded.write(System.out, "TURTLE");
         return m;
-        // TODO Auto-generated constructor stub
     }
 
     public static boolean isSymmetric(String fullPropUri) {
-        // if (ONTOLOGY.getSymmetricProperty(fullPropUri) != null) {
-        // return true;
-        // }
+        SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(fullPropUri), RDF.type,
+                ResourceFactory.createResource("http://www.w3.org/2002/07/owl#SymmetricProperty"));
+        StmtIterator it = ONTOLOGY.listStatements(ss);
+        if (it.hasNext()) {
+            System.out.println(it.next());
+            return true;
+        }
         return false;
     }
 
-    public static List<Statement> getInverseList(String fullPropUri) {
+    public static List<Statement> getInverseListStatement(String fullPropUri) {
         List<Statement> l = new ArrayList<>();
         SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(fullPropUri), INVERSE, (RDFNode) null);
         StmtIterator it = ONTOLOGY.listStatements(ss);
         while (it.hasNext()) {
             Statement st = it.nextStatement();
             l.add(st);
-            System.out.println("Object prop : " + st.getObject().asResource().getURI());
-            System.out.println("Object prop : " + ONTOLOGY.getProperty(st.getObject().asResource().getURI()));
+        }
+        return l;
+    }
+
+    public static List<Property> getInverseListProperty(String fullPropUri) {
+        List<Property> l = new ArrayList<>();
+        SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(fullPropUri), INVERSE, (RDFNode) null);
+        StmtIterator it = ONTOLOGY.listStatements(ss);
+        while (it.hasNext()) {
+            Statement st = it.nextStatement();
+            Property p = ONTOLOGY.getProperty(st.getObject().asResource().getURI());
+            if (!l.contains(p)) {
+                l.add(p);
+            }
         }
         return l;
     }
@@ -78,8 +90,9 @@ public class OntologyData {
         EditConfig.init();
         OntologyData.init();
         System.out.println("<-----------Inverseof hasSon------------>");
-        System.out.println(getInverseList("http://purl.bdrc.io/ontology/core/hasSon"));
-        // System.out.println(isSymmetric("http://purl.bdrc.io/ontology/core/kinWith"));
+        System.out.println(getInverseListStatement("http://purl.bdrc.io/ontology/core/hasSon"));
+        System.out.println(getInverseListProperty("http://purl.bdrc.io/ontology/core/hasSon"));
+        System.out.println(isSymmetric("http://purl.bdrc.io/ontology/core/kinWith1"));
         // log.info("Ontology data URL 1 {}",
         // EditConfig.getProperty("ontologyDataUrl"));
         // OntologyData.ONTOLOGY.write(System.out, "TURTLE");

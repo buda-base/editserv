@@ -93,8 +93,9 @@ public class TestModelUtils {
     // @Test
     public void checkSymetricAndInverse() {
         assert (OntologyData.isSymmetric(kinWith.getURI()));
-        Resource r = OntologyData.getInverse(personTeacherOf.getURI());
-        assert (r.getURI().equals("http://purl.bdrc.io/ontology/core/personStudentOf"));
+        // Resource r = OntologyData.getInverse(personTeacherOf.getURI());
+        // assert
+        // (r.getURI().equals("http://purl.bdrc.io/ontology/core/personStudentOf"));
     }
 
     public void displayInverseSymetric() {

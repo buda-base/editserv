@@ -25,13 +25,4 @@ public class OntologyDataTest {
         Assert.assertTrue(OntologyData.isSymmetric("http://purl.bdrc.io/ontology/core/hasSpouse"));
     }
 
-    @Test
-    public void testSymmetricProp() {
-        Resource rs = OntologyData.getInverse("http://purl.bdrc.io/ontology/core/hasPart");
-        Assert.assertTrue(rs != null);
-        Assert.assertTrue(rs.getURI().equals(res.getURI()));
-        rs = OntologyData.getInverse("http://purl.bdrc.io/ontology/core/hasSpouse");
-        Assert.assertTrue(rs == null);
-    }
-
 }

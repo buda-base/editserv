@@ -10,11 +10,7 @@ import java.util.Set;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.ontology.OntDocumentManager;
-import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.DatasetFactory;
-import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
@@ -27,15 +23,11 @@ import org.apache.jena.reasoner.Reasoner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
-import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.libraries.Prefixes;
 
 public class TestModelUtils {
 
@@ -54,11 +46,11 @@ public class TestModelUtils {
     static String BDR = "http://purl.bdrc.io/resource/";
     static ArrayList<Resource> missingObjects;
     static Triple T1;
-    static String owlSchemaBase = "/home/eroux/BUDA/softs/owl-schema/";
-    
+    static String owlSchemaBase = "/Users/marc/dev/lds-pdi/owl-schema/";
+
     static Resource fatherR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PFATHER");
     static Resource sonR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PSON");
-    
+
     static Model ontmodel = null;
     static Reasoner bdrcReasoner = null;
 
@@ -68,15 +60,15 @@ public class TestModelUtils {
         missingObjects = new ArrayList<>(Arrays.asList(P1585, P8528, P2JM192, P2JM193, P2JM194));
         T1 = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P705"),
                 NodeFactory.createURI("http://purl.bdrc.io/ontology/core/hasFather"), NodeFactory.createURI("http://purl.bdrc.io/resource/P2MS9526"));
-        OntDocumentManager ontManager = new OntDocumentManager(owlSchemaBase+"ont-policy.rdf");
+        OntDocumentManager ontManager = new OntDocumentManager(owlSchemaBase + "ont-policy.rdf");
         // not really needed since ont-policy sets it, but what if someone changes the
         // policy
         ontManager.setProcessImports(true);
         OntModelSpec ontSpec = new OntModelSpec(OntModelSpec.OWL_DL_MEM);
         ontSpec.setDocumentManager(ontManager);
         ontmodel = ontManager.getOntology("http://purl.bdrc.io/ontology/admin/", ontSpec);
-        bdrcReasoner = BDRCReasoner.getReasoner(ontmodel, owlSchemaBase+"reasoning/kinship.rules", true);
-        
+        bdrcReasoner = BDRCReasoner.getReasoner(ontmodel, owlSchemaBase + "reasoning/kinship.rules", true);
+
     }
 
     // @Test
@@ -121,8 +113,8 @@ public class TestModelUtils {
     public void findInverseTriple() throws IOException, UnknownBdrcResourceException, NotModifiableException {
         Model fatherM = ModelFactory.createDefaultModel();
         Model sonM = ModelFactory.createDefaultModel();
-        fatherM.add(fatherR, fatherM.createProperty(BDO, "personGender"), fatherM.createResource(BDR+"GenderMale"));
-        sonM.add(sonR, sonM.createProperty(BDO, "personGender"), sonM.createResource(BDR+"GenderMale"));
+        fatherM.add(fatherR, fatherM.createProperty(BDO, "personGender"), fatherM.createResource(BDR + "GenderMale"));
+        sonM.add(sonR, sonM.createProperty(BDO, "personGender"), sonM.createResource(BDR + "GenderMale"));
         System.out.println("we have the father:");
         System.out.println(fatherM.listStatements().toList());
         System.out.println("and the son:");

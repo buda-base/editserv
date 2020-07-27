@@ -3,8 +3,6 @@ package io.bdrc.edit.commons.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.jena.ontology.ObjectProperty;
-import org.apache.jena.ontology.OntProperty;
 import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -17,12 +15,12 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner;
 import org.apache.jena.reasoner.rulesys.Rule;
-import org.apache.jena.util.iterator.ExtendedIterator;
 import org.apache.jena.vocabulary.ReasonerVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.libraries.Prefixes;
 
 public class OntologyData {
 
@@ -42,12 +40,15 @@ public class OntologyData {
         Model m = ModelFactory.createDefaultModel();
         log.info("Ontology data URL {}", EditConfig.getProperty("ontologyDataUrl"));
         m.read(EditConfig.getProperty("ontologyDataUrl"), null, "ttl");
-        String rule = "[inverseOf1: (?P owl:inverseOf ?Q) -> (?Q owl:inverseOf ?P) ]";
+        String rule = "[inverseOf1: (?P owl:inverseOf ?Q) -> (?Q owl:inverseOf ?P) ] [inv:  (?a rdfs:subPropertyOf ?b), (?b owl:inverseOf ?c) -> (?a owl:inverseOf ?c)]";
         List<Rule> miniRules = Rule.parseRules(rule);
         Reasoner reasoner = new GenericRuleReasoner(miniRules);
-        reasoner.setParameter(ReasonerVocabulary.PROPruleMode, "forward");
+        reasoner.setParameter(ReasonerVocabulary.PROPruleMode, "hybrid");
         InfModel core = ModelFactory.createInfModel(reasoner, m);
         m.add(core);
+        System.out.println("Deductions model --->");
+        Model ded = core.getDeductionsModel().setNsPrefixes(Prefixes.getPrefixMapping());
+        ded.write(System.out, "TURTLE");
         return m;
         // TODO Auto-generated constructor stub
     }
@@ -57,25 +58,6 @@ public class OntologyData {
         // return true;
         // }
         return false;
-    }
-
-    public static OntProperty getInverse(String fullPropUri) {
-        // ObjectProperty prop = ONTOLOGY.getObjectProperty(fullPropUri);
-        ObjectProperty prop = null;
-        OntProperty op = null;
-        if (prop != null) {
-            // op = ONTOLOGY.getObjectProperty(fullPropUri).getInverseOf();
-        }
-        if (op == null && prop != null) {
-            ExtendedIterator<? extends OntProperty> it = prop.listSuperProperties();
-            while (it.hasNext()) {
-                OntProperty ontProp = it.next().getInverseOf();
-                if (ontProp != null) {
-                    return ontProp;
-                }
-            }
-        }
-        return op;
     }
 
     public static List<Statement> getInverseList(String fullPropUri) {
@@ -88,14 +70,6 @@ public class OntologyData {
             System.out.println("Object prop : " + st.getObject().asResource().getURI());
             System.out.println("Object prop : " + ONTOLOGY.getProperty(st.getObject().asResource().getURI()));
         }
-        ss = new SimpleSelector(null, INVERSE, ResourceFactory.createResource(fullPropUri).asNode());
-        it = ONTOLOGY.listStatements(ss);
-        while (it.hasNext()) {
-            Statement st = it.nextStatement();
-            l.add(st);
-            System.out.println("Subject prop : " + st.getSubject().asResource().getURI());
-            System.out.println("Subject prop : " + ONTOLOGY.getProperty(st.getSubject().asResource().getURI()));
-        }
         return l;
     }
 
@@ -103,6 +77,7 @@ public class OntologyData {
         ResourceFactory.createProperty("http://www.w3.org/2002/07/owl#inverseOf");
         EditConfig.init();
         OntologyData.init();
+        System.out.println("<-----------Inverseof hasSon------------>");
         System.out.println(getInverseList("http://purl.bdrc.io/ontology/core/hasSon"));
         // System.out.println(isSymmetric("http://purl.bdrc.io/ontology/core/kinWith"));
         // log.info("Ontology data URL 1 {}",

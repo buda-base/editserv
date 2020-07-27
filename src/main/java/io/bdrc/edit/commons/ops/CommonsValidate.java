@@ -143,7 +143,7 @@ public class CommonsValidate {
             String tmp = st.getPredicate().getURI();
             Resource rs = null;
             if (tmp != null) {
-                rs = OntologyData.getInverse(tmp);
+                // rs = OntologyData.getInverse(tmp);
             }
             if (rs != null) {
                 inverseStmt.add(st);
@@ -170,13 +170,16 @@ public class CommonsValidate {
         for (Statement st : inverses) {
             String graphUri = st.getObject().asResource().getURI();
             graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
-            Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
+            Resource rs = null;
+            // Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
             List<Triple> tp = map.get(graphUri);
             if (tp == null) {
                 tp = new ArrayList<Triple>();
             }
-            Triple t = Triple.create(st.getObject().asNode(), rs.asNode(), st.getSubject().asNode());
-            tp.add(t);
+            if (rs != null) {
+                Triple t = Triple.create(st.getObject().asNode(), rs.asNode(), st.getSubject().asNode());
+                tp.add(t);
+            }
             map.put(graphUri, tp);
         }
         return map;

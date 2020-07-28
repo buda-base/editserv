@@ -1,9 +1,13 @@
 package io.bdrc.edit;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
@@ -42,6 +46,23 @@ public class EditConfig {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        }
+    }
+
+    public static void initForTests(String fusekiUrl) throws JsonParseException, JsonMappingException, IOException {
+        try {
+
+            InputStream input = new FileInputStream(new File("src/test/resources/test.properties"));
+            // load a properties file
+            prop.load(input);
+            input.close();
+            AuthProps.init(prop);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        if (fusekiUrl != null) {
+            prop.setProperty(FUSEKI_URL, fusekiUrl);
         }
     }
 

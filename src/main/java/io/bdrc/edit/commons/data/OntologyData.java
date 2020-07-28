@@ -29,7 +29,6 @@ public class OntologyData {
     static Property INVERSE;
 
     public static void init() {
-        EditConfig.init();
         ONTOLOGY = loadOntologyData();
         INVERSE = ONTOLOGY.createProperty("http://www.w3.org/2002/07/owl#", "inverseOf");
     }

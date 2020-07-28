@@ -26,6 +26,7 @@ import org.apache.jena.reasoner.Reasoner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsValidate;
@@ -60,6 +61,7 @@ public class TestModelUtils {
 
     @BeforeClass
     public static void init() throws Exception {
+        EditConfig.initForTests(null);
         OntologyData.init();
         missingObjects = new ArrayList<>(Arrays.asList(P1585, P8528, P2JM192, P2JM193, P2JM194));
         T1 = new Triple(NodeFactory.createURI("http://purl.bdrc.io/resource/P705"),
@@ -72,7 +74,6 @@ public class TestModelUtils {
         ontSpec.setDocumentManager(ontManager);
         ontmodel = ontManager.getOntology("http://purl.bdrc.io/ontology/admin/", ontSpec);
         bdrcReasoner = BDRCReasoner.getReasoner(ontmodel, owlSchemaBase + "reasoning/kinship.rules", true);
-
     }
 
     // @Test

@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +38,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
@@ -117,7 +117,7 @@ public class TestValidation {
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
         System.out.println("Neighbours Inverse >>" + inverses);
         System.out.println("Neighbours Symmetric >>" + symetrics);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToProcess(new HashSet<>(symetrics), new HashSet<>(inverses));
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
         System.out.println("ToDelete >>" + toDelete);
         for (String graph : toDelete.keySet()) {
             // Helpers.deleteTriples(graph, toDelete.get(graph),
@@ -146,9 +146,12 @@ public class TestValidation {
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
         System.out.println("Neighbours Inverse >>" + inverses);
         System.out.println("Neighbours Symmetric >>" + symetrics);
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
         // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToRemove(new
         // HashSet<>(symetrics), new HashSet<>(inverses));
-        // System.out.println("ToDelete >>" + toDelete);
+        System.out.println("ToDelete >>" + toDelete);
+        assertTrue(toDelete.get(EditConstants.BDG + "P2JM206") != null);
+        assertTrue(toDelete.get(EditConstants.BDG + "P2JM206").size() == 4);
         // for (String graph : toDelete.keySet()) {
         // Helpers.deleteTriples(graph, toDelete.get(graph),
         // "http://buda1.bdrc.io:13180/fuseki/testrw/");

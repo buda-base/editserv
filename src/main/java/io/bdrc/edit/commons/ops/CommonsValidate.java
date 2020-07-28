@@ -3,7 +3,6 @@ package io.bdrc.edit.commons.ops;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -149,10 +148,23 @@ public class CommonsValidate {
         return inverseStmt;
     }
 
-    public static HashMap<String, List<Triple>> getTriplesToProcess(Set<Statement> diffSymetric, Set<Statement> diffInverse) {
+    public static HashMap<String, List<Triple>> getTriplesToRemove(List<Statement> symetrics, List<Statement> inverses) {
         HashMap<String, List<Triple>> map = new HashMap<>();
-        List<Statement> symetrics = getNeighboursFromSymmetric(diffSymetric);
-        List<Statement> inverses = getNeighboursFromInverse(diffInverse);
+        for (Statement st : inverses) {
+            String graph = st.getObject().asResource().getURI();
+            graph = EditConstants.BDG + graph.substring(graph.lastIndexOf("/") + 1);
+            List<Property> props = OntologyData.getInverseListProperty(st.getPredicate().getURI());
+            List<Triple> tp = map.get(graph);
+            for (Property p : props) {
+                Triple t = Triple.create(st.getObject().asNode(), p.asNode(), st.getSubject().asNode());
+                if (tp == null) {
+                    tp = new ArrayList<Triple>();
+                }
+                tp.add(t);
+            }
+            map.put(graph, tp);
+            tp = null;
+        }
         for (Statement st : symetrics) {
             String graphUri = st.getObject().asResource().getURI();
             graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
@@ -162,21 +174,6 @@ public class CommonsValidate {
             }
             Triple t = Triple.create(st.getObject().asNode(), st.getPredicate().asNode(), st.getSubject().asNode());
             tp.add(t);
-            map.put(graphUri, tp);
-        }
-        for (Statement st : inverses) {
-            String graphUri = st.getObject().asResource().getURI();
-            graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
-            Resource rs = null;
-            // Resource rs = OntologyData.getInverse(st.getPredicate().getURI());
-            List<Triple> tp = map.get(graphUri);
-            if (tp == null) {
-                tp = new ArrayList<Triple>();
-            }
-            if (rs != null) {
-                Triple t = Triple.create(st.getObject().asNode(), rs.asNode(), st.getSubject().asNode());
-                tp.add(t);
-            }
             map.put(graphUri, tp);
         }
         return map;
@@ -199,8 +196,10 @@ public class CommonsValidate {
         List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
         List<Statement> added_inverses = CommonsValidate.getNeighboursFromInverse(added);
         List<Statement> added_symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToProcess(new HashSet<>(symetrics), new HashSet<>(inverses));
-        HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToProcess(new HashSet<>(added_symetrics), new HashSet<>(added_inverses));
+        HashMap<String, List<Triple>> toAdd = null;
+        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
+        // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToProcess(new
+        // HashSet<>(added_symetrics), new HashSet<>(added_inverses));
         HashMap<String, Model> models = new HashMap<>();
         HashMap<String, Model> added_models = new HashMap<>();
         for (String graph : toDelete.keySet()) {

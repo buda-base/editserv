@@ -45,7 +45,7 @@ public class ModelUtils {
         return differenceSet;
     }
 
-    // Model with containing the statements that are in Model A and that don't exist
+    // Model containing the statements that are in Model A and that don't exist
     // in Model B
     public static Model ModelComplement(Model A, Model B) {
         Set<Statement> fullModel = ModelToSet(A);

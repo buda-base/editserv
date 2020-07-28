@@ -290,7 +290,7 @@ public class CommonsRead {
     public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
         EditConfig.init();
         System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707"));
-        Model res = getEditorGraph("bdr:P707");
+        Model res = getEditorGraph("bdr:P705");
         System.out.println("---------------------------------------------------");
         res.setNsPrefixes(Prefixes.getPrefixMapping());
         res.write(System.out, "TTL");

@@ -102,7 +102,7 @@ public class TestValidation {
     }
 
     // @Test
-    public void processRemovedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
+    public void processRemovedTriples1() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
         Model edited = ModelFactory.createDefaultModel();
@@ -131,27 +131,27 @@ public class TestValidation {
     }
 
     @Test
-    public void processAddedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
+    public void processRemovedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
 
         Model initial = ModelFactory.createDefaultModel();
         Model edited = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
+        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P705.ttl");
         initial.read(in, null, "TTL");
-        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583_moreProps.ttl");
+        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P705_missingSon.ttl");
         edited.read(in, null, "TTL");
         in.close();
-        Set<Statement> added = CommonsValidate.getDiffAddedTriples(initial, edited);
-        System.out.println("added >>" + added);
-        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(added);
-        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
+        Set<Statement> removed = CommonsValidate.getDiffRemovedTriples(initial, edited);
+        System.out.println("removed >>" + removed);
+        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
+        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
         System.out.println("Neighbours Inverse >>" + inverses);
         System.out.println("Neighbours Symmetric >>" + symetrics);
         HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
         // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToRemove(new
         // HashSet<>(symetrics), new HashSet<>(inverses));
         System.out.println("ToDelete >>" + toDelete);
-        assertTrue(toDelete.get(EditConstants.BDG + "P2JM206") != null);
-        assertTrue(toDelete.get(EditConstants.BDG + "P2JM206").size() == 4);
+        assertTrue(toDelete.get(EditConstants.BDG + "P6609") != null);
+        assertTrue(toDelete.get(EditConstants.BDG + "P6609").size() == 3);
         // for (String graph : toDelete.keySet()) {
         // Helpers.deleteTriples(graph, toDelete.get(graph),
         // "http://buda1.bdrc.io:13180/fuseki/testrw/");

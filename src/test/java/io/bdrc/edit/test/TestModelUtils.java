@@ -124,6 +124,9 @@ public class TestModelUtils {
         System.out.println(newInferredModel.listStatements().toList());
         System.out.println("we simply the inferred triples to clean things up a bit and obtain:");
         newInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, newInferredModel));
+        // System.out.println("After cleanup we obtain:");
+        // System.out.println(newInferredModel.listStatements().toList());
+        // we use the full newInferred instead of the cleanup one
         Model triplesToRemove = oldInferredModel.difference(newInferredModel);
         Model triplesToAdd = newInferredModel.difference(oldInferredModel);
         System.out.println("-------------------------------------------");

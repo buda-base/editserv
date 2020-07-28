@@ -119,13 +119,13 @@ public class TestModelUtils {
         in.close();
         System.out.println("we apply the reasoner on non-updated father and get:");
         Model oldInferredModel = ModelFactory.createInfModel(bdrcReasoner, initial).getDeductionsModel();
+        oldInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, oldInferredModel));
         System.out.println(oldInferredModel.listStatements().toList());
         System.out.println("we apply the reasoner to updated father and get:");
         Model newInferredModel = ModelFactory.createInfModel(bdrcReasoner, edited).getDeductionsModel();
         System.out.println(newInferredModel.listStatements().toList());
-        System.out.println("we simply the inferred triples to clean things up a bit and obtain:");
-        // newInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel,
-        // newInferredModel));
+        System.out.println("we simplify the inferred triples to clean things up a bit and obtain:");
+        newInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, newInferredModel));
         // System.out.println("After cleanup we obtain:");
         // System.out.println(newInferredModel.listStatements().toList());
         // we use the full newInferred instead of the cleanup one

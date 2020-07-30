@@ -1,0 +1,130 @@
+@prefix :      <http://purl.bdrc.io/ontology/core/> .
+@prefix aut:   <http://purl.bdrc.io/ontology/ext/auth/> .
+@prefix bdan:  <http://purl.bdrc.io/annotation/> .
+@prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix tbr:   <http://purl.bdrc.io/ontology/toberemoved/> .
+@prefix bdou:  <http://purl.bdrc.io/ontology/ext/user/> .
+@prefix rsh:   <http://purl.bdrc.io/shacl/core/shape/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bdac:  <http://purl.bdrc.io/anncollection/> .
+@prefix wd:    <http://www.wikidata.org/entity/> .
+@prefix srcpe: <https://sakyaresearch.org/persons/> .
+@prefix oa:    <http://www.w3.org/ns/oa#> .
+@prefix bdgup: <http://purl.bdrc.io/graph-nc/user-private/> .
+@prefix mbbt:  <http://mbingenheimer.net/tools/bibls/> .
+@prefix dila:  <http://purl.dila.edu.tw/resource/> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix tmp:   <http://purl.bdrc.io/ontology/tmp/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix text:  <http://jena.apache.org/text#> .
+@prefix bdgu:  <http://purl.bdrc.io/graph-nc/user/> .
+@prefix bda:   <http://purl.bdrc.io/admindata/> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix bdg:   <http://purl.bdrc.io/graph/> .
+@prefix srct:  <https://sakyaresearch.org/topics/> .
+@prefix ola:   <https://openlibrary.org/authors/> .
+@prefix f:     <java:io.bdrc.ldspdi.sparql.functions.> .
+@prefix srcpl: <https://sakyaresearch.org/places/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
+@prefix bdo:   <http://purl.bdrc.io/ontology/core/> .
+@prefix iiif2: <http://iiif.io/api/presentation/2#> .
+@prefix iiif3: <http://iiif.io/api/presentation/3#> .
+@prefix adr:   <http://purl.bdrc.io/resource-nc/auth/> .
+@prefix viaf:  <http://viaf.org/viaf/> .
+@prefix eftr:  <http://purl.84000.co/resource/core/> .
+@prefix bds:   <http://purl.bdrc.io/ontology/shapes/core/> .
+@prefix bdr:   <http://purl.bdrc.io/resource/> .
+@prefix bdu:   <http://purl.bdrc.io/resource-nc/user/> .
+@prefix as:    <http://www.w3.org/ns/activitystreams#> .
+@prefix srcd:  <https://sakyaresearch.org/deities/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ldp:   <http://www.w3.org/ns/ldp#> .
+@prefix srcs:  <https://sakyaresearch.org/sources/> .
+@prefix srcl:  <https://sakyaresearch.org/literary_forms/> .
+
+bdr:NMDEEEEDD2983D  a  bdo:PersonTitle ;
+        rdfs:label  "dbon po bla ma rin po che dpal/"@bo-x-ewts .
+
+bdr:NM019CA9EC900E  a  bdo:PersonPersonalName ;
+        rdfs:label  "dbon po dpal/"@bo-x-ewts .
+
+bdr:NM5795BE76B694  a  bdo:PersonTitle ;
+        rdfs:label  "dbon po dpal grags pa dpal 'od gser bzang po/"@bo-x-ewts .
+
+bdr:NM8901DF4F2706  a  bdo:PersonPrimaryName ;
+        rdfs:label  "grags pa dpal/"@bo-x-ewts .
+
+bdr:EVE6C60D382F69  a  bdo:PersonBirth ;
+        bdo:onYear  "1251"^^xsd:gYear .
+
+bdr:EV7D813AA19571  a        bdo:PersonAssumesOffice ;
+        bdo:eventWhere       bdr:G67 ;
+        bdo:onYear           "1272"^^xsd:gYear ;
+        bdo:personEventRole  bdr:R30 .
+
+bdr:P1019  bdo:hasCousin     bdr:P8428 ;
+        bdo:note             bdr:NTA5E25C252C5C , bdr:NTE62D5A08A5B5 ;
+        bdo:personEvent      bdr:EVC81047D1BD88 , bdr:EVE6C60D382F69 , bdr:EVF484B7351F1A , bdr:EVFDEFF73AD8B3 , bdr:EVAED31CFEC9F2 , bdr:EV439BF3339568 , bdr:EV7D813AA19571 ;
+        bdo:personGender     bdr:GenderMale ;
+        bdo:personName       bdr:NM6BA592EB1326 , bdr:NM53B37A3D557D , bdr:NMFFEBA949603E , bdr:NM415A9233BDD9 , bdr:NM5C6F2734461C , bdr:NMBA98FF258C1D , bdr:NM5795BE76B694 , bdr:NM019CA9EC900E , bdr:NM922D4F387F40 , bdr:NMDEEEEDD2983D , bdr:NM5BB06916B430 , bdr:NM8901DF4F2706 ;
+        bdo:personStudentOf  bdr:P1818 ;
+        bdo:personTeacherOf  bdr:P8LS16435 , bdr:P6511 ;
+        skos:prefLabel       "grags pa dpal/"@bo-x-ewts .
+
+bdr:EV439BF3339568  a   bdo:PersonOccupiesSeat ;
+        bdo:eventWhere  bdr:G70 .
+
+bdr:NM6BA592EB1326  a  bdo:PersonPrimaryTitle ;
+        rdfs:label  "stag lung pa sangs rgyas dbon grags pa dpal/"@bo-x-ewts .
+
+bdr:NMBA98FF258C1D  a  bdo:PersonTitle ;
+        rdfs:label  "sangs rgyas dbon grags pa dpal/"@bo-x-ewts .
+
+bdr:NM922D4F387F40  a  bdo:PersonTitle ;
+        rdfs:label  "sangs rgyas dbon grags pa dpal 'od/"@bo-x-ewts .
+
+bdr:NM53B37A3D557D  a  bdo:PersonPrimaryTitle ;
+        rdfs:label  "sangs rgyas dbon/"@bo-x-ewts .
+
+bdr:EVC81047D1BD88  a  bdo:PersonDeath ;
+        bdo:onYear  "1296"^^xsd:gYear .
+
+bdr:EVF484B7351F1A  a        bdo:PersonLeavesOffice ;
+        bdo:eventWhere       bdr:G70 ;
+        bdo:onYear           "1296"^^xsd:gYear ;
+        bdo:personEventRole  bdr:R30 .
+
+bdr:NM5C6F2734461C  a  bdo:PersonTitle ;
+        rdfs:label  "stag lung pa sangs rgyas dbon/"@bo-x-ewts .
+
+bdr:NTE62D5A08A5B5  a              bdo:Note ;
+        bdo:noteLocationStatement  "p. 197" ;
+        bdo:noteText               "b. 1251; d. 1297; on see one year\nborn mdo khams"@en ;
+        bdo:noteWork               bdr:W23664 .
+
+bdr:EVFDEFF73AD8B3  a        bdo:PersonAssumesOffice ;
+        bdo:eventWhere       bdr:G70 ;
+        bdo:onYear           "1276"^^xsd:gYear ;
+        bdo:personEventRole  bdr:R30 .
+
+bdr:NM415A9233BDD9  a  bdo:PersonTitle ;
+        rdfs:label  "mchog sprul sangs rgyas dbon po/"@bo-x-ewts .
+
+bdr:EVAED31CFEC9F2  a        bdo:PersonLeavesOffice ;
+        bdo:eventWhere       bdr:G67 ;
+        bdo:onYear           "1273"^^xsd:gYear ;
+        bdo:personEventRole  bdr:R30 .
+
+bdr:NMFFEBA949603E  a  bdo:PersonFirstOrdinationName ;
+        rdfs:label  "grags pa dpal 'od zer bzang po/"@bo-x-ewts .
+
+bdr:NM5BB06916B430  a  bdo:PersonOtherName ;
+        rdfs:label  "Kīrtiśrīraśmibhadra"@sa-x-ndia .
+
+bdr:NTA5E25C252C5C  a              bdo:Note ;
+        bdo:noteLocationStatement  "p. 1741" ;
+        bdo:noteWork               bdr:W19801 .

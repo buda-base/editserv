@@ -55,6 +55,8 @@ public class TestModelUtils {
     static Model missingSon = ModelFactory.createDefaultModel();
     static Model moreSon = ModelFactory.createDefaultModel();
     static Model edited = ModelFactory.createDefaultModel();
+    static Model cousin = ModelFactory.createDefaultModel();
+    static Model missingCousin = ModelFactory.createDefaultModel();
 
     @BeforeClass
     public static void init() throws Exception {
@@ -79,35 +81,57 @@ public class TestModelUtils {
         moreSon.read(in, null, "TTL");
         in = TestModelUtils.class.getClassLoader().getResourceAsStream("P705_edited.ttl");
         edited.read(in, null, "TTL");
+        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1019.ttl");
+        cousin.read(in, null, "TTL");
+        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1019_missingCousin.ttl");
+        missingCousin.read(in, null, "TTL");
+        in.close();
     }
 
     @Test
     public void findAllTriplesToProcessFromModels() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        findTriplesToProcess(initial, edited);
+        System.out.println("***********************CASE REPLACED SON + ADD COUSIN***************************");
+        findTriplesToProcess(initial, edited, "http://purl.bdrc.io/resource/P705");
+        System.out.println("***********************END CASE REPLACED SON + ADD COUSIN***************************");
+    }
+
+    @Test
+    public void findAllSymmetricTriplesToProcessFromModels() throws IOException, UnknownBdrcResourceException, NotModifiableException {
+        System.out.println("***********************CASE MISSING COUSIN***************************");
+        findTriplesToProcess(cousin, missingCousin, "http://purl.bdrc.io/resource/P1019");
+        System.out.println("***********************END CASE MISSING COUSIN***************************");
     }
 
     @Test
     public void findTriplesToRemoveFromModels() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        findTriplesToProcess(initial, missingSon);
+        System.out.println("***********************CASE MISSING SON ***************************");
+        findTriplesToProcess(initial, missingSon, "http://purl.bdrc.io/resource/P705");
+        System.out.println("***********************END CASE MISSING SON ***************************");
     }
 
     @Test
     public void findTriplesToAddFromModels() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        findTriplesToProcess(initial, moreSon);
+        System.out.println("***********************CASE ONE MORE SON ***************************");
+        findTriplesToProcess(initial, moreSon, "http://purl.bdrc.io/resource/P705");
+        System.out.println("***********************END CASE ONE MORE SON ***************************");
     }
 
-    public static void findTriplesToProcess(Model init, Model edit) throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        System.out.println("we apply the reasoner on non-updated father and get:");
+    public static void findTriplesToProcess(Model init, Model edit, String resUri)
+            throws IOException, UnknownBdrcResourceException, NotModifiableException {
+        System.out.println("we apply the reasoner on non-updated model and get:");
         Model oldInferredModel = ModelFactory.createInfModel(bdrcReasoner, init).getDeductionsModel();
         oldInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, oldInferredModel));
-        System.out.println(oldInferredModel.listStatements().toList());
-        System.out.println("we apply the reasoner to updated father and get:");
+        System.out.println("inital model inferred and simplified :" + System.lineSeparator() + oldInferredModel.listStatements().toList());
+        System.out.println("we apply the reasoner to updated model and get:");
         Model newInferredModel = ModelFactory.createInfModel(bdrcReasoner, edit).getDeductionsModel();
-        System.out.println(newInferredModel.listStatements().toList());
-        System.out.println("we simplify the inferred triples to clean things up a bit and obtain:");
         newInferredModel.remove(BDRCReasoner.deReasonToRemove(ontmodel, newInferredModel));
+        System.out.println("edited model inferred and simplified :" + System.lineSeparator() + newInferredModel.listStatements().toList());
         Model triplesToRemove = oldInferredModel.difference(newInferredModel);
+        Set<Statement> stToRemove = triplesToRemove.listStatements().toSet();
+        System.out.println("triple to removed FROM INFERRED -->: " + stToRemove);
         Model triplesToAdd = newInferredModel.difference(oldInferredModel);
+        Set<Statement> stToAdd = triplesToAdd.listStatements().toSet();
+        System.out.println("triple to add FROM INFERRED -->: " + stToAdd);
         System.out.println("-------------------------------------------");
         System.out.println("These were removed by the editor:");
         Set<Statement> diff = CommonsValidate.getDiffRemovedTriples(init, edit);
@@ -125,7 +149,7 @@ public class TestModelUtils {
         System.out.println("-------------------------------------------");
         List<Statement> stadd = triplesToAdd.listStatements().toList();
         for (Statement add : stadd) {
-            if (add.getObject().asNode().getURI().equals("http://purl.bdrc.io/resource/P705")) {
+            if (add.getObject().asNode().getURI().equals(resUri)) {
                 System.out.println("triples To Add -->: " + add);
             }
         }
@@ -134,7 +158,7 @@ public class TestModelUtils {
         System.out.println("-------------------------------------------");
         List<Statement> strem = triplesToRemove.listStatements().toList();
         for (Statement rem : strem) {
-            if (rem.getObject().asNode().getURI().equals("http://purl.bdrc.io/resource/P705")) {
+            if (rem.getObject().asNode().getURI().equals(resUri)) {
                 System.out.println("triple To Remove -->: " + rem);
             }
         }

@@ -38,23 +38,8 @@ public class ModelUtils {
 
     // All the statements that are in Model A that don't exist in Model B
     public static Set<Statement> ModelComplementAsSet(Model A, Model B) {
-        Set<Statement> fullModel = ModelToSet(A);
-        Set<Statement> focusModel = ModelToSet(B);
-        Set<Statement> differenceSet = new HashSet<Statement>(fullModel);
-        differenceSet.removeAll(focusModel);
-        return differenceSet;
-    }
-
-    // Model containing the statements that are in Model A and that don't exist
-    // in Model B
-    public static Model ModelComplement(Model A, Model B) {
-        Set<Statement> fullModel = ModelToSet(A);
-        Set<Statement> focusModel = ModelToSet(B);
-        Set<Statement> differenceSet = new HashSet<Statement>(fullModel);
-        differenceSet.removeAll(focusModel);
-        Model m = ModelFactory.createDefaultModel();
-        m.add(IteratorUtils.toList(differenceSet.iterator()));
-        return m;
+        Model diff = A.difference(B);
+        return diff.listStatements().toSet();
     }
 
     public static Set<Statement> mergeModelAsSet(Set<Statement> A, Set<Statement> B) {
@@ -71,7 +56,7 @@ public class ModelUtils {
     }
 
     public static Model getEditedModel(Model full, Model focus, Model focusEdited) {
-        Model complement = ModelComplement(full, focus);
+        Model complement = full.difference(focus);
         return mergeModel(complement, focusEdited);
     }
 

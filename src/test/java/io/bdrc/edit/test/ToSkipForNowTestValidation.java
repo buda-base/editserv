@@ -8,7 +8,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -27,7 +26,6 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,12 +36,10 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.MainEditController;
-import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -51,13 +47,13 @@ import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { MainEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @EnableAutoConfiguration
-public class TestValidation {
+public class ToSkipForNowTestValidation {
 
     String validModel = "P707.ttl";
     String nameErrModel = "P707_missingName.ttl";
     static List<Triple> removed = new ArrayList<Triple>();
     static HashMap<String, List<Triple>> removedByGraph = new HashMap<>();
-    public static Logger log = LoggerFactory.getLogger(TestValidation.class);
+    public static Logger log = LoggerFactory.getLogger(ToSkipForNowTestValidation.class);
 
     @Autowired
     Environment environment;
@@ -71,7 +67,7 @@ public class TestValidation {
 
     // @Test
     public void validateValidModelAndSave() throws IOException {
-        InputStream in = TestValidation.class.getClassLoader().getResourceAsStream(validModel);
+        InputStream in = ToSkipForNowTestValidation.class.getClassLoader().getResourceAsStream(validModel);
         StringWriter writer = new StringWriter();
         IOUtils.copy(in, writer, "UTF-8");
         String model = writer.toString();
@@ -87,7 +83,7 @@ public class TestValidation {
 
     // @Test
     public void validateMissingNameErrorModelAndSave() throws IOException {
-        InputStream in = TestValidation.class.getClassLoader().getResourceAsStream(nameErrModel);
+        InputStream in = ToSkipForNowTestValidation.class.getClassLoader().getResourceAsStream(nameErrModel);
         StringWriter writer = new StringWriter();
         IOUtils.copy(in, writer, "UTF-8");
         String model = writer.toString();
@@ -99,69 +95,6 @@ public class TestValidation {
         put.setHeader("Content-type", "text/turtle");
         HttpResponse response = client.execute(put);
         System.out.println(response);
-    }
-
-    // @Test
-    public void processRemovedTriples1() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-
-        Model initial = ModelFactory.createDefaultModel();
-        Model edited = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583.ttl");
-        initial.read(in, null, "TTL");
-        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P1583_missingProps.ttl");
-        edited.read(in, null, "TTL");
-        in.close();
-        Set<Statement> removed = ModelUtils.ModelComplementAsSet(initial, edited);
-        System.out.println("Removed >>" + removed);
-        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
-        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
-        System.out.println("Neighbours Inverse >>" + inverses);
-        System.out.println("Neighbours Symmetric >>" + symetrics);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
-        System.out.println("ToDelete >>" + toDelete);
-        for (String graph : toDelete.keySet()) {
-            // Helpers.deleteTriples(graph, toDelete.get(graph),
-            // "http://buda1.bdrc.io:13180/fuseki/testrw/");
-            System.out.println("-----------REMOVING TRIPLES IN GRAPH ----------->>" + graph);
-            Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
-            // and here
-            // put to fuseki
-            // put to git
-        }
-    }
-
-    @Test
-    public void processRemovedTriples() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-
-        Model initial = ModelFactory.createDefaultModel();
-        Model edited = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P705.ttl");
-        initial.read(in, null, "TTL");
-        in = TestModelUtils.class.getClassLoader().getResourceAsStream("P705_missingSon.ttl");
-        edited.read(in, null, "TTL");
-        in.close();
-        Set<Statement> removed = CommonsValidate.getDiffRemovedTriples(initial, edited);
-        System.out.println("removed >>" + removed);
-        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
-        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
-        System.out.println("Neighbours Inverse >>" + inverses);
-        System.out.println("Neighbours Symmetric >>" + symetrics);
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
-        // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToRemove(new
-        // HashSet<>(symetrics), new HashSet<>(inverses));
-        System.out.println("ToDelete >>" + toDelete);
-        assertTrue(toDelete.get(EditConstants.BDG + "P6609") != null);
-        assertTrue(toDelete.get(EditConstants.BDG + "P6609").size() == 3);
-        // for (String graph : toDelete.keySet()) {
-        // Helpers.deleteTriples(graph, toDelete.get(graph),
-        // "http://buda1.bdrc.io:13180/fuseki/testrw/");
-        // System.out.println("-----------REMOVING TRIPLES IN GRAPH ----------->>" +
-        // graph);
-        // Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
-        // and here
-        // put to fuseki
-        // put to git
-        // }
     }
 
     public static void prepareData() {

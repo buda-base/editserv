@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.OntologyData;
-import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
@@ -134,12 +134,12 @@ public class TestModelUtils {
         System.out.println("triple to add FROM INFERRED -->: " + stToAdd);
         System.out.println("-------------------------------------------");
         System.out.println("These were removed by the editor:");
-        Set<Statement> diff = CommonsValidate.getDiffRemovedTriples(init, edit);
+        Set<Statement> diff = getDiffRemovedTriples(init, edit);
         System.out.println("-------------------------------------------");
         for (Statement d : diff) {
             System.out.println("triple removed by edition -->: " + d);
         }
-        Set<Statement> adds = CommonsValidate.getDiffAddedTriples(init, edit);
+        Set<Statement> adds = getDiffAddedTriples(init, edit);
         System.out.println("-------------------------------------------");
         for (Statement ad : adds) {
             System.out.println("triple added by edition -->: " + ad);
@@ -163,6 +163,14 @@ public class TestModelUtils {
             }
         }
         System.out.println("-------------------------------------------");
+    }
+
+    public static Set<Statement> getDiffRemovedTriples(Model graphEditor, Model edited) {
+        return ModelUtils.ModelComplementAsSet(graphEditor, edited);
+    }
+
+    public static Set<Statement> getDiffAddedTriples(Model graphEditor, Model edited) {
+        return ModelUtils.ModelComplementAsSet(edited, graphEditor);
     }
 
 }

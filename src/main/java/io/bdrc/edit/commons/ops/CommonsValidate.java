@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.jena.graph.Triple;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
@@ -21,6 +19,7 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.rdfconnection.RDFConnectionFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
+import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
@@ -36,6 +35,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.helpers.EditServReasoner;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
@@ -50,6 +50,8 @@ public class CommonsValidate {
     public static Logger log = LoggerFactory.getLogger(CommonsValidate.class);
 
     static final String SH = "http://www.w3.org/ns/shacl#";
+    static final String TO_REMOVE = "TO_REMOVE";
+    static final String TO_ADD = "TO_ADD";
     static final Property SH_CONFORMS = ResourceFactory.createProperty(SH + "conforms");
     static final Property SH_RESULT = ResourceFactory.createProperty(SH + "result");
     static final Property SH_VALUE = ResourceFactory.createProperty(SH + "value");
@@ -125,89 +127,60 @@ public class CommonsValidate {
         return false;
     }
 
-    public static List<Statement> getNeighboursFromSymmetric(Set<Statement> diff) {
-        ArrayList<Statement> symetricStmt = new ArrayList<>();
-        for (Statement st : diff) {
-            String tmp = st.getPredicate().getURI();
-            if (tmp != null && OntologyData.isSymmetric(tmp)) {
-                symetricStmt.add(st);
+    public static HashMap<String, HashMap<String, List<Statement>>> findTriplesToProcess(Model init, Model edit, String resUri)
+            throws IOException, UnknownBdrcResourceException, NotModifiableException {
+        HashMap<String, HashMap<String, List<Statement>>> map = new HashMap<>();
+        Reasoner editReasoner = OntologyData.getEditServReasoner();
+        Model oldInferredModel = ModelFactory.createInfModel(editReasoner, init).getDeductionsModel();
+        oldInferredModel.remove(EditServReasoner.deReasonToRemove(OntologyData.ONTOLOGY, oldInferredModel));
+        Model newInferredModel = ModelFactory.createInfModel(editReasoner, edit).getDeductionsModel();
+        newInferredModel.remove(EditServReasoner.deReasonToRemove(OntologyData.ONTOLOGY, newInferredModel));
+        List<Statement> triplesToRemove = oldInferredModel.difference(newInferredModel).listStatements().toList();
+        List<Statement> triplesToAdd = newInferredModel.difference(oldInferredModel).listStatements().toList();
+        HashMap<String, List<Statement>> rem = new HashMap<>();
+        HashMap<String, List<Statement>> add = new HashMap<>();
+        for (Statement st : triplesToRemove) {
+            String resourceUri = st.getSubject().getURI();
+            String graphUri = EditConstants.BDG + Helpers.getShortName(resourceUri);
+            List<Statement> tmp = rem.get(graphUri);
+            if (tmp == null) {
+                tmp = new ArrayList<Statement>();
             }
+            tmp.add(st);
+            rem.put(graphUri, tmp);
         }
-        return symetricStmt;
-    }
-
-    public static List<Statement> getNeighboursFromInverse(Set<Statement> diff) {
-        ArrayList<Statement> inverseStmt = new ArrayList<>();
-        for (Statement st : diff) {
-            String tmp = st.getPredicate().getURI();
-            List<Property> sts = OntologyData.getInverseListProperty(tmp);
-            if (sts.size() > 0) {
-                inverseStmt.add(st);
+        for (Statement st : triplesToAdd) {
+            String resourceUri = st.getSubject().getURI();
+            String graphUri = EditConstants.BDG + Helpers.getShortName(resourceUri);
+            List<Statement> tmp = add.get(graphUri);
+            if (tmp == null) {
+                tmp = new ArrayList<Statement>();
             }
+            tmp.add(st);
+            add.put(graphUri, tmp);
         }
-        return inverseStmt;
-    }
-
-    public static HashMap<String, List<Triple>> getTriplesToRemove(List<Statement> symetrics, List<Statement> inverses) {
-        HashMap<String, List<Triple>> map = new HashMap<>();
-        for (Statement st : inverses) {
-            String graph = st.getObject().asResource().getURI();
-            graph = EditConstants.BDG + graph.substring(graph.lastIndexOf("/") + 1);
-            List<Property> props = OntologyData.getInverseListProperty(st.getPredicate().getURI());
-            List<Triple> tp = map.get(graph);
-            for (Property p : props) {
-                Triple t = Triple.create(st.getObject().asNode(), p.asNode(), st.getSubject().asNode());
-                if (tp == null) {
-                    tp = new ArrayList<Triple>();
-                }
-                tp.add(t);
-            }
-            map.put(graph, tp);
-            tp = null;
-        }
-        for (Statement st : symetrics) {
-            String graphUri = st.getObject().asResource().getURI();
-            graphUri = EditConstants.BDG + graphUri.substring(graphUri.lastIndexOf("/") + 1);
-            List<Triple> tp = map.get(graphUri);
-            if (tp == null) {
-                tp = new ArrayList<Triple>();
-            }
-            Triple t = Triple.create(st.getObject().asNode(), st.getPredicate().asNode(), st.getSubject().asNode());
-            tp.add(t);
-            map.put(graphUri, tp);
-        }
+        map.put(TO_REMOVE, rem);
+        map.put(TO_ADD, add);
         return map;
-    }
-
-    public static Set<Statement> getDiffRemovedTriples(Model graphEditor, Model edited) {
-        return ModelUtils.ModelComplementAsSet(graphEditor, edited);
-    }
-
-    public static Set<Statement> getDiffAddedTriples(Model graphEditor, Model edited) {
-        return ModelUtils.ModelComplementAsSet(edited, graphEditor);
     }
 
     public static boolean completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
         Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
-        Set<Statement> removed = CommonsValidate.getDiffRemovedTriples(editorGraph, edited);
-        Set<Statement> added = CommonsValidate.getDiffRemovedTriples(editorGraph, edited);
-        List<Statement> inverses = CommonsValidate.getNeighboursFromInverse(removed);
-        List<Statement> symetrics = CommonsValidate.getNeighboursFromSymmetric(removed);
-        List<Statement> added_inverses = CommonsValidate.getNeighboursFromInverse(added);
-        List<Statement> added_symetrics = CommonsValidate.getNeighboursFromSymmetric(added);
-        HashMap<String, List<Triple>> toAdd = null;
-        HashMap<String, List<Triple>> toDelete = CommonsValidate.getTriplesToRemove(symetrics, inverses);
-        // HashMap<String, List<Triple>> toAdd = CommonsValidate.getTriplesToProcess(new
-        // HashSet<>(added_symetrics), new HashSet<>(added_inverses));
+        HashMap<String, HashMap<String, List<Statement>>> map = findTriplesToProcess(editorGraph, edited,
+                EditConstants.BDR + Helpers.getShortName(graphUri));
         HashMap<String, Model> models = new HashMap<>();
         HashMap<String, Model> added_models = new HashMap<>();
-        for (String graph : toDelete.keySet()) {
-            Model m = ModelUtils.removeTriples(graph, toDelete.get(graph));
+        HashMap<String, List<Statement>> rem = map.get(TO_REMOVE);
+        for (String graph : rem.keySet()) {
+            List<Statement> stmt = rem.get(graph);
+            Model m = ModelUtils.removeTriples(graph, stmt);
             models.put(graph, m);
         }
-        for (String graph : toAdd.keySet()) {
-            Model m = ModelUtils.addTriples(graph, toAdd.get(graph));
+        HashMap<String, List<Statement>> add = map.get(TO_ADD);
+        for (String graph : add.keySet()) {
+            List<Statement> stmt = add.get(graph);
+            Model m = ModelUtils.addTriples(graph, stmt);
             added_models.put(graph, m);
         }
         RDFConnectionFuseki rvf = null;

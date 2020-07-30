@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.user.UsersCache;
 
 public class EditConfig {
@@ -43,6 +44,7 @@ public class EditConfig {
                 RdfAuthModel.init();
             }
             UsersCache.init();
+            OntologyData.init();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

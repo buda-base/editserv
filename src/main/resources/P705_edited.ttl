@@ -81,6 +81,7 @@ bdr:NM74233C8A459E  a  bdo:PersonSecretInitiatoryName ;
 bdr:P705  bdo:hasFather      bdr:P2MS9526 ;
         bdo:hasMother        bdr:P2MS9527 ;
         bdo:hasSon           bdr:P248 , bdr:P707 , bdr:P6608 ;
+        bdo:hasCousin        bdr:PXXXX;
         bdo:note             bdr:NTFAD9B4DB46D3 ;
         bdo:personEvent      bdr:EVEE02404EB256 , bdr:EV1864C6F4BA5E , bdr:EVBE752C7DD472 ;
         bdo:personGender     bdr:GenderMale ;

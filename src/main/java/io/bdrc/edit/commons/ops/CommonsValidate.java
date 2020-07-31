@@ -50,8 +50,8 @@ public class CommonsValidate {
     public static Logger log = LoggerFactory.getLogger(CommonsValidate.class);
 
     static final String SH = "http://www.w3.org/ns/shacl#";
-    static final String TO_REMOVE = "TO_REMOVE";
-    static final String TO_ADD = "TO_ADD";
+    public static final String TO_REMOVE = "TO_REMOVE";
+    public static final String TO_ADD = "TO_ADD";
     static final Property SH_CONFORMS = ResourceFactory.createProperty(SH + "conforms");
     static final Property SH_RESULT = ResourceFactory.createProperty(SH + "result");
     static final Property SH_VALUE = ResourceFactory.createProperty(SH + "value");

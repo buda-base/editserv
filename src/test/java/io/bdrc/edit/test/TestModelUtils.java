@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.OntologyData;
+import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -161,6 +163,24 @@ public class TestModelUtils {
             if (rem.getObject().asNode().getURI().equals(resUri)) {
                 System.out.println("triple To Remove -->: " + rem);
             }
+        }
+        System.out.println("-------------------------------------------");
+    }
+
+    @Test
+    public void findNeighboursTriplesToProcess() throws IOException, UnknownBdrcResourceException, NotModifiableException {
+        HashMap<String, HashMap<String, List<Statement>>> map = CommonsValidate.findTriplesToProcess(initial, edited,
+                "http://purl.bdrc.io/resource/P705");
+        System.out.println("-----------------USING VALIDATES STATEMENTS TO ADD --------------------------");
+        HashMap<String, List<Statement>> add = map.get(CommonsValidate.TO_ADD);
+        for (String graph : add.keySet()) {
+            System.out.println("For graph " + graph + " we must add :" + add.get(graph));
+        }
+        System.out.println("-------------------------------------------");
+        System.out.println("-----------------USING VALIDATES STATEMENTS TO REMOVE --------------------------");
+        HashMap<String, List<Statement>> remove = map.get(CommonsValidate.TO_REMOVE);
+        for (String graph : remove.keySet()) {
+            System.out.println("For graph " + graph + " we must add :" + remove.get(graph));
         }
         System.out.println("-------------------------------------------");
     }

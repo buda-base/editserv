@@ -227,7 +227,7 @@ public class CommonsValidate {
     public static void main(String[] args) throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
         EditConfig.init();
         Model m = CommonsRead.getEditorGraph("P:707");
-        Resource r = validateTQ(m, "bdo:Person");
+        //Resource r = validateTQ(m, "bdo:Person");
         // System.out.println(existResource(Models.BDR + "P1583"));
 
     }

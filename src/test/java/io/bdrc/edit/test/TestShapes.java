@@ -2,6 +2,7 @@ package io.bdrc.edit.test;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 
@@ -31,12 +32,13 @@ public class TestShapes {
     }
 
     @Test
-    public void parseShape() throws MalformedURLException, FileNotFoundException {
+    public void parseShape() throws IOException {
         Model m = ModelFactory.createDefaultModel();
         InputStream stream = new FileInputStream("/Users/marc/dev/lds-pdi/editor-templates/templates/core/person.local.shapes.ttl");
         m.read("https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/event.shapes.ttl", null, "TTL");
         // m.read(stream, null, "TTL");
-        Shapes shapes = Shapes.parse(m.getGraph());
+        Shapes.parse(m.getGraph());
+        stream.close();
     }
 
 }

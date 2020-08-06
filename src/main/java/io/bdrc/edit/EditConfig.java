@@ -35,9 +35,7 @@ public class EditConfig {
             prop.load(input);
             input.close();
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
-            prop.load(is);
-            is = new FileInputStream("/etc/buda/share/mail.properties");
-            prop.load(is);
+            prop.load(is);            
             is.close();
             AuthProps.init(prop);
             if (useAuth()) {

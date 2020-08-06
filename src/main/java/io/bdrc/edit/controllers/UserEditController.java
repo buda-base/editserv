@@ -39,7 +39,7 @@ import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
 @RequestMapping("/")
-public class UserEditController {
+public class UserEditController {    
 
     public final static Logger log = LoggerFactory.getLogger(UserEditController.class.getName());
 

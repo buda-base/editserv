@@ -11,12 +11,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,8 +51,10 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.AbortedByHookException;
 import org.eclipse.jgit.api.errors.ConcurrentRefUpdateException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.NoMessageException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.UnmergedPathsException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.lib.Constants;
@@ -63,6 +69,7 @@ import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -72,6 +79,7 @@ import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.UserDataUpdate;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.jena.sttl.STriGWriter;
+import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Prefixes;
 
@@ -334,7 +342,6 @@ public class BudaUser {
         Model adm = ad.asModel();
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-        Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
         Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
         fusConn.close();
         // Public graph is pushed to bdrcrw
@@ -368,17 +375,66 @@ public class BudaUser {
         }
         return repository;
     }
+    
+    public static void pushUserRepo() throws InvalidRemoteException, TransportException, GitAPIException {
+        Repository r = ensureUserGitRepo();
+        Git git = new Git(r);
+        git.push()
+        .setCredentialsProvider(
+                new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
+        .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
+        git.close();
+    }
+    
+    public static final int pushEveryS = 600; // push every 600 seconds
+    public static boolean pushScheduled = false;
+    public static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    
+    public static void pushUserRepoIfRelevant() {
+        if (pushScheduled)
+            return;
+        pushScheduled = true;
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                    pushUserRepo();
+                    pushScheduled = false;
+                } catch (GitAPIException e) {
+                    log.error("error pushing to users repo", e);
+                }
+            }
+        };
+        scheduler.schedule(task, pushEveryS, TimeUnit.SECONDS);
+        scheduler.shutdown();
+    }
+    
+    public static final int pullEveryS = 6000; // pull every x seconds
+    public static Instant lastPull = null;
+    
+    public static void pullUserRepoIfRelevant() throws GitAPIException, IOException {
+        final Instant now = Instant.now();
+        if (lastPull == null || lastPull.isBefore(now.minusSeconds(pullEveryS))) {
+            Helpers.pullOrCloneUsers();
+        }
+        lastPull = now;
+    }
 
     public static RevCommit update(UserDataUpdate data) throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException,
             UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
-        Helpers.pullOrCloneUsers();
+        final RevCommit rev = update(data.getUserId(), data.getDatasetGraph());
+        data.setGitRevisionInfo(rev.getName());
+        return rev;
+    }
+
+    public static RevCommit update(final String userId, final DatasetGraph dsg) throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException,
+    UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        pullUserRepoIfRelevant();
         RevCommit rev = null;
-        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
-        String bucket = GlobalHelpers.getTwoLettersBucket(data.getUserId());
+        final String dirpath = EditConfig.getProperty("usersGitLocalRoot");
+        final String bucket = GlobalHelpers.getTwoLettersBucket(userId);
         Helpers.createDirIfNotExists(dirpath + bucket + "/");
-        FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + data.getUserId() + ".trig");
-        DatasetGraph dsg = data.getDatasetGraph();
-        ModelFactory.createModelForGraph(dsg.getUnionGraph()).write(System.out, "TURTLE");
+        final String gitPath = bucket + "/" + userId + ".trig";
+        final FileOutputStream fos = new FileOutputStream(dirpath + gitPath);
         new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
         Repository r = null;
         if (r == null) {
@@ -386,58 +442,31 @@ public class BudaUser {
         }
         Git git = new Git(r);
         if (!git.status().call().isClean()) {
-            git.add().addFilepattern(".").call();
-            rev = git.commit().setMessage("User " + data.getUserId() + " was updated" + Calendar.getInstance().getTime()).call();
-            git.push()
-                    .setCredentialsProvider(
-                            new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
-                    .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
-            data.setGitRevisionInfo(rev.getName());
+            git.add().addFilepattern(gitPath).call();
+            rev = git.commit().setMessage("User " + userId + " was updated" + Calendar.getInstance().getTime()).call();
         }
         git.close();
+        pushUserRepoIfRelevant();
         return rev;
     }
-
+    
     public static RevCommit update(String userId, Model pub, Model priv)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException,
             WrongRepositoryStateException, AbortedByHookException, GitAPIException {
-        Helpers.pullOrCloneUsers();
-        RevCommit rev = null;
-        String dirpath = EditConfig.getProperty("usersGitLocalRoot");
-        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-        Helpers.createDirIfNotExists(dirpath + bucket + "/");
-        FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
-        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
-        Repository r = null;
-        if (r == null) {
-            r = ensureUserGitRepo();
-        }
-        Git git = new Git(r);
-        git.add().addFilepattern(".").call();
-        rev = git.commit().setMessage("User " + userId + " was updated").call();
-        git.push()
-                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))
-                .setRemote(EditConfig.getProperty("usersRemoteGit")).call();
-        git.close();
-        return rev;
+        return update(userId, dsg);
     }
 
     public static void deleteBudaUser(String userid, boolean deleteGit) throws DataUpdateException {
         try {
             Helpers.pullOrCloneUsers();
             QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiData"));
-            System.out.println(1);
             QueryProcessor.dropGraph("http://purl.bdrc.io/admindata/" + userid, EditConfig.getProperty("fusekiAuthData"));
-            System.out.println(2);
             QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user/" + userid, EditConfig.getProperty("fusekiData"));
-            System.out.println(3);
             QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user/" + userid, EditConfig.getProperty("fusekiAuthData"));
-            System.out.println(4);
             QueryProcessor.dropGraph("http://purl.bdrc.io/graph-nc/user-private/" + userid, EditConfig.getProperty("fusekiAuthData"));
-            System.out.println(5);
             if (deleteGit) {
                 String dirpath = EditConfig.getProperty("usersGitLocalRoot");
                 String bucket = GlobalHelpers.getTwoLettersBucket(userid);
@@ -462,13 +491,6 @@ public class BudaUser {
         }
     }
 
-    public static void cleanAllUsers(boolean deleteGit) throws DataUpdateException {
-        ArrayList<String> users = getUserIds();
-        for (String id : users) {
-            deleteBudaUser(id, deleteGit);
-        }
-    }
-
     private static ArrayList<String> getUserIds() {
         ArrayList<String> users = new ArrayList<>();
         String query = "select distinct ?s ?p ?o where  {  ?s a <http://purl.bdrc.io/ontology/ext/user/User> }";
@@ -478,7 +500,6 @@ public class BudaUser {
             String tmp = qs.get("?s").asNode().getLocalName();
             users.add(tmp);
         }
-        System.out.println(users);
         return users;
     }
 

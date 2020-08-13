@@ -41,7 +41,7 @@ public class UserDataUpdate {
         String s = null;
         try {
             // update local gitrepo
-            Helpers.pullOrCloneUsers();
+            BudaUser.pullUserRepoIfRelevant();
             // Fetching the graphs, building the dataset to be patched
             for (String st : graphs) {
                 s = st;

@@ -36,7 +36,7 @@ public class UserPatchModule implements BUDAEditModule {
     public UserPatchModule(UserDataUpdate data, TransactionLog log) throws ModuleException {
         this.data = data;
         this.log = log;
-        //setStatus(Types.STATUS_PREPARED);
+        setStatus(Types.STATUS_PREPARED);
     }
 
     public static String getSetActivePatch(String userId, boolean active) {
@@ -59,7 +59,7 @@ public class UserPatchModule implements BUDAEditModule {
     @Override
     public void run() throws ModuleException {
         try {
-            //setStatus(Types.STATUS_PROCESSING);
+            setStatus(Types.STATUS_PROCESSING);
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiData"));
             RDFConnectionFuseki pubFusConn = ((RDFConnectionFuseki) builder.build());
             RDFConnectionRemoteBuilder builder1 = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
@@ -98,11 +98,11 @@ public class UserPatchModule implements BUDAEditModule {
             }
             pubFusConn.close();
             privFusConn.close();
-            //setStatus(Types.STATUS_SUCCESS);
+            setStatus(Types.STATUS_SUCCESS);
             logger.info("User Patch has been applied");
         } catch (Exception e) {
             logger.error("UserPatchModule failed ", e);
-            //setStatus(Types.STATUS_FAILED);
+            setStatus(Types.STATUS_FAILED);
             log.addError(getName(), e.getMessage());
             throw new PatchModuleException(e);
         }

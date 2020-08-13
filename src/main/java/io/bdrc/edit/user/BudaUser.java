@@ -57,6 +57,7 @@ import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.UnmergedPathsException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;

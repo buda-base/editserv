@@ -184,12 +184,14 @@ public class Helpers {
     public static void createDirIfNotExists(String dir) {
         File theDir = new File(dir);
         if (!theDir.exists()) {
+            log.info("Directory {} doesn't exist, creting it...",dir);
             try {
                 theDir.mkdir();
             } catch (SecurityException se) {
                 log.error("Could not create " + dir, se);
             }
         }
+        log.info("Directory {} already existing... moving on",dir);
     }
 
     public static void pullOrCloneUsers() throws GitAPIException, IOException {
@@ -223,6 +225,7 @@ public class Helpers {
                     .setProgressMonitor(new TextProgressMonitor()).setRemote("origin").call();
             git.close();
         }
+        log.info("Users were cloned or pulled from {} into {}",remoteGit,dir);
     }
 
     public static void modelToOutputStream(Model m, OutputStream out, String resId) throws FileNotFoundException {

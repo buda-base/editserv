@@ -35,6 +35,7 @@ public class GitUserPatchModule implements BUDAEditModule {
         setStatus(Types.STATUS_PROCESSING);
         try {
             BudaUser.update(data);
+            
             setStatus(Types.STATUS_SUCCESS);
         } catch (Exception e) {
             setStatus(Types.STATUS_FAILED);

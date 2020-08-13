@@ -308,17 +308,8 @@ public class BudaUser {
     }
 
     public static void addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
-        // This call updates the global rdf Model from auth0 since a new user has been
-        // added
-        try {
-            HttpClient client = HttpClientBuilder.create().build();
-            HttpPost post = new HttpPost("http://" + EditConfig.getProperty("serverRoot") + "/callbacks/github/bdrc-auth");
-            client.execute(post);
-        } catch (Exception ex) {
-            log.error("Could not update Auth Model when creating buda user", ex);
-        }
         long start = System.currentTimeMillis();
-        Helpers.pullOrCloneUsers();
+        pullUserRepoIfRelevant();
         long start1 = System.currentTimeMillis();
         log.info("Pulling users repo took {} ms", (start1 - start));
         Model[] mod = BudaUser.createBudaUserModels(user);
@@ -427,7 +418,7 @@ public class BudaUser {
         return rev;
     }
 
-    public static RevCommit update(final String userId, final DatasetGraph dsg) throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException,
+    public static synchronized RevCommit update(final String userId, final DatasetGraph dsg) throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException,
     UnmergedPathsException, ConcurrentRefUpdateException, WrongRepositoryStateException, AbortedByHookException, GitAPIException {
         pullUserRepoIfRelevant();
         RevCommit rev = null;

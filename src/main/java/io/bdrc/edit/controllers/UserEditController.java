@@ -217,13 +217,6 @@ public class UserEditController {
         return header.substring(7);
     }
 
-    @PostMapping(value = "/usersCleanup", produces = MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<String> cleanUsers() throws DataUpdateException {
-        log.info("Call to cleanUsers()");
-        BudaUser.cleanAllUsers(true);
-        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body("OK");
-    }
-
     @PostMapping(value = "/callbacks/updateFuseki/", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> updateFuseki() {
         log.info("updating Fuseki users data >>");

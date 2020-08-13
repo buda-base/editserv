@@ -51,6 +51,7 @@ import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.UnmergedPathsException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
@@ -401,12 +402,18 @@ public class BudaUser {
     public static RevCommit update(String userId, Model pub, Model priv)
             throws IOException, NoSuchAlgorithmException, NoHeadException, NoMessageException, UnmergedPathsException, ConcurrentRefUpdateException,
             WrongRepositoryStateException, AbortedByHookException, GitAPIException {
+        log.info("User id >> {}",userId);
+        log.info("Public model >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        pub.write(System.out,"Turtle");
+        log.info("Private model >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        priv.write(System.out,"Turtle");
         Helpers.pullOrCloneUsers();
         RevCommit rev = null;
         String dirpath = EditConfig.getProperty("usersGitLocalRoot");
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
         Helpers.createDirIfNotExists(dirpath + bucket + "/");
         FileOutputStream fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");
+        log.info("File created or opened >> {}",dirpath + bucket + "/" + userId + ".trig");
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
         dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
@@ -416,7 +423,7 @@ public class BudaUser {
             r = ensureUserGitRepo();
         }
         Git git = new Git(r);
-        git.add().addFilepattern(".").call();
+        git.add().addFilepattern(".").call();        
         rev = git.commit().setMessage("User " + userId + " was updated").call();
         git.push()
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass")))

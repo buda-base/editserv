@@ -91,4 +91,11 @@ public class UserDataUpdate {
         return pc.getContent();
     }
 
+    @Override
+    public String toString() {
+        return "UserDataUpdate [pc=" + pc + ", graphs=" + graphs + ", dsg="
+                + dsg + ", admData=" + admData + ", gitRev=" + gitRev
+                + ", userId=" + userId + "]";
+    }
+
 }

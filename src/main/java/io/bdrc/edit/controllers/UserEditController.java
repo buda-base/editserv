@@ -29,7 +29,6 @@ import io.bdrc.auth.model.AuthDataModelBuilder;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.Types;
-import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.edit.user.GitUserPatchModule;
 import io.bdrc.edit.user.GitUserRevisionModule;
@@ -39,7 +38,7 @@ import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
 @RequestMapping("/")
-public class UserEditController {    
+public class UserEditController {
 
     public final static Logger log = LoggerFactory.getLogger(UserEditController.class.getName());
 
@@ -57,7 +56,8 @@ public class UserEditController {
                 HashMap<String, String> err = new HashMap<>();
                 err.put("message", "No data available");
                 err.put("cause", "No token was found");
-                return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(err));
+                return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .body(StreamingHelpers.getJsonObjectStream(err));
             } else {
                 Access acc = (Access) request.getAttribute("access");
                 log.info("meUser() Access >> {} ", acc);
@@ -83,15 +83,17 @@ public class UserEditController {
     }
 
     @PatchMapping(value = "/resource-nc/user/{res}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<StreamingResponseBody> userPatch(@PathVariable("res") final String res, HttpServletResponse response,
-            HttpServletRequest request, @RequestParam(value = "type", defaultValue = "NONE") final String type) throws Exception {
+    public ResponseEntity<StreamingResponseBody> userPatch(@PathVariable("res") final String res,
+            HttpServletResponse response, HttpServletRequest request,
+            @RequestParam(value = "type", defaultValue = "NONE") final String type) throws Exception {
         log.info("Call userPatch()");
         String token = getToken(request.getHeader("Authorization"));
         if (token == null) {
             HashMap<String, String> err = new HashMap<>();
             err.put("message", "You must be authenticated in order to disable this user");
             err.put("cause", "No token was found");
-            return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(err));
+            return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8)
+                    .body(StreamingHelpers.getJsonObjectStream(err));
         } else {
             String auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
             User usr = RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1));
@@ -106,26 +108,25 @@ public class UserEditController {
                     // next, mark (patch) the corresponding Auth0 user as "unblocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":false}");
                     // next, update RdfAuthModel (auth0 users)
-                    Thread t = new Thread(new RdfAuthModel());
-                    t.start();
+                    new Thread(new RdfAuthModel()).start();
                 } else {
                     // specialized or generic patching here
                     // we might run user edit transactions here...
                     // using a separate endpoint for now (12/19)
                 }
-                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
+                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers
+                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
 
             }
-            return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                    .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
+            return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(
+                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
         }
 
     }
 
     @PatchMapping(value = "/resource-nc/user/patch/{res}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<StreamingResponseBody> userPublicPatch(@PathVariable("res") final String res, HttpServletResponse response,
-            HttpServletRequest request, @RequestBody String patch) throws Exception {
+    public ResponseEntity<StreamingResponseBody> userPublicPatch(@PathVariable("res") final String res,
+            HttpServletResponse response, HttpServletRequest request, @RequestBody String patch) throws Exception {
         log.info("Call userPublicPatch() for res:" + res);
         log.info("Call userPublicPatch() for Patch:" + patch);
         try {
@@ -146,11 +147,13 @@ public class UserEditController {
                     ut.commit();
                     HashMap<String, String> msg = new HashMap<>();
                     msg.put("message", "OK");
-                    return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(msg));
+                    return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
+                            .body(StreamingHelpers.getJsonObjectStream(msg));
                 } else {
                     HashMap<String, String> msg = new HashMap<>();
                     msg.put("message", "You must be an admin to modify this user");
-                    return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(msg));
+                    return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8)
+                            .body(StreamingHelpers.getJsonObjectStream(msg));
                 }
             }
         } catch (Exception e) {
@@ -159,20 +162,22 @@ public class UserEditController {
             err.put("code", "500");
             err.put("cause", e.getMessage());
             log.error("/resource-nc/user/patch/{res} failed for resource:" + res, e);
-            return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(err));
+            return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
+                    .body(StreamingHelpers.getJsonObjectStream(err));
         }
     }
 
     @DeleteMapping(value = "/resource-nc/user/{res}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<StreamingResponseBody> userDelete(@PathVariable("res") final String res, HttpServletResponse response,
-            HttpServletRequest request) throws Exception {
+    public ResponseEntity<StreamingResponseBody> userDelete(@PathVariable("res") final String res,
+            HttpServletResponse response, HttpServletRequest request) throws Exception {
         log.info("Call userDelete()");
         String token = getToken(request.getHeader("Authorization"));
         if (token == null) {
             HashMap<String, String> err = new HashMap<>();
             err.put("message", "You must be authenticated in order to disable this user");
             err.put("cause", "No token was found");
-            return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers.getJsonObjectStream(err));
+            return ResponseEntity.status(403).contentType(MediaType.APPLICATION_JSON_UTF8)
+                    .body(StreamingHelpers.getJsonObjectStream(err));
         } else {
             String auth0Id = null;
             Access acc = (Access) request.getAttribute("access");
@@ -186,8 +191,7 @@ public class UserEditController {
                     // next, mark (patch) the corresponding Auth0 user as "blocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":true}");
                     // next, update RdfAuthModel (auth0 users)
-                    Thread t = new Thread(new RdfAuthModel());
-                    t.start();
+                    new Thread(new RdfAuthModel()).start();
                 } catch (Exception e) {
                     log.error("DELETE /resource-nc/user/{res} for resource " + res, e);
                     throw e;
@@ -195,11 +199,11 @@ public class UserEditController {
             }
             String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
             if (acc.getUser().isAdmin()) {
-                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
+                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers
+                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
             }
-            return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                    .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
+            return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(
+                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
         }
     }
 

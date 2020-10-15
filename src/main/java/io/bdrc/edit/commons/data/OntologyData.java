@@ -32,7 +32,8 @@ public class OntologyData {
     }
 
     private static Model loadOntologyData() {
-        OntDocumentManager ontManager = new OntDocumentManager(EditConfig.getProperty("owlSchemaBase") + "ont-policy.rdf");
+        OntDocumentManager ontManager = new OntDocumentManager(
+                EditConfig.getProperty("owlSchemaBase") + "ont-policy.rdf");
         // not really needed since ont-policy sets it, but what if someone changes the
         // policy
         ontManager.setProcessImports(true);
@@ -42,18 +43,13 @@ public class OntologyData {
     }
 
     public static Reasoner getEditServReasoner() {
-        return EditServReasoner.getReasoner(ONTOLOGY, EditConfig.getProperty("owlSchemaBase") + "reasoning/kinship.rules", true);
+        return EditServReasoner.getReasoner(ONTOLOGY,
+                EditConfig.getProperty("owlSchemaBase") + "reasoning/kinship.rules", true);
     }
 
     public static List<Statement> getInverseListStatement(String fullPropUri) {
-        List<Statement> l = new ArrayList<>();
         SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(fullPropUri), INVERSE, (RDFNode) null);
-        StmtIterator it = ONTOLOGY.listStatements(ss);
-        while (it.hasNext()) {
-            Statement st = it.nextStatement();
-            l.add(st);
-        }
-        return l;
+        return ONTOLOGY.listStatements(ss).toList();
     }
 
     public static List<Property> getInverseListProperty(String fullPropUri) {

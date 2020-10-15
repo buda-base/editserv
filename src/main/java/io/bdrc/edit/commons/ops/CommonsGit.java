@@ -42,8 +42,8 @@ public class CommonsGit {
     public static Logger log = LoggerFactory.getLogger(CommonsGit.class);
 
     public static String putAndCommitSingleResource(Model newModel, String prefixedId)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException, ParameterFormatException,
-            ValidationException, InvalidRemoteException, TransportException, GitAPIException {
+            throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException,
+            ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
         String resType = CommonsRead.getFullResourceTypeUri(prefixedId, newModel, false);
         Model current = CommonsGit.getGraphFromGit(prefixedId);
         // at this point, there's no conflict and the newModel is validated.
@@ -62,21 +62,25 @@ public class CommonsGit {
         if (ni.hasNext()) {
             gitRepo = ni.next().asResource().getLocalName();
         }
-        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"), Models.BDA + gitRepo, gitPath);
+        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"),
+                Models.BDA + gitRepo, gitPath);
         log.info("Gitrepository object {}", GitRepositories.getRepoByUri(Models.ADM + gitRepo));
-        FileOutputStream fos = new FileOutputStream(
-                EditConfig.getProperty("gitLocalRoot") + GitRepositories.getRepoByUri(Models.BDA + gitRepo).getGitRepoName() + "/" + gitPath);
+        FileOutputStream fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot")
+                + GitRepositories.getRepoByUri(Models.BDA + gitRepo).getGitRepoName() + "/" + gitPath);
         modelToOutputStream(merged, fos, Models.BDR + (prefixedId.substring(prefixedId.lastIndexOf(":") + 1)));
-        RevCommit rev = GitHelpers.commitChanges(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(), "Committed model :" + prefixedId);
+        RevCommit rev = GitHelpers.commitChanges(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(),
+                "Committed model :" + prefixedId);
         if (rev != null) {
-            GitHelpers.push(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(), EditConfig.getProperty("gitRemoteBase"),
-                    EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
+            GitHelpers.push(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(),
+                    EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"),
+                    EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
             return rev.getName();
         }
         return null;
     }
 
-    public static Model getGraphFromGit(String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+    public static Model getGraphFromGit(String graphUri)
+            throws UnknownBdrcResourceException, NotModifiableException, IOException {
         String rootId = "";
         if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
             throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
@@ -103,13 +107,16 @@ public class CommonsGit {
             gitRepo = g_repo.next().asResource().getURI();
         }
         if (gitPath == null || gitRepo == null) {
-            throw new NotModifiableException(graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
+            throw new NotModifiableException(
+                    graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
         }
-        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"), Models.BDA + gitRepo, gitPath);
+        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"),
+                Models.BDA + gitRepo, gitPath);
 
         GitRepo repo = GitRepositories.getRepoByUri(gitRepo);
         return ModelFactory.createModelForGraph(Helpers
-                .buildGraphFromTrig(GlobalHelpers.readFileContent(EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
+                .buildGraphFromTrig(GlobalHelpers.readFileContent(
+                        EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
                 .getUnionGraph());
     }
 

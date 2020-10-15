@@ -25,6 +25,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +76,8 @@ public class UserAPICheck {
         props.load(is);
         AuthProps.init(props);
         is.close();
-        auth = new AuthAPI("bdrc-io.auth0.com", AuthProps.getProperty("lds-pdiClientID"), AuthProps.getProperty("lds-pdiClientSecret"));
+        auth = new AuthAPI("bdrc-io.auth0.com", AuthProps.getProperty("lds-pdiClientID"),
+                AuthProps.getProperty("lds-pdiClientSecret"));
         HttpClient client = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost("https://bdrc-io.auth0.com/oauth/token");
         HashMap<String, String> json = new HashMap<>();
@@ -89,6 +91,7 @@ public class UserAPICheck {
         se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
         post.setEntity(se);
         HttpResponse response = client.execute(post);
+        log.info("Response >>{}", response);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.getEntity().writeTo(baos);
         String json_resp = baos.toString();
@@ -159,10 +162,11 @@ public class UserAPICheck {
         return token;
     }
 
-    // @Test
+    @Test
     public void noToken() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS public resource >> {}", resp.getStatusLine());
         assert (resp.getStatusLine().getStatusCode() == 401);
@@ -171,7 +175,8 @@ public class UserAPICheck {
     // @Test
     public void tokenOfExistingUser() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
         get.addHeader("Authorization", "Bearer " + adminToken);
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS public resource >> {}", resp.getStatusLine());
@@ -182,13 +187,15 @@ public class UserAPICheck {
     // @Test
     public void userForUser() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/U456");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/U456");
         get.addHeader("Authorization", "Bearer " + publicToken);
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS user for NonAdminUser public >> {}", resp.getStatusLine());
         assert (resp.getStatusLine().getStatusCode() == 200);
         log.info("RESULT user for NonAdminUser public >> {}", EntityUtils.toString(resp.getEntity()));
-        get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/U456");
+        get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/U456");
         get.addHeader("Authorization", "Bearer " + adminToken);
         resp = client.execute(get);
         log.info("RESP STATUS user for AdminUser admin >> {}", resp.getStatusLine());
@@ -199,7 +206,8 @@ public class UserAPICheck {
     // @Test
     public void tokenOfNonExistingBudaUser() throws ClientProtocolException, IOException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
         get.addHeader("Authorization", "Bearer " + adminToken);
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS public resource >> {}", resp.getStatusLine());
@@ -228,7 +236,8 @@ public class UserAPICheck {
     // @Test
     public void createBudauserFromToken() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
         get.addHeader("Authorization", "Bearer " + adminToken);
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS public resource >> {}", resp.getStatusLine());
@@ -251,7 +260,8 @@ public class UserAPICheck {
     public void disableBudaUser() throws ClientProtocolException, IOException {
         // First, make sure we have a user
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
+        HttpGet get = new HttpGet(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
         get.addHeader("Authorization", "Bearer " + staffToken);
         HttpResponse resp = client.execute(get);
         log.info("RESP STATUS disableBudaUser 1 >> {}", resp.getStatusLine());
@@ -261,7 +271,8 @@ public class UserAPICheck {
         TokenValidation tv = new TokenValidation(staffToken);
         UserProfile up = tv.getUser();
         String userId = BudaUser.getRdfProfile(up.getUser().getUserId()).getLocalName();
-        HttpDelete hd = new HttpDelete("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/" + userId);
+        HttpDelete hd = new HttpDelete(
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/" + userId);
         hd.addHeader("Authorization", "Bearer " + adminToken);
         resp = client.execute(hd);
         log.info("RESP STATUS disableBudaUser 2 >> {}", resp.getStatusLine());
@@ -273,7 +284,8 @@ public class UserAPICheck {
     // @Test
     public void patchPublic() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/public/U1417245714");
+        HttpPatch patch = new HttpPatch("http://localhost:" + environment.getProperty("local.server.port")
+                + "/resource-nc/user/public/U1417245714");
         patch.addHeader("Authorization", "Bearer " + adminToken);
         StringEntity entity = new StringEntity(getResourceFileContent("changePublic.patch"));
         patch.setEntity(entity);
@@ -281,7 +293,6 @@ public class UserAPICheck {
         System.out.println("RESP STATUS public resource >> " + resp.getStatusLine());
         // assert (resp.getStatusLine().getStatusCode() == 200);
         System.out.println("RESULT >> " + EntityUtils.toString(resp.getEntity()));
-
     }
 
     public static String getResourceFileContent(String file) throws IOException {

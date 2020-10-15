@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
@@ -37,8 +39,8 @@ public class MainEditController {
     public final static Logger log = LoggerFactory.getLogger(MainEditController.class.getName());
 
     @GetMapping(value = "/focusGraph/{prefixedId}", produces = "application/json")
-    public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req,
-            HttpServletResponse response) {
+    public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("prefixedId") String prefixedId,
+            HttpServletRequest req, HttpServletResponse response) {
         Model m = ModelFactory.createDefaultModel();
         try {
             m = CommonsRead.getEditorGraph(prefixedId);
@@ -52,8 +54,8 @@ public class MainEditController {
     }
 
     @PutMapping(value = "/putresource/{prefixedId}")
-    public ResponseEntity<String> putResource(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req, HttpServletResponse response,
-            @RequestBody String model) throws Exception {
+    public ResponseEntity<String> putResource(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req,
+            HttpServletResponse response, @RequestBody String model) throws Exception {
         InputStream in = new ByteArrayInputStream(model.getBytes());
         // for testing purpose
         // InputStream in =
@@ -66,7 +68,8 @@ public class MainEditController {
 
         } else {
             log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, jenaLang.getLabel());
@@ -77,16 +80,25 @@ public class MainEditController {
         // if (!CommonsValidate.validateShacl(m, Models.BDR +
         // prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
         /*
-         * if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(prefixedId, m),
-         * Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) { throw
-         * new ValidationException("Could not validate " + prefixedId); }
+         * if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(
+         * prefixedId, m), Models.BDR +
+         * prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) { throw new
+         * ValidationException("Could not validate " + prefixedId); }
          */
-        String commitId = CommonsGit.putAndCommitSingleResource(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
+        String commitId = CommonsGit.putAndCommitSingleResource(m,
+                Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body(commitId);
+    }
+
+    @RequestMapping(value = "/callbacks/model/bdrc-auth", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> readAuthModel() {
+        log.info("updating Auth data model() >>");
+        RdfAuthModel.readAuthModel();
+        return ResponseEntity.ok("Updated auth Model was read into editserv");
     }
 
 }

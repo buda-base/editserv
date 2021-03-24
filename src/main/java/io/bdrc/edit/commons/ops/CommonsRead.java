@@ -45,7 +45,6 @@ public class CommonsRead {
     public static Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
     public static Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
     public static Resource EXTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "ExternalShape");
-    public static Property LOCAL_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "localShapeGraph");
     public static Property TOP_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "topShapeGraph");
     public static Property UI_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "uiShapeGraph");
     public static HashMap<String, Model> ENTITY_MAP;
@@ -70,16 +69,6 @@ public class CommonsRead {
         return m;
     }
 
-    public static String getLocalShapeUri(String entityPrefixedUri) {
-        Model ent = getEntityModel(entityPrefixedUri);
-        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
-        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), LOCAL_SHAPE);
-        if (st != null) {
-            return st.getObject().asNode().getURI();
-        }
-        return null;
-    }
-
     public static String getTopShapeUri(String entityPrefixedUri) {
         Model ent = getEntityModel(entityPrefixedUri);
         String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
@@ -98,11 +87,6 @@ public class CommonsRead {
             return st.getObject().asNode().getURI();
         }
         return null;
-    }
-
-    public static Model getLocalShapeModel(String entityPrefixedUri) {
-        Model m = QueryProcessor.getGraph(getLocalShapeUri(entityPrefixedUri));
-        return m;
     }
 
     public static Model getTopShapeModel(String entityPrefixedUri) {
@@ -126,7 +110,6 @@ public class CommonsRead {
         String entityPrefixedUri = getResourceTypeUri(prefixedUri, true);
         Model m = ModelFactory.createDefaultModel();
         m.add(getTopShapeModel(entityPrefixedUri));
-        m.add(getLocalShapeModel(entityPrefixedUri));
         return m;
     }
 
@@ -187,8 +170,6 @@ public class CommonsRead {
         List<String> shapesUris = new ArrayList<>();
         String typeUri = getResourceTypeUri(prefixedUri, true);
         log.info("BEST SHAPES TYPE URIS {} ", typeUri);
-        shapesUris.add(getLocalShapeUri(typeUri));
-        log.info("BEST SHAPES LOCAL SHAPES URIS {} ", getLocalShapeUri(typeUri));
         shapesUris.add(getTopShapeUri(typeUri));
         log.info("BEST SHAPES URIS {} ", shapesUris);
         return shapesUris;

@@ -31,9 +31,11 @@ public class EditConfig {
             input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
             prop.load(input);
             input.close();
-            input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
-            prop.load(input);
-            input.close();
+            if (System.getProperty("editserv.configpath") != null) {
+                input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
+                prop.load(input);
+                input.close();
+            }
             InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
             prop.load(is);            
             is.close();

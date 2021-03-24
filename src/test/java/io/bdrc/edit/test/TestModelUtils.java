@@ -46,7 +46,7 @@ public class TestModelUtils {
     static String BDR = "http://purl.bdrc.io/resource/";
     static ArrayList<Resource> missingObjects;
     static Triple T1;
-    static String owlSchemaBase = "/Users/marc/dev/lds-pdi/owl-schema/";
+    static String owlSchemaBase = "../owl-schema/";
 
     static Resource fatherR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PFATHER");
     static Resource sonR = ResourceFactory.createResource("http://purl.bdrc.io/resource/PSON");

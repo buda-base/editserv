@@ -31,14 +31,4 @@ public class TestShapes {
         Shapes shapes = Shapes.parse(shapes_mod.getGraph());
     }
 
-    @Test
-    public void parseShape() throws IOException {
-        Model m = ModelFactory.createDefaultModel();
-        InputStream stream = new FileInputStream("/Users/marc/dev/lds-pdi/editor-templates/templates/core/person.local.shapes.ttl");
-        m.read("https://raw.githubusercontent.com/buda-base/editor-templates/master/templates/core/event.shapes.ttl", null, "TTL");
-        // m.read(stream, null, "TTL");
-        Shapes.parse(m.getGraph());
-        stream.close();
-    }
-
 }

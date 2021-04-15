@@ -66,7 +66,7 @@ public class OntologyData {
         return l;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ResourceFactory.createProperty("http://www.w3.org/2002/07/owl#inverseOf");
         EditConfig.init();
         OntologyData.init();

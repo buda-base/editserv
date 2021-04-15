@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
@@ -15,10 +16,11 @@ import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
 public class TestCommons {
 
-    static {
+    @BeforeClass
+    public static void init() throws Exception {
         EditConfig.init();
     }
-
+    
     @Test
     public void getGraphTest() {
         String graphUri = "http://purl.bdrc.io/resource/P1583";

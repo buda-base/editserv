@@ -1,6 +1,5 @@
 package io.bdrc.edit.user;
 
-import org.apache.commons.jcs.access.exception.CacheException;
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
@@ -24,12 +23,8 @@ public class UsersCache {
     }
 
     public static void addToCache(Object res, int hash) {
-        try {
-            CACHE.put(Integer.valueOf(hash), res);
-            res = null;
-        } catch (CacheException e) {
-            log.error("Problem putting Users Results -->" + res + " in the cache, for key -->" + hash + " Exception:" + e.getMessage());
-        }
+        CACHE.put(Integer.valueOf(hash), res);
+        res = null;
     }
 
     public static Object getObjectFromCache(int hash) {

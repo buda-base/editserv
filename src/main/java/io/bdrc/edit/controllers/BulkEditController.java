@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.Access;
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.helpers.BulkOps;
 import io.bdrc.libraries.SparqlCommons;
 
@@ -130,7 +131,7 @@ public class BulkEditController {
             } else {
                 // using sparql request
                 if (!sparql.equals("")) {
-                    HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(sparql, fusekiUrl);
+                    HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(sparql, fusekiUrl, EditConfig.prefix.getPrefixesString());
                     if (isLiteral) {
                         if (add) {
                             BulkOps.addLiteralValueForModels(map, p, value, lang, fusekiUrl);
@@ -201,7 +202,7 @@ public class BulkEditController {
             } else {
                 // using sparql request
                 if (!sparql.equals("")) {
-                    HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(sparql, fusekiUrl);
+                    HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(sparql, fusekiUrl, EditConfig.prefix.getPrefixesString());
                     BulkOps.renameProp(map, oldProp, newProp, fusekiUrl);
 
                 } else {

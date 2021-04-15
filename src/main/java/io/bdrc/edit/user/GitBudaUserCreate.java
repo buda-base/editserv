@@ -19,7 +19,6 @@ import io.bdrc.edit.helpers.AdminData;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
-import io.bdrc.libraries.Prefixes;
 
 public class GitBudaUserCreate implements Runnable {
 
@@ -53,7 +52,7 @@ public class GitBudaUserCreate implements Runnable {
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PUBLIC_PFX + userId).asNode(), pub.getGraph());
             dsg.addGraph(ResourceFactory.createResource(BudaUser.PRIVATE_PFX + userId).asNode(), priv.getGraph());
             dsg.addGraph(ResourceFactory.createResource(EditConstants.BDA + userId).asNode(), adm.getGraph());
-            new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+            new STriGWriter().write(fos, dsg, EditConfig.prefix.getPrefixMap(), "", GlobalHelpers.createWriterContext());
             if (r == null) {
                 r = BudaUser.ensureUserGitRepo();
             }

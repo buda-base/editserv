@@ -28,7 +28,6 @@ import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.libraries.Models;
-import io.bdrc.libraries.Prefixes;
 
 public class CommonsRead {
 
@@ -212,7 +211,7 @@ public class CommonsRead {
                 }
             }
         }
-        res.setNsPrefixes(Prefixes.getPrefixMapping());
+        res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         return res;
     }
 
@@ -268,12 +267,12 @@ public class CommonsRead {
         return commit;
     }
 
-    public static void main(String[] arg) throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
+    public static void main(String[] arg) throws Exception {
         EditConfig.init();
         System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707"));
         Model res = getEditorGraph("bdr:P1019");
         System.out.println("---------------------------------------------------");
-        res.setNsPrefixes(Prefixes.getPrefixMapping());
+        res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         res.write(System.out, "TTL");
         /*
          * System.out.println(getLocalShapeUri("bdo:Person"));

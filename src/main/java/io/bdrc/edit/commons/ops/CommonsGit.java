@@ -126,7 +126,7 @@ public class CommonsGit {
         Node graphUri = NodeFactory.createURI(uriStr);
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
-        new STriGWriter().write(out, dsg, Helpers.getPrefixMap(), graphUri.toString(m), Helpers.createWriterContext());
+        new STriGWriter().write(out, dsg, EditConfig.prefix.getPrefixMap(), graphUri.toString(m), Helpers.createWriterContext());
         out.close();
     }
 

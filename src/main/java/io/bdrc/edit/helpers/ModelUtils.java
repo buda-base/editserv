@@ -20,11 +20,11 @@ import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
 
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.libraries.Prefixes;
 
 public class ModelUtils {
 
@@ -78,7 +78,7 @@ public class ModelUtils {
                 return resourceUri;
             } else {
                 String prefix = resourceUri.substring(0, prefixIndex);
-                return Prefixes.getFullIRI(prefix) + resourceUri.substring(prefixIndex + 1);
+                return EditConfig.prefix.getFullIRI(prefix) + resourceUri.substring(prefixIndex + 1);
             }
         } catch (Exception ex) {
             return null;
@@ -87,7 +87,7 @@ public class ModelUtils {
 
     public static Model removeTriples(String graphUri, List<Statement> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
-        m.setNsPrefixes(Prefixes.getPrefixMapping());
+        m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         Dataset ds = DatasetFactory.create();
         ds.addNamedModel(graphUri, m);
         DatasetGraph dg = ds.asDatasetGraph();
@@ -101,7 +101,7 @@ public class ModelUtils {
 
     public static Model addTriples(String graphUri, List<Statement> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
-        m.setNsPrefixes(Prefixes.getPrefixMapping());
+        m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         Dataset ds = DatasetFactory.create();
         ds.addNamedModel(graphUri, m);
         DatasetGraph dg = ds.asDatasetGraph();

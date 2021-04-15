@@ -66,22 +66,6 @@ public class Helpers {
 
     public final static Logger log = LoggerFactory.getLogger(Helpers.class.getName());
 
-    public static PrefixMap getPrefixMap() {
-        PrefixMap pm = PrefixMapFactory.create();
-        pm.add("", BDO);
-        pm.add("adm", ADM);
-        pm.add("bda", BDA);
-        pm.add("bdg", BDG);
-        pm.add("bdr", BDR);
-        pm.add("owl", OWL.getURI());
-        pm.add("rdf", RDF.getURI());
-        pm.add("rdfs", RDFS.getURI());
-        pm.add("skos", SKOS.getURI());
-        pm.add("vcard", VCARD4.getURI());
-        pm.add("xsd", XSD.getURI());
-        return pm;
-    }
-
     public static Context createWriterContext() {
         SortedMap<String, Integer> nsPrio = ComparePredicates.getDefaultNSPriorities();
         nsPrio.put(SKOS.getURI(), 1);
@@ -234,7 +218,7 @@ public class Helpers {
         Node graphUri = NodeFactory.createURI(uriStr);
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
-        new STriGWriter().write(out, dsg, getPrefixMap(), graphUri.toString(m), Helpers.createWriterContext());
+        new STriGWriter().write(out, dsg, EditConfig.prefix.getPrefixMap(), graphUri.toString(m), Helpers.createWriterContext());
     }
 
     public static boolean finalizeLog(TransactionLog log, String name) throws JsonProcessingException, IOException {
@@ -260,7 +244,7 @@ public class Helpers {
         return fullResUri.substring(fullResUri.lastIndexOf("/") + 1);
     }
 
-    public static void main(String[] args) throws GitAPIException, IOException {
+    public static void main(String[] args) throws Exception {
         EditConfig.init();
         Helpers.pullOrCloneUsers();
     }

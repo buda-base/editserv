@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.libraries.Prefixes;
 
 public class QueryProcessor {
 
@@ -26,7 +25,7 @@ public class QueryProcessor {
         }
         Model m = ModelFactory.createDefaultModel();
         try {
-            final Query q = QueryFactory.create(Prefixes.getPrefixesString() + " describe <" + fullUri.trim() + ">");
+            final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + " describe <" + fullUri.trim() + ">");
             final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
             m = qe.execDescribe();
         } catch (Exception ex) {
@@ -59,7 +58,7 @@ public class QueryProcessor {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
         }
         String query = "construct {?s ?p <" + fullUri + ">} where { { ?s ?p <" + fullUri + "> } }";
-        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
@@ -75,7 +74,7 @@ public class QueryProcessor {
         String query = " construct {?s ?p ?o} where { graph <" + fullUri + "> { ?s ?p ?o } }";
         log.info("Query Processor looking for graph {} ", fullUri);
         log.info("Query Processor graph query {} ", query);
-        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
@@ -84,7 +83,7 @@ public class QueryProcessor {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
         }
-        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
@@ -93,7 +92,7 @@ public class QueryProcessor {
         if (fusekiUrl == null) {
             fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
         }
-        final Query q = QueryFactory.create(Prefixes.getPrefixesString() + query);
+        final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execSelect();
     }
@@ -116,7 +115,7 @@ public class QueryProcessor {
         return qe;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         EditConfig.init();
         Model m = QueryProcessor.describeModel("http://purl.bdrc.io/resource/P1583", null);
         m.write(System.out, "TURTLE");

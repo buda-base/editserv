@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
@@ -50,7 +51,7 @@ public class MainEditController {
                     .body(StreamingHelpers.getStream("No graph could be found for " + prefixedId));
         }
         response.addHeader("Content-Type", "text/turtle;charset=utf-8");
-        return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null));
+        return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
 
     @PutMapping(value = "/putresource/{prefixedId}")

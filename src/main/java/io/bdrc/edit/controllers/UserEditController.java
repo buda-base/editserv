@@ -28,6 +28,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.model.AuthDataModelBuilder;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.Types;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.edit.user.GitUserPatchModule;
@@ -74,7 +75,7 @@ public class UserEditController {
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
                         .header("Location", "/resource-nc/user/" + usr.getLocalName())
-                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json"));
+                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json", EditConfig.prefix.getPrefixMap()));
             }
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);
@@ -115,11 +116,11 @@ public class UserEditController {
                     // using a separate endpoint for now (12/19)
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers
-                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
+                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json", EditConfig.prefix.getPrefixMap()));
 
             }
             return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(
-                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
+                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json", EditConfig.prefix.getPrefixMap()));
         }
 
     }
@@ -200,10 +201,10 @@ public class UserEditController {
             String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
             if (acc.getUser().isAdmin()) {
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers
-                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json"));
+                        .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json", EditConfig.prefix.getPrefixMap()));
             }
             return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(
-                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json"));
+                    StreamingHelpers.getModelStream(BudaUser.getUserModel(false, BudaUser.getRdfProfile(n)), "json", EditConfig.prefix.getPrefixMap()));
         }
     }
 

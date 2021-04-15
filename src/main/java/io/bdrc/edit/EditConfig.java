@@ -13,6 +13,7 @@ import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.user.UsersCache;
+import io.bdrc.libraries.Prefix;
 
 public class EditConfig {
 
@@ -23,31 +24,32 @@ public class EditConfig {
     public static String FUSEKI_URL = "fusekiUrl";
     public static String FUSEKI_DATA = "fusekiData";
     public final static String QUERY_TIMEOUT = "timeout";
+    public static Prefix prefix;
 
-    public static void init() {
-        try {
-            InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
-            prop.load(input);
-            input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
+    public static void init() throws Exception {
+        InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
+        prop.load(input);
+        input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
+        prop.load(input);
+        input.close();
+        if (System.getProperty("editserv.configpath") != null) {
+            input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
             prop.load(input);
             input.close();
-            if (System.getProperty("editserv.configpath") != null) {
-                input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
-                prop.load(input);
-                input.close();
-            }
-            InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
-            prop.load(is);            
-            is.close();
-            AuthProps.init(prop);
-            if (useAuth()) {
-                RdfAuthModel.init();
-            }
-            UsersCache.init();
-            OntologyData.init();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        }
+        InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
+        prop.load(is);            
+        is.close();
+        AuthProps.init(prop);
+        if (useAuth()) {
+            RdfAuthModel.init();
+        }
+        UsersCache.init();
+        OntologyData.init();
+        if (prop.getProperty("prefixesFilePath") != null) {
+            prefix = new Prefix(prop.getProperty("prefixesFilePath"));
+        } else {
+            throw new Exception("please set property prefixesFilePath with the path to a prefix file");
         }
     }
 

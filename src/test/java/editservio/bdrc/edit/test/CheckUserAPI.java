@@ -58,7 +58,7 @@ public class CheckUserAPI {
     public final static Logger log = LoggerFactory.getLogger(CheckUserAPI.class.getName());
 
     @BeforeClass
-    public static void init() throws IOException {
+    public static void init() throws Exception {
         EditConfig.init();
         Properties props = EditConfig.getProperties();
         InputStream input = new FileInputStream("/etc/buda/editserv/editserv.properties");

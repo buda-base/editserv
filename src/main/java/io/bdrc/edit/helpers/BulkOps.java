@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.GitHelpers;
@@ -38,7 +39,8 @@ public class BulkOps {
     public static String STATUS_PROP = "http://purl.bdrc.io/ontology/admin/status";
     public static String STATUS_WITHDRAWN = "http://purl.bdrc.io/admindata/StatusWithdrawn";
     public static String STATUS_RELEASED = "http://purl.bdrc.io/admindata/StatusReleased";
-    public static Reasoner REASONER = BDRCReasoner.getReasoner();
+    public static Reasoner REASONER = BDRCReasoner.getReasoner(OntologyData.ONTOLOGY,
+            EditConfig.getProperty("owlSchemaBase") + "reasoning/kinship.rules", true);
 
     public static Model mergeGraphsOfSameResourceType(String to_mergeGraphUri, String to_keepGraphUri, String resourceType)
             throws NoSuchAlgorithmException, IOException {
@@ -89,7 +91,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsForResourceByGitRepos(replacedUri, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsForResourceByGitRepos(replacedUri, fusekiUrl, EditConfig.prefix.getPrefixesString());
         HashMap<String, Model> models = new HashMap<>();
         String replacedResId = replacedUri.substring(replacedUri.lastIndexOf("/") + 1);
         Set<String> repos = map.keySet();
@@ -110,7 +112,7 @@ public class BulkOps {
                                             EditConfig.getProperty("gitLocalRoot") + ad.getGitRepo().getGitRepoName(), ad.getGitPath()))
                                     .getUnionGraph());
                     // Updating model
-                    to_update = SparqlCommons.replaceRefInModel(to_update, uri, replacedUri, validUri, null);
+                    to_update = SparqlCommons.replaceRefInModel(to_update, uri, replacedUri, validUri, null, EditConfig.prefix.getPrefixesString());
 
                 } else {
                     // if the graph being processed is the graph of the withdrawn resource, the
@@ -148,7 +150,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl, EditConfig.prefix.getPrefixesString());
         setPropValueForModels(map, p, value, fusekiUrl);
     }
 
@@ -198,7 +200,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitReposHavingProp(graphUris, oldPropUri, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitReposHavingProp(graphUris, oldPropUri, fusekiUrl, EditConfig.prefix.getPrefixesString());
         renameProp(map, oldPropUri, newPropUri, fusekiUrl);
     }
 
@@ -249,7 +251,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl, EditConfig.prefix.getPrefixesString());
         addPropValueForModels(map, p, value, fusekiUrl);
     }
 
@@ -300,7 +302,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl, EditConfig.prefix.getPrefixesString());
         addLiteralValueForModels(map, p, value, lang, fusekiUrl);
     }
 
@@ -350,7 +352,7 @@ public class BulkOps {
                 fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
             }
         }
-        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl);
+        HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(graphUris, fusekiUrl, EditConfig.prefix.getPrefixesString());
         setLiteralValueForModels(map, p, value, lang, fusekiUrl);
     }
 
@@ -421,7 +423,7 @@ public class BulkOps {
     }
 
     public static void main(String[] args)
-            throws NoSuchAlgorithmException, InvalidRemoteException, TransportException, IOException, GitAPIException, DataUpdateException {
+            throws Exception {
         EditConfig.init();
         replaceAllDuplicateByValid("http://purl.bdrc.io/resource/P1595", "http://purl.bdrc.io/resource/PPP1595",
                 "http://buda1.bdrc.io:13180/fuseki/testrw/query");

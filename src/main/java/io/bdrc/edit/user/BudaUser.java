@@ -82,7 +82,6 @@ import io.bdrc.edit.txn.exceptions.DataUpdateException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.GlobalHelpers;
-import io.bdrc.libraries.Prefixes;
 
 public class BudaUser {
 
@@ -214,7 +213,7 @@ public class BudaUser {
         String userId = "U" + Integer.toString(Math.abs(usr.getName().hashCode()));
         log.debug("createBudaUserModel for >> {}", userId);
         Resource bUser = ResourceFactory.createResource(BDU_PFX + userId);
-        publicModel.setNsPrefixes(Prefixes.getPrefixMapping());
+        publicModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
@@ -227,7 +226,7 @@ public class BudaUser {
         mods[0] = publicModel;
 
         Model privateModel = ModelFactory.createDefaultModel();
-        privateModel.setNsPrefixes(Prefixes.getPrefixMapping());
+        privateModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
@@ -262,7 +261,7 @@ public class BudaUser {
         String userId = "U" + Integer.toString(Math.abs(userName.hashCode()));
         log.debug("createBudaUserModel for >> {}", userId);
         Resource bUser = ResourceFactory.createResource(BDU_PFX + userId);
-        publicModel.setNsPrefixes(Prefixes.getPrefixMapping());
+        publicModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
@@ -275,7 +274,7 @@ public class BudaUser {
         mods[0] = publicModel;
 
         Model privateModel = ModelFactory.createDefaultModel();
-        privateModel.setNsPrefixes(Prefixes.getPrefixMapping());
+        privateModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
@@ -427,7 +426,7 @@ public class BudaUser {
         Helpers.createDirIfNotExists(dirpath + bucket + "/");
         final String gitPath = bucket + "/" + userId + ".trig";
         final FileOutputStream fos = new FileOutputStream(dirpath + gitPath);
-        new STriGWriter().write(fos, dsg, Prefixes.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+        new STriGWriter().write(fos, dsg, EditConfig.prefix.getPrefixMap(), "", GlobalHelpers.createWriterContext());
         Repository r = ensureUserGitRepo();
         Git git = new Git(r);
         if (!git.status().call().isClean()) {
@@ -535,7 +534,7 @@ public class BudaUser {
         Helpers.putModel(privConn, BudaUser.PRIVATE_PFX + resId, priv);
     }
 
-    public static void main(String[] args) throws IOException, DataUpdateException {
+    public static void main(String[] args) throws Exception {
         EditConfig.init();
         BudaUser.rebuiltFuseki();
         // RdfAuthModel.initForTest(false, true);

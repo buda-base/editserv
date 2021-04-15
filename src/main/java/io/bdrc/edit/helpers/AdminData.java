@@ -15,7 +15,6 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.libraries.GlobalHelpers;
-import io.bdrc.libraries.Prefixes;
 
 public class AdminData {
 
@@ -70,7 +69,7 @@ public class AdminData {
         m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
         m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
         m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_STATUS, EditConstants.STATUS_PROV));
-        m.setNsPrefixes(Prefixes.getPrefixMapping());
+        m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         return m;
     }
 
@@ -95,7 +94,7 @@ public class AdminData {
         return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
     }
 
-    public static void main(String[] args) throws NoSuchAlgorithmException {
+    public static void main(String[] args) throws Exception {
         EditConfig.init();
         Model m = new AdminData("U1669274875", "user").asModel();
         m.write(System.out, "TURTLE");

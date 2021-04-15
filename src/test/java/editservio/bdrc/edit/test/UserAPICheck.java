@@ -65,7 +65,7 @@ public class UserAPICheck {
     Environment environment;
 
     @BeforeClass
-    public static void init() throws IOException {
+    public static void init() throws Exception {
         EditConfig.init();
         Properties props = EditConfig.getProperties();
         InputStream input = new FileInputStream("/etc/buda/editserv/editserv.properties");

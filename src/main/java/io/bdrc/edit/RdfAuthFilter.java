@@ -65,7 +65,8 @@ public class RdfAuthFilter implements Filter {
                     }
                     prof = validation.getUser();
                     log.debug("validation is {}", validation);
-                    log.error("user is {}", prof);
+                    log.error("userprof is {}", prof);
+                    log.error("user is {}", prof.getUser());
                 }
                 if (isSecuredEndpoint) {
                     if (validation  == null) {

@@ -131,7 +131,8 @@ public class UserPatchModule implements BUDAEditModule {
             log.setLastStatus(Types.getStatus(status));
         } catch (Exception e) {
             logger.error("UserPatchModule set status failed ", e);
-            setStatus(Types.STATUS_FAILED);
+            if (st != Types.STATUS_FAILED)
+                setStatus(Types.STATUS_FAILED);
             log.setLastStatus(getName() + ": " + Types.getStatus(status));
             log.addError(getName(), e.getMessage());
             throw new PatchModuleException(e);

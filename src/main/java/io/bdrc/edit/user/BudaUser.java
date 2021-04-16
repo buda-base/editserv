@@ -439,7 +439,7 @@ public class BudaUser {
         Helpers.createDirIfNotExists(dirpath + bucket + "/");
         final String gitPath = bucket + "/" + userId + ".trig";
         final FileOutputStream fos = new FileOutputStream(dirpath + gitPath);
-        new STriGWriter().write(fos, dsg, EditConfig.prefix.getPrefixMap(), "", GlobalHelpers.createWriterContext());
+        new STriGWriter().write(fos, dsg, EditConfig.prefix.getPrefixMap(), null, GlobalHelpers.createWriterContext());
         Repository r = ensureUserGitRepo();
         Git git = new Git(r);
         if (!git.status().call().isClean()) {

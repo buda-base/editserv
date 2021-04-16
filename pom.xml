@@ -154,6 +154,11 @@
     </dependency>    
     <!-- https://mvnrepository.com/artifact/org.seaborne.rdf-delta/rdf-patch -->
     <dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>apache-jena-libs</artifactId>
+      <version>${jena.version}</version>
+    </dependency>
+    <dependency>
         <groupId>org.seaborne.rdf-delta</groupId>
         <artifactId>rdf-patch</artifactId>
         <version>0.8.2</version>

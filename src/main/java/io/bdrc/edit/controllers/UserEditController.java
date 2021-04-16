@@ -7,6 +7,7 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
@@ -67,15 +68,21 @@ public class UserEditController {
                 log.info("meUser() auth0Id >> {}", auth0Id);
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() Buda usr >> {}", usr);
+                Model userModel = null;
                 if (usr == null) {
-                    BudaUser.addNewBudaUser(acc.getUser());
-                    usr = BudaUser.getRdfProfile(auth0Id);
+                    userModel = BudaUser.addNewBudaUser(acc.getUser());
+                    usr = BudaUser.getRdfProfile(auth0Id, userModel);
                     log.info("meUser() User new created Resource >> {}", usr);
-                    usr.getModel().write(System.out, "TURTLE");
+                } else {
+                    userModel = BudaUser.getUserModel(true, usr);
+                }
+                if (userModel == null) {
+                    return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON_UTF8)
+                            .body(null);
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
                         .header("Location", "/resource-nc/user/" + usr.getLocalName())
-                        .body(StreamingHelpers.getModelStream(BudaUser.getUserModel(true, usr), "json", EditConfig.prefix.getPrefixMap()));
+                        .body(StreamingHelpers.getModelStream(userModel, "json", EditConfig.prefix.getPrefixMap()));
             }
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);

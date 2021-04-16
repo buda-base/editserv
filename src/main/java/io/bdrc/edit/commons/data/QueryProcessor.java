@@ -114,7 +114,7 @@ public class QueryProcessor {
         qe.setTimeout(Long.parseLong(EditConfig.getProperty(EditConfig.QUERY_TIMEOUT)));
         return qe;
     }
-
+    
     public static void main(String[] args) throws Exception {
         EditConfig.init();
         Model m = QueryProcessor.describeModel("http://purl.bdrc.io/resource/P1583", null);

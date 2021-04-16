@@ -27,11 +27,13 @@ import java.util.stream.Stream;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
@@ -128,6 +130,24 @@ public class BudaUser {
         return null;
     }
 
+    public static Resource getRdfProfile(String auth0Id, Model m) throws IOException {
+        Resource r = null;
+        String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
+                + auth0Id + "> }";
+        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
+        QueryExecution qe = QueryExecutionFactory.create(query, m);
+        log.info("QUERY EXECUTION >> {}", qe);
+        ResultSet rs = qe.execSelect();
+        log.info("RS {} Has next >> {}", rs, rs.hasNext());
+        if (rs.hasNext()) {
+            r = rs.next().getResource("?s");
+            log.info("RESOURCE >> {} ", r);
+            return r;
+        }
+        qe.close();
+        return null;
+    }
+    
     public static RDFNode getAuth0IdFromUserId(String userId) throws IOException {
         String query = "select distinct ?o where  {  <" + BDU_PFX + userId + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
@@ -174,33 +194,49 @@ public class BudaUser {
     }
 
     public static Model getUserModel(boolean full, Resource r) throws IOException {
-        if (r == null) {
-            return null;
-        }
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
-        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
-        Model mod = ModelFactory.createDefaultModel();
-        String rdfId = r.getURI().substring(r.getURI().lastIndexOf("/") + 1);
-        mod.add(fusConn.fetch(PUBLIC_PFX + rdfId));
-        if (full) {
-            mod.add(fusConn.fetch(PRIVATE_PFX + rdfId));
-        }
-        fusConn.close();
-        return mod;
+        return getUserModelFromUserId(full, r.getLocalName());
     }
 
-    public static Model getUserModelFromUserId(boolean full, String resId) throws IOException {
-        if (resId == null) {
+    public static void removeAdminData(Model m, String resLocalName) {
+        Resource r = m.getResource("http://purl.bdrc.io/admindata/"+resLocalName);
+        m.removeAll(r, null, (RDFNode) null);
+        // TODO: remove log entries
+    }
+    
+    public static Model getUserModelFromUserId(boolean full, String resLocalName) throws IOException {
+        if (resLocalName == null) {
             return null;
         }
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         Model mod = ModelFactory.createDefaultModel();
-        mod.add(fusConn.fetch(PUBLIC_PFX + resId));
+        Model fetched = null;
+        boolean modelNotEmpty = false;
         if (full) {
-            mod.add(fusConn.fetch(PRIVATE_PFX + resId));
+            fetched = null;
+            try {
+                fetched = fusConn.fetch(PRIVATE_PFX + resLocalName);
+            } catch (HttpException e) {
+                log.warn("httpexception when downloading public model for user "+resLocalName);
+            }
+            if (fetched != null) {
+                mod.add(fetched);
+                modelNotEmpty = true;
+            }
         }
+        try {
+            fetched = fusConn.fetch(PUBLIC_PFX + resLocalName);
+        } catch (HttpException e) {
+            log.warn("httpexception when downloading public model for user "+resLocalName);
+        }
+        if (fetched == null && !modelNotEmpty) {
+            fusConn.close();
+            return null;
+        }
+        if (fetched != null)
+            mod.add(fetched);
         fusConn.close();
+        removeAdminData(mod, resLocalName);
         return mod;
     }
 
@@ -306,7 +342,7 @@ public class BudaUser {
         return propsPolicies;
     }
 
-    public static void addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
+    public static Model addNewBudaUser(User user) throws GitAPIException, IOException, NoSuchAlgorithmException {
         long start = System.currentTimeMillis();
         pullUserRepoIfRelevant();
         long start1 = System.currentTimeMillis();
@@ -323,14 +359,17 @@ public class BudaUser {
             userId = r.getLocalName();
         } else {
             log.error("Invalid user model for {}", user);
-            // return null;
+            return null;
         }
+        Model res = ModelFactory.createDefaultModel();
+        res.add(pub);
+        res.add(priv);
+        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
+        AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
+        pub.add(ad.asModel());
         GitBudaUserCreate gitTask = new GitBudaUserCreate(userId, pub, priv, user.getName());
         Thread t = new Thread(gitTask);
         t.start();
-        String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-        AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
-        Model adm = ad.asModel();
         RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         Helpers.putModel(fusConn, BudaUser.PRIVATE_PFX + userId, priv);
@@ -339,9 +378,9 @@ public class BudaUser {
         builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiUrl").replace("query", ""));
         fusConn = ((RDFConnectionFuseki) builder.build());
         Helpers.putModel(fusConn, BudaUser.PUBLIC_PFX + userId, pub);
-        // adding adminData graph to public dataset
-        Helpers.putModel(fusConn, EditConstants.BDA + userId, adm);
         fusConn.close();
+        // we return the full model
+        return res;
     }
 
     public static Repository ensureUserGitRepo() {

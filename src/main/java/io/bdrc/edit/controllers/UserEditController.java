@@ -64,17 +64,12 @@ public class UserEditController {
                 Access acc = (Access) request.getAttribute("access");
                 log.info("meUser() Access >> {} ", acc);
                 String authId = acc.getUser().getAuthId();
-                if (authId.isEmpty()) {
-                    log.warn("couldn't find authId for "+token);
-                    return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON_UTF8)
+                if (authId == null || authId.isEmpty()) {
+                    log.error("couldn't find authId for "+token);
+                    return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
                             .body(null);
                 }
                 String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
-                if (auth0Id.isEmpty()) {
-                    log.warn("couldn't find auth0Id for authId "+authId);
-                    return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON_UTF8)
-                            .body(null);
-                }
                 log.info("meUser() auth0Id >> {}", auth0Id);
                 Resource usr = BudaUser.getRdfProfile(auth0Id);
                 log.info("meUser() Buda usr >> {}", usr);
@@ -87,8 +82,8 @@ public class UserEditController {
                     userModel = BudaUser.getUserModel(true, usr);
                 }
                 if (userModel == null) {
-                    log.warn("couldn't find user model for authId "+authId);
-                    return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON_UTF8)
+                    log.error("couldn't find user model for authId "+authId);
+                    return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
                             .body(null);
                 }
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)

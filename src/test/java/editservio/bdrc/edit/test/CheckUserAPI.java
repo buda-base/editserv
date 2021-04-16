@@ -90,7 +90,7 @@ public class CheckUserAPI {
         JsonNode node = mapper.readTree(json_resp);
         token = node.findValue("access_token").asText();
         RdfAuthModel.init();
-        log.info("USERS >> {}" + RdfAuthModel.getUsers());
+        //log.info("USERS >> {}" + RdfAuthModel.getUsers());
         // set123Token();
         set456Token();
         // setPrivateToken();

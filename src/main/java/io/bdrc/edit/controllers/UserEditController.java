@@ -114,7 +114,7 @@ public class UserEditController {
             String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
             Access acc = (Access) request.getAttribute("access");
             log.info("userPatch() Token User {}", acc.getUser());
-            if (acc.getUser().isAdmin()) {
+            if (acc.getUserProfile().isAdmin()) {
                 // case user unlock
                 if (type.equals("unblock")) {
                     // first update the Buda User rdf profile
@@ -152,7 +152,7 @@ public class UserEditController {
             } else {
                 Access acc = (Access) request.getAttribute("access");
                 log.info("userPatch() Token User {}", acc.getUser());
-                if (acc.getUser().isAdmin() || BudaUser.isSameUser(acc.getUser(), res)) {
+                if (acc.getUserProfile().isAdmin() || BudaUser.isSameUser(acc.getUser(), res)) {
                     UserTransaction ut = new UserTransaction(patch, acc.getUser(), res);
                     ut.addModule(new UserPatchModule(ut.getData(), ut.getLog()), 0);
                     ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
@@ -196,7 +196,7 @@ public class UserEditController {
             String auth0Id = null;
             Access acc = (Access) request.getAttribute("access");
             log.info("userDelete() Token User {}", acc.getUser());
-            if (acc.getUser().isAdmin()) {
+            if (acc.getUserProfile().isAdmin()) {
                 try {
                     auth0Id = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
                     User usr = RdfAuthModel.getUser(auth0Id.substring(auth0Id.lastIndexOf("/") + 1));
@@ -212,7 +212,7 @@ public class UserEditController {
                 }
             }
             String n = auth0Id.substring(auth0Id.lastIndexOf("/") + 1);
-            if (acc.getUser().isAdmin()) {
+            if (acc.getUserProfile().isAdmin()) {
                 return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8).body(StreamingHelpers
                         .getModelStream(BudaUser.getUserModel(true, BudaUser.getRdfProfile(n)), "json", EditConfig.prefix.getPrefixMap()));
             }

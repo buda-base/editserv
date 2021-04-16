@@ -270,7 +270,8 @@ public class BudaUser {
         publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
         // TODO there should be some language detection based on the first character:
         // if Chinese, then @zh-hani, if Tibetan then @bo, else no lang tag
-        publicModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
+        if (usr.getName() != null)
+            publicModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
         mods[0] = publicModel;
 
         Model privateModel = ModelFactory.createDefaultModel();

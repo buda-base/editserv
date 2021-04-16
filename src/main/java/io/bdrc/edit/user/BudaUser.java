@@ -282,12 +282,14 @@ public class BudaUser {
         String auth0Id = usr.getUserId();
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "isActive"), ResourceFactory.createPlainLiteral("true"));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "hasUserProfile"), ResourceFactory.createResource(ADR_PFX + auth0Id));
-        privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(usr.getEmail()));
+        if (usr.getEmail() != null)
+            privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(usr.getEmail()));
         
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"),
                 ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("eng"));
-        privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
+        if (usr.getName() != null)
+            privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
 
         mods[0] = publicModel;
         mods[1] = privateModel;

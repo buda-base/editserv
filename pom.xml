@@ -71,7 +71,7 @@
     <dependency>
         <groupId>io.bdrc</groupId>
         <artifactId>jena-stable-turtle</artifactId>
-        <version>0.7.3</version>
+        <version>0.7.1</version>
     </dependency>
 	<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 	<dependency>
@@ -156,7 +156,13 @@
     <dependency>
         <groupId>org.seaborne.rdf-delta</groupId>
         <artifactId>rdf-patch</artifactId>
-        <version>0.8.0</version>
+        <version>0.8.2</version>
+        <exclusions>
+        <exclusion>
+          <groupId>org.apache.jena</groupId>
+          <artifactId>apache-jena-libs</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.seaborne.rdf-delta/rdf-delta-server-local -->
 	<!--dependency>

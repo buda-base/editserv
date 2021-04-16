@@ -39,7 +39,7 @@ public class MainEditController {
 
     public final static Logger log = LoggerFactory.getLogger(MainEditController.class.getName());
 
-    @GetMapping(value = "/focusGraph/{prefixedId}", produces = "application/json")
+    @GetMapping(value = "/focusGraph/{prefixedId}", produces = "text/turtle")
     public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("prefixedId") String prefixedId,
             HttpServletRequest req, HttpServletResponse response) {
         Model m = ModelFactory.createDefaultModel();
@@ -50,7 +50,7 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                     .body(StreamingHelpers.getStream("No graph could be found for " + prefixedId));
         }
-        response.addHeader("Content-Type", "text/turtle;charset=utf-8");
+        response.addHeader("Content-Type", "text/turtle");
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
 

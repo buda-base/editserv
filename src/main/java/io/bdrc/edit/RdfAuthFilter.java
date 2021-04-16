@@ -64,7 +64,7 @@ public class RdfAuthFilter implements Filter {
                         return;
                     }
                     prof = validation.getUser();
-                    log.debug("validation is {}", validation);
+                    log.error("validation is {}", validation);
                     log.error("userprof is {}", prof);
                     log.error("user is {}", prof.getUser());
                 }

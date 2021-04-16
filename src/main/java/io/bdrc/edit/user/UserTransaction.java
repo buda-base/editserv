@@ -46,7 +46,7 @@ public class UserTransaction {
             Helpers.createDirIfNotExists(path);
             log = new TransactionLog(path, user.getName(), userId);
             setStatus(Types.STATUS_PREPARING);
-            this.data = new UserDataUpdate(new PatchContent(patch), user.getName(), userId);
+            this.data = new UserDataUpdate(new PatchContent(patch), userId);
             this.modulesMap = new TreeMap<>();
         } catch (Exception e) {
             logger.error("UserTransaction failed to initialized", e);

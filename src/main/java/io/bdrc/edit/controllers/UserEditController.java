@@ -154,6 +154,7 @@ public class UserEditController {
                 log.info("userPatch() Token User {}", acc.getUser());
                 if (acc.getUserProfile().isAdmin() || BudaUser.isSameUser(acc.getUser(), res)) {
                     UserTransaction ut = new UserTransaction(patch, acc.getUser(), res);
+                    log.error(ut.getData().toString());
                     ut.addModule(new UserPatchModule(ut.getData(), ut.getLog()), 0);
                     ut.addModule(new GitUserPatchModule(ut.getData(), ut.getLog()), 1);
                     ut.addModule(new GitUserRevisionModule(ut.getData(), ut.getLog()), 2);

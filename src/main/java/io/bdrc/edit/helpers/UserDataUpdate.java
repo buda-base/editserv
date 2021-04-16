@@ -27,7 +27,7 @@ public class UserDataUpdate {
     private String gitRev;
     private String userId;
 
-    public UserDataUpdate(PatchContent pc, String editor, String userId) throws DataUpdateException {
+    public UserDataUpdate(PatchContent pc, String userId) throws DataUpdateException {
         this.pc = pc;
         this.userId = userId;
         this.graphs = pc.getEditPatchHeaders().getGraphUris();

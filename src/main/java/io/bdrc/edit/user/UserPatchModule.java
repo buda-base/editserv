@@ -36,6 +36,8 @@ public class UserPatchModule implements BUDAEditModule {
     public UserPatchModule(UserDataUpdate data, TransactionLog log) throws ModuleException {
         this.data = data;
         this.log = log;
+        if (data == null)
+            throw new PatchModuleException("data can't be empty");
         setStatus(Types.STATUS_PREPARED);
     }
 

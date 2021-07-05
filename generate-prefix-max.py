@@ -33,18 +33,19 @@ NSM.bind("rdfs", RDFS)
 def analyzeLName(lname):
     typeprefix = ""
     userprefix = ""
-    if lname[:2] in ["WAS", "ITW", "PRA"]:
-        typeprefix = "WAS"
+    if lname[:3] in ["WAS", "ITW", "PRA"]:
+        typeprefix = lname[:3]
         lname = lname[3:]
-    elif lname[:2] in ["WA", "MW", "PR", "EI", "UT", "IT"]:
+    elif lname[:2] in ["WA", "MW", "PR", "IE", "UT", "IT"]:
         typeprefix = lname[:2]
         lname = lname[2:]
     else:
         typeprefix = lname[:1]
-        if typeprefix not in ["W", "P", "G", "R", "L", "C", "T"]:
+        if typeprefix not in ["W", "P", "G", "R", "L", "C", "T", "I"]:
+            print("no1")
             return None
         lname = lname[1:]
-    mtch = re.match(r"\d\d?[A-Z][A-Z]", lname)
+    mtch = re.search(r"^\d\d?[A-Z][A-Z][A-Z]?[A-Z]?[A-Z]?", lname)
     if mtch is not None:
         l = len(mtch.group(0))
         userprefix = lname[:l]
@@ -53,13 +54,14 @@ def analyzeLName(lname):
     try:
         idx = int(lname)
     except ValueError:
+        print("no2")
         return None
     prefix = typeprefix + userprefix
     return [prefix, idx]
 
 def handleFile(fpath):
     lname = Path(fpath).stem
-    if "WEAP" in lname:
+    if "WEAP" in lname or lname.startswith("WA0XL"):
         return
     parts = analyzeLName(lname)
     if parts == None:
@@ -81,10 +83,10 @@ def analyzeIinstance(iiFilePath):
     model = ConjunctiveGraph()
     model.parse(str(iiFilePath), format="trig")
     for _, _, v in model.triples((None, BDO.instanceHasVolume, None)):
-        _, _, iinstanceLname = NSM.compute_qname_strict(iinstanceRes)
-        parts = analyzeLName(iinstanceLname)
+        _, _, vLname = NSM.compute_qname_strict(v)
+        parts = analyzeLName(vLname)
         if parts == None:
-            print("non-conform ID: %s" % lname)
+            print("non-conform ID: %s" % vLname)
             return
         prefix = parts[0]
         idx = parts[1]
@@ -97,7 +99,7 @@ def analyzeIinstance(iiFilePath):
     
 
 def main():
-    l = sorted(glob.glob(GITPATH+'/**/*.trig'))
+    l = sorted(glob.glob(GITPATH+'/**/*.trig', recursive=True))
     i = 0
     for fpath in tqdm(l):
         handleFile(fpath)

@@ -50,6 +50,9 @@ def analyzeLName(lname):
         l = len(mtch.group(0))
         userprefix = lname[:l]
         lname = lname[l:]
+    lodashidx = lname.find("_")
+    if lodashidx > -1:
+        lname = lname[:lodashidx]
     idx = 0
     try:
         idx = int(lname)

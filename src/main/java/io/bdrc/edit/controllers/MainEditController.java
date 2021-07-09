@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import io.bdrc.auth.Access;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
@@ -57,6 +58,11 @@ public class MainEditController {
     @PutMapping(value = "/putresource/{prefixedId}")
     public ResponseEntity<String> putResource(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
+        Access acc = (Access) req.getAttribute("access");
+        if (acc == null || !acc.isUserLoggedIn())
+            return ResponseEntity.status(401).body("this requires being logged in with an admin account");
+        if (!acc.getUserProfile().isAdmin())
+            return ResponseEntity.status(403).body("this requires being logged in with an admin account");
         InputStream in = new ByteArrayInputStream(model.getBytes());
         // for testing purpose
         // InputStream in =

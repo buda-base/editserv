@@ -42,7 +42,6 @@ def analyzeLName(lname):
     else:
         typeprefix = lname[:1]
         if typeprefix not in ["W", "P", "G", "R", "L", "C", "T", "I"]:
-            print("no1")
             return None
         lname = lname[1:]
     mtch = re.search(r"^\d\d?[A-Z][A-Z][A-Z]?[A-Z]?[A-Z]?", lname)
@@ -57,7 +56,6 @@ def analyzeLName(lname):
     try:
         idx = int(lname)
     except ValueError:
-        print("no2")
         return None
     prefix = typeprefix + userprefix
     return [prefix, idx]

@@ -122,7 +122,7 @@ public class UserEditController {
                     // next, mark (patch) the corresponding Auth0 user as "unblocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":false}");
                     // next, update RdfAuthModel (auth0 users)
-                    new Thread(new RdfAuthModel()).start();
+                    //new Thread(new RdfAuthModel()).start();
                 } else {
                     // specialized or generic patching here
                     // we might run user edit transactions here...
@@ -206,7 +206,7 @@ public class UserEditController {
                     // next, mark (patch) the corresponding Auth0 user as "blocked'
                     AuthDataModelBuilder.patchUser(usr.getAuthId(), "{\"blocked\":true}");
                     // next, update RdfAuthModel (auth0 users)
-                    new Thread(new RdfAuthModel()).start();
+                    //new Thread(new RdfAuthModel()).start();
                 } catch (Exception e) {
                     log.error("DELETE /resource-nc/user/{res} for resource " + res, e);
                     throw e;

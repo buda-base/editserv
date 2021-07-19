@@ -288,7 +288,7 @@ public class BudaUser {
         
         privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"),
                 ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
-        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("eng"));
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("en"));
         if (usr.getName() != null)
             privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
 

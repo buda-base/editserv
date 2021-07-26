@@ -1,6 +1,7 @@
 package io.bdrc.edit.controllers;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +31,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.Models;
@@ -108,4 +111,12 @@ public class MainEditController {
         return ResponseEntity.ok("Updated auth Model was read into editserv");
     }
 
+    @PostMapping(value = "/callbacks/github/shapes", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> updateShapesOntology(@RequestBody String payload) throws IOException {
+        Shapes sh = new Shapes();
+        Thread t = new Thread(sh);
+        t.start();
+        return ResponseEntity.ok().body("Shapes Ontologies are being updated");
+    }
+    
 }

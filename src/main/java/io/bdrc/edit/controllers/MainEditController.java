@@ -111,7 +111,7 @@ public class MainEditController {
         return ResponseEntity.ok("Updated auth Model was read into editserv");
     }
 
-    @PostMapping(value = "/callbacks/github/shapes", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/callbacks/github/shapes")
     public ResponseEntity<String> updateShapesOntology(@RequestBody String payload) throws IOException {
         Shapes sh = new Shapes();
         Thread t = new Thread(sh);

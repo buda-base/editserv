@@ -112,7 +112,7 @@ public class MainEditController {
     }
 
     @PostMapping(value = "/callbacks/github/shapes")
-    public ResponseEntity<String> updateShapesOntology(@RequestBody String payload) throws IOException {
+    public ResponseEntity<String> updateShapesOntology() throws IOException {
         Shapes sh = new Shapes();
         Thread t = new Thread(sh);
         t.start();

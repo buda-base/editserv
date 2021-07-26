@@ -23,17 +23,12 @@ import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class Shapes implements Runnable {
     
     static String GIT_SHAPES_REMOTE_URL = "https://github.com/buda-base/editor-templates.git";
     private static int delayInSeconds = 2;
     static Repository localRepo;
     private static Model fullMod;
-    private static String commitId;
-    private static String payload;
     public static HashMap<String, Model> modelsBase = new HashMap<>();
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
@@ -49,10 +44,6 @@ public class Shapes implements Runnable {
 
     public static void updateFromRepo() {
         try {
-            if (commitId == null) {
-                JsonNode node = new ObjectMapper().readTree(payload);
-                commitId = node.get("commits").elements().next().get("id").asText();
-            }
             modelsBase = new HashMap<>();
             OntModelSpec oms = new OntModelSpec(OntModelSpec.OWL_MEM);
             OntDocumentManager odm = new OntDocumentManager(System.getProperty("user.dir") + "/editor-templates/ont-policy.rdf");

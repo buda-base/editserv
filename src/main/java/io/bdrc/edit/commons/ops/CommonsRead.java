@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.controllers.RIDController;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -48,6 +51,28 @@ public class CommonsRead {
     public static Property UI_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "uiShapeGraph");
     public static HashMap<String, Model> ENTITY_MAP;
     static final String ONT_GRAPH_URL = "/graph/ontologySchema.ttl";
+    
+    public final static Map<String,String> shapeUriToFocusSparql = new HashMap<>();
+    
+    public final static Map<String,Resource> prefixToTopShape = new HashMap<>();
+    static {
+        prefixToTopShape.put("WAS", ResourceFactory.createResource(EditConstants.BDS+"SerialWorkShape"));
+        prefixToTopShape.put("ITW", ResourceFactory.createResource(EditConstants.BDS+"ItemShape"));
+        prefixToTopShape.put("PRA", ResourceFactory.createResource(EditConstants.BDS+"SubscriberShape"));
+        prefixToTopShape.put("WA", ResourceFactory.createResource(EditConstants.BDS+"WorkShape"));
+        prefixToTopShape.put("MW", ResourceFactory.createResource(EditConstants.BDS+"InstanceShape"));
+        prefixToTopShape.put("PR", ResourceFactory.createResource(EditConstants.BDS+"CollectionShape"));
+        prefixToTopShape.put("IE", ResourceFactory.createResource(EditConstants.BDS+"EtextInstanceShape"));
+        //prefixToTopShape.put("UT", "etexts");
+        prefixToTopShape.put("IT", ResourceFactory.createResource(EditConstants.BDS+"ItemShape"));
+        prefixToTopShape.put("W", ResourceFactory.createResource(EditConstants.BDS+"ImageInstanceShape"));
+        prefixToTopShape.put("P", ResourceFactory.createResource(EditConstants.BDS+"PersonShape"));
+        prefixToTopShape.put("G", ResourceFactory.createResource(EditConstants.BDS+"PlaceShape"));
+        prefixToTopShape.put("R", ResourceFactory.createResource(EditConstants.BDS+"RoleShape"));
+        prefixToTopShape.put("L", ResourceFactory.createResource(EditConstants.BDS+"LineageShape"));
+        prefixToTopShape.put("C", ResourceFactory.createResource(EditConstants.BDS+"CorporationShape"));
+        prefixToTopShape.put("T", ResourceFactory.createResource(EditConstants.BDS+"TopicShape"));
+    }
 
     static {
         FOCUS_SHAPES = new ArrayList<>();
@@ -56,28 +81,67 @@ public class CommonsRead {
         ENTITY_MAP = new HashMap<>();
     }
 
-    public static Model getEntityModelFromGit(String prefixedUri) {
-        log.info("Getting entity model for {}", prefixedUri);
-        Model m = ENTITY_MAP.get(prefixedUri);
-        if (m == null) {
-            String shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
-            m = QueryProcessor.describeModel(EditConstants.BDO + shortName);
-            m.write(System.out, "TURTLE");
-            ENTITY_MAP.put(prefixedUri, m);
-        }
-        return m;
+    public static Resource getShapeForEntity(final String lname) {
+        final String typePrefix = RIDController.getTypePrefix(lname);
+        return prefixToTopShape.get(typePrefix);
     }
 
-    public static String getTopShapeUri(String entityPrefixedUri) {
-        Model ent = getEntityModel(entityPrefixedUri);
-        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
-        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), TOP_SHAPE);
-        if (st != null) {
-            return st.getObject().asNode().getURI();
-        }
-        return null;
+    public static final class ShaclProps {
+        // recursive type, map is sparql path as key, ShaclProps as object
+        // object is non-null only in the case of facets (not datatype properties or external properties)
+        public Map<String, ShaclProps> properties = null;
+        public int depth = 0;
     }
-
+    
+    public static ShaclProps getShaclPropsFor(Resource shape) {
+        StmtIterator it = Shapes.fullMod.listStatements(shape, EditConstants.SH_PROPERTY, (RDFNode) null);
+        ShaclProps res = new ShaclProps();
+        while (it.hasNext()) {
+            final Resource shProp = it.next().getResource();
+            final Resource path = shProp.getPropertyResourceValue(EditConstants.SH_PATH);
+            Resource pathInverse = null;
+            String sparqlPath = null;
+            boolean pathIsInverse = false;
+            if (path != null && !path.isAnon()) {
+                sparqlPath = path.getURI();
+            } else if (path != null && path.isAnon()) {
+                pathInverse = shProp.getPropertyResourceValue(EditConstants.SH_INVERSE_PATH);
+                if (pathInverse != null) {
+                    sparqlPath = "^"+pathInverse.getURI();
+                    pathIsInverse = true;
+                }
+            }
+            if (sparqlPath == null)
+                continue;
+            ShaclProps sp = null;
+            final Resource shapeType = shProp.getPropertyResourceValue(EditConstants.PROPERTY_SHAPE_TYPE);
+            if (EditConstants.FACET_SHAPE.equals(shapeType)) {
+                // find shape that shapes the object of the property:
+                if (pathIsInverse) {
+                    StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETOBJECTSOF, path);
+                    if (shapeForObjectIt.hasNext()) {
+                        Resource subShape = shapeForObjectIt.next().getSubject();
+                        sp = getShaclPropsFor(subShape);
+                    }
+                } else {
+                    StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETSUBJECTSOF, pathInverse);
+                    if (shapeForObjectIt.hasNext()) {
+                        Resource subShape = shapeForObjectIt.next().getSubject();
+                        sp = getShaclPropsFor(subShape);
+                    }
+                }
+            }
+            if (sp != null && sp.depth >= res.depth)
+                res.depth = sp.depth +1;
+            if (res.depth == 0)
+                res.depth = 1;
+            if (res.properties == null)
+                res.properties = new HashMap<>();
+            res.properties.put(sparqlPath, sp);
+        }
+        return res;
+    }
+    
     public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
         List<String> shapesUris = new ArrayList<>();
         ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), EXTERNAL_SHAPE);
@@ -170,25 +234,28 @@ public class CommonsRead {
         return uris;
     }
 
-    public static String getCommit(Model m, String graphUri) {
-        String commit = null;
-        String shortName = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        SimpleSelector s = new SimpleSelector(ResourceFactory.createResource(Models.BDA + shortName),
-                ResourceFactory.createProperty(Models.ADM + "gitRevision"), (RDFNode) null);
-        log.info("Selector {}", ResourceFactory.createProperty(Models.ADM + "gitRevision"));
+    public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM + "graphId");
+    public static final Property gitRevision = ResourceFactory.createProperty(Models.ADM + "gitRevision");
+    public static String getCommit(final Model m, final String graphUri) {
+        final Resource graph = ResourceFactory.createResource(graphUri);
+        final StmtIterator si = m.listStatements(null, admGraphId, graph);
+        if (!si.hasNext())
+            return null;
+        final Resource admin = si.next().getSubject();
+        SimpleSelector s = new SimpleSelector(admin, gitRevision, (RDFNode) null);
         StmtIterator it = m.listStatements(s);
         if (it.hasNext()) {
             Statement st = it.next();
             if (st.getObject().isLiteral()) {
-                commit = st.getObject().asLiteral().toString();
+                return st.getObject().asLiteral().toString();
             }
         }
-        return commit;
+        return null;
     }
 
     public static void main(String[] arg) throws Exception {
         EditConfig.init();
-        System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707", null));
+        //System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707", null));
         Model res = getEditorGraph("bdr:P1019");
         System.out.println("---------------------------------------------------");
         res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());

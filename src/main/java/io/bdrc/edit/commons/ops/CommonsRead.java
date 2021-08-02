@@ -1,35 +1,27 @@
 package io.bdrc.edit.commons.ops;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Shapes;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.ParameterFormatException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.libraries.Models;
 
 public class CommonsRead {
@@ -89,11 +81,15 @@ public class CommonsRead {
     public static final class ShaclProps {
         // recursive type, map is sparql path as key, ShaclProps as object
         // object is non-null only in the case of facets (not datatype properties or external properties)
-        public Map<String, ShaclProps> properties = null;
-        public int depth = 0;
+        public Map<String, Resource> properties = null;
     }
     
+    public static Map<Resource, ShaclProps> nodeShapesToProps = new HashMap<>();
+    
     public static ShaclProps getShaclPropsFor(Resource shape) {
+        if (nodeShapesToProps.containsKey(shape)) {
+            return nodeShapesToProps.get(shape);
+        }
         StmtIterator it = Shapes.fullMod.listStatements(shape, EditConstants.SH_PROPERTY, (RDFNode) null);
         ShaclProps res = new ShaclProps();
         while (it.hasNext()) {
@@ -113,126 +109,64 @@ public class CommonsRead {
             }
             if (sparqlPath == null)
                 continue;
-            ShaclProps sp = null;
+            Resource subShape = null;
             final Resource shapeType = shProp.getPropertyResourceValue(EditConstants.PROPERTY_SHAPE_TYPE);
             if (EditConstants.FACET_SHAPE.equals(shapeType)) {
                 // find shape that shapes the object of the property:
                 if (pathIsInverse) {
                     StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETOBJECTSOF, path);
                     if (shapeForObjectIt.hasNext()) {
-                        Resource subShape = shapeForObjectIt.next().getSubject();
-                        sp = getShaclPropsFor(subShape);
+                        subShape = shapeForObjectIt.next().getSubject();
                     }
                 } else {
                     StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETSUBJECTSOF, pathInverse);
                     if (shapeForObjectIt.hasNext()) {
-                        Resource subShape = shapeForObjectIt.next().getSubject();
-                        sp = getShaclPropsFor(subShape);
+                        subShape = shapeForObjectIt.next().getSubject();
                     }
                 }
             }
-            if (sp != null && sp.depth >= res.depth)
-                res.depth = sp.depth +1;
-            if (res.depth == 0)
-                res.depth = 1;
             if (res.properties == null)
                 res.properties = new HashMap<>();
-            res.properties.put(sparqlPath, sp);
+            res.properties.put(sparqlPath, subShape);
         }
         return res;
     }
     
-    public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
-        List<String> shapesUris = new ArrayList<>();
-        ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), EXTERNAL_SHAPE);
-        while (itFacet.hasNext()) {
-            String url = itFacet.next().getURI();
-            shapesUris.add(url.replace("purl.bdrc.io", EditConfig.getProperty("serverRoot")));
-        }
-        return shapesUris;
-    }
-
-    public static String uriFromQname(String qname) {
-        return (EditConstants.BDR + qname.substring(qname.indexOf(":") + 1));
-    }
-
-    public static Model getEditorGraph(String prefRes, Model resMod, List<String> shapeUris)
-            throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
-        String shortName = prefRes.substring(prefRes.lastIndexOf(":") + 1);
-        Model res = ModelFactory.createDefaultModel();
-        List<String> propsUri = getFocusPropsFromShape(shapeUris, CommonsRead.GRAPH_NAME_TYPE, prefRes);
-        Iterator<Statement> it = resMod.listStatements();
-        while (it.hasNext()) {
-            Statement stmt = it.next();
-            String subject = stmt.getSubject().getURI();
-            subject = subject.substring(subject.lastIndexOf("/") + 1);
-            if (subject.equals(shortName)) {
-                if (propsUri.contains(stmt.getPredicate().getURI()) && stmt.getSubject().getURI().equals(EditConstants.BDR + shortName)) {
-                    res.add(stmt);
-                    if (stmt.getObject().isResource()) {
-                        SimpleSelector ss = new SimpleSelector(stmt.getObject().asResource(), (Property) null, (RDFNode) null);
-                        // looking up -in res model- the statements pertaining to the object and add
-                        // them to the focus graph for validation
-                        StmtIterator stit = resMod.listStatements(ss);
-                        while (stit.hasNext()) {
-                            Statement st = stit.next();
-                            res.add(st);
-                        }
-                    }
+    public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape) {
+        final ShaclProps sp = getShaclPropsFor(shape);
+        if (sp == null) 
+            return;
+        for (Entry<String,Resource> e : sp.properties.entrySet()) {
+            final String path = e.getKey();
+            final Resource subShape = e.getValue();
+            if (path.startsWith("^")) {
+                StmtIterator si = m.listStatements(null, m.createProperty(path.substring(1)), subject);
+                while (si.hasNext()) {
+                    final Statement s = si.next();
+                    fg.add(s);
+                    if (subShape != null)
+                        addToFocusGraph(m, fg, s.getSubject(), subShape);
+                }
+            } else {
+                StmtIterator si = m.listStatements(subject, m.createProperty(path), (RDFNode) null);
+                while (si.hasNext()) {
+                    fg.add(si.next());
+                    final Statement s = si.next();
+                    fg.add(s);
+                    if (subShape != null)
+                        addToFocusGraph(m, fg, s.getResource(), subShape);
                 }
             }
         }
-        List<String> ignoredProps = getExternalUris(prefRes);
-        for (String ignore : ignoredProps) {
-            SimpleSelector ss = new SimpleSelector((Resource) null, ResourceFactory.createProperty(ignore), (RDFNode) null);
-            StmtIterator ignit = res.listStatements(ss);
-            while (ignit.hasNext()) {
-                Statement st = ignit.next();
-                if (st.getPredicate().getURI().equals(ignore)) {
-                    res.remove(st);
-                }
-            }
-        }
-        res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
+    }
+    
+    public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) {
+        final Model res = ModelFactory.createDefaultModel();
+        res.setNsPrefixes(m.getNsPrefixMap());
+        addToFocusGraph(m, res, subject, shape);
         return res;
     }
 
-    public static Model getEditorGraph(String qname, Model m)
-            throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        return getEditorGraph(qname, m, getBestShapes(qname, m));
-    }
-
-    public static Model getEditorGraph(String qname)
-            throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        final Model resM = CommonsGit.getGraphFromGit(qname);
-        return getEditorGraph(qname, resM, getBestShapes(qname, resM));
-    }
-
-    public static List<String> getFocusPropsFromShape(List<String> shapeGraphs, String sourceType, String prefixedUri)
-            throws IOException, ParameterFormatException, UnknownBdrcResourceException, NotModifiableException {
-        List<String> uris = new ArrayList<>();
-        String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model mm = CommonsGit.getGraphFromGit(EditConstants.BDR + shortName);
-        NodeIterator it = mm.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
-        String typeUri = it.next().asResource().getURI();
-        Model mod = getValidationShapesForType(typeUri.replace(EditConstants.BDO, "bdo:"));
-        for (String uri : shapeGraphs) {
-            Model m = ModelFactory.createDefaultModel();
-            m.read(uri + ".ttl", "TTL");
-            NodeIterator it1 = m.listObjectsOfProperty(SHACL_PROP);
-            while (it1.hasNext()) {
-                RDFNode n = it1.next();
-                if (n.asResource() != null) {
-                    String rdf = n.asResource().getURI();
-                    Resource r = mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH);
-                    if (r != null) {
-                        uris.add(mod.createResource(rdf).getPropertyResourceValue(SHACL_PATH).getURI());
-                    }
-                }
-            }
-        }
-        return uris;
-    }
 
     public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM + "graphId");
     public static final Property gitRevision = ResourceFactory.createProperty(Models.ADM + "gitRevision");
@@ -256,10 +190,10 @@ public class CommonsRead {
     public static void main(String[] arg) throws Exception {
         EditConfig.init();
         //System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707", null));
-        Model res = getEditorGraph("bdr:P1019");
+        //Model res = getEditorGraph("bdr:P1019");
         System.out.println("---------------------------------------------------");
-        res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
-        res.write(System.out, "TTL");
+        //res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
+        //res.write(System.out, "TTL");
         /*
          * System.out.println(getLocalShapeUri("bdo:Person"));
          * System.out.println(getTopShapeUri("bdo:Person"));

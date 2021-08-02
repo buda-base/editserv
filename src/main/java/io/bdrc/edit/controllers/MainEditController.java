@@ -43,23 +43,23 @@ public class MainEditController {
 
     public final static Logger log = LoggerFactory.getLogger(MainEditController.class.getName());
 
-    @GetMapping(value = "/focusGraph/{prefixedId}", produces = "text/turtle")
-    public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("prefixedId") String prefixedId,
+    @GetMapping(value = "/focusGraph/{qname}", produces = "text/turtle")
+    public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
         Model m = ModelFactory.createDefaultModel();
         try {
-            m = CommonsRead.getEditorGraph(prefixedId);
+            m = CommonsRead.getEditorGraph(qname);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
-                    .body(StreamingHelpers.getStream("No graph could be found for " + prefixedId));
+                    .body(StreamingHelpers.getStream("No graph could be found for " + qname));
         }
         response.addHeader("Content-Type", "text/turtle");
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
 
-    @PutMapping(value = "/putresource/{prefixedId}")
-    public ResponseEntity<String> putResource(@PathVariable("prefixedId") String prefixedId, HttpServletRequest req,
+    @PutMapping(value = "/putresource/{qname}")
+    public ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
         Access acc = (Access) req.getAttribute("access");
         if (acc == null || !acc.isUserLoggedIn())
@@ -84,8 +84,8 @@ public class MainEditController {
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, jenaLang.getLabel());
         // m.write(System.out, "TURTLE");
-        if (!CommonsValidate.validateCommit(m, Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
-            throw new VersionConflictException("Version conflict while trying to save " + prefixedId);
+        if (!CommonsValidate.validateCommit(m, Models.BDR + qname.substring(qname.lastIndexOf(":") + 1))) {
+            throw new VersionConflictException("Version conflict while trying to save " + qname);
         }
         // if (!CommonsValidate.validateShacl(m, Models.BDR +
         // prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
@@ -96,7 +96,7 @@ public class MainEditController {
          * ValidationException("Could not validate " + prefixedId); }
          */
         String commitId = CommonsGit.putAndCommitSingleResource(m,
-                Models.BDR + prefixedId.substring(prefixedId.lastIndexOf(":") + 1));
+                Models.BDR + qname.substring(qname.lastIndexOf(":") + 1));
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }

@@ -28,7 +28,7 @@ public class Shapes implements Runnable {
     static String GIT_SHAPES_REMOTE_URL = "https://github.com/buda-base/editor-templates.git";
     private static int delayInSeconds = 2;
     static Repository localRepo;
-    private static Model fullMod;
+    private static Model fullMod = null;
     public static HashMap<String, Model> modelsBase = new HashMap<>();
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);

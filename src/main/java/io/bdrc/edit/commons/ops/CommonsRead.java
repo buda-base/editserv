@@ -56,7 +56,7 @@ public class CommonsRead {
         ENTITY_MAP = new HashMap<>();
     }
 
-    public static Model getEntityModel(String prefixedUri) {
+    public static Model getEntityModelFromGit(String prefixedUri) {
         log.info("Getting entity model for {}", prefixedUri);
         Model m = ENTITY_MAP.get(prefixedUri);
         if (m == null) {
@@ -78,49 +78,7 @@ public class CommonsRead {
         return null;
     }
 
-    public static String getUIShapeUri(String entityPrefixedUri) {
-        Model ent = getEntityModel(entityPrefixedUri);
-        String shortName = entityPrefixedUri.substring(entityPrefixedUri.lastIndexOf(":") + 1);
-        Statement st = ent.getProperty(ResourceFactory.createResource(EditConstants.BDO + shortName), UI_SHAPE);
-        if (st != null) {
-            return st.getObject().asNode().getURI();
-        }
-        return null;
-    }
-
-    public static Model getTopShapeModel(String entityPrefixedUri) {
-        Model m = QueryProcessor.getGraph(getTopShapeUri(entityPrefixedUri));
-        return m;
-    }
-
-    public static Model getUIShapeModel(String entityPrefixedUri) {
-        Model m = QueryProcessor.getGraph(getUIShapeUri(entityPrefixedUri));
-        return m;
-    }
-
-    public static Model getValidationShapesForType(String entityPrefixedUri) {
-        Model m = ModelFactory.createDefaultModel();
-        m.add(getTopShapeModel(entityPrefixedUri));
-        // m.add(getLocalShapeModel(entityPrefixedUri));
-        return m;
-    }
-
-    public static Model getValidationShapesForResource(String prefixedUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String entityPrefixedUri = getResourceTypeUri(prefixedUri, true);
-        Model m = ModelFactory.createDefaultModel();
-        m.add(getTopShapeModel(entityPrefixedUri));
-        return m;
-    }
-
-    public static Model getFullDataValidationModel(Model model) {
-        Model m = ModelFactory.createDefaultModel();
-        m.read("http://" + EditConfig.getProperty("shapeServerRoot") + ONT_GRAPH_URL, "TTL");
-        m.add(model);
-        return m;
-    }
-
     public static List<String> getExternalUris(String prefixedType) throws IOException, ParameterFormatException {
-        Model m = getValidationShapesForType(prefixedType);
         List<String> shapesUris = new ArrayList<>();
         ResIterator itFacet = m.listSubjectsWithProperty(ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType"), EXTERNAL_SHAPE);
         while (itFacet.hasNext()) {
@@ -130,48 +88,8 @@ public class CommonsRead {
         return shapesUris;
     }
 
-    public static String getResourceTypeUri(String prefixedUri, boolean prefixed)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String shortName = prefixedUri.substring(prefixedUri.indexOf(":") + 1);
-        Model m = QueryProcessor.describeModel(EditConstants.BDR + shortName);
-        NodeIterator it = m.listObjectsOfProperty(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type);
-        RDFNode n = it.next();
-        if (prefixed) {
-            String tmp = n.asResource().getURI();
-            return "bdo:" + tmp.substring(tmp.lastIndexOf("/") + 1);
-
-        } else {
-            return n.asResource().getURI();
-        }
-    }
-
-    public static String getFullResourceTypeUri(String prefixedUri, Model m, boolean prefixed)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        log.info("Getting type of {} - prefixed= {}  model.size= {}", prefixedUri, prefixed, m.size());
-        String shortName = "";
-        if (prefixed) {
-            shortName = prefixedUri.substring(prefixedUri.lastIndexOf(":") + 1);
-        } else {
-            shortName = prefixedUri.substring(prefixedUri.lastIndexOf("/") + 1);
-        }
-        log.info("ShortName of {} is {} - building Selector  with {}", prefixedUri, shortName, EditConstants.BDR + shortName);
-        SimpleSelector ss = new SimpleSelector(ResourceFactory.createResource(EditConstants.BDR + shortName), RDF.type, (RDFNode) null);
-        StmtIterator stit = m.listStatements(ss);
-        return stit.next().getObject().asResource().getURI();
-    }
-
-    public static String getFullUriResourceFromPrefixed(String prefixedUri) {
-        return (EditConstants.BDR + prefixedUri.substring(prefixedUri.indexOf(":") + 1));
-    }
-
-    public static List<String> getBestShapes(String prefixedUri)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException, ParameterFormatException {
-        List<String> shapesUris = new ArrayList<>();
-        String typeUri = getResourceTypeUri(prefixedUri, true);
-        log.info("BEST SHAPES TYPE URIS {} ", typeUri);
-        shapesUris.add(getTopShapeUri(typeUri));
-        log.info("BEST SHAPES URIS {} ", shapesUris);
-        return shapesUris;
+    public static String uriFromQname(String qname) {
+        return (EditConstants.BDR + qname.substring(qname.indexOf(":") + 1));
     }
 
     public static Model getEditorGraph(String prefRes, Model resMod, List<String> shapeUris)
@@ -215,14 +133,15 @@ public class CommonsRead {
         return res;
     }
 
-    public static Model getEditorGraph(String prefRes, Model m)
+    public static Model getEditorGraph(String qname, Model m)
             throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        return getEditorGraph(prefRes, m, getBestShapes(prefRes));
+        return getEditorGraph(qname, m, getBestShapes(qname, m));
     }
 
-    public static Model getEditorGraph(String prefRes)
+    public static Model getEditorGraph(String qname)
             throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        return getEditorGraph(prefRes, CommonsGit.getGraphFromGit(prefRes), getBestShapes(prefRes));
+        final Model resM = CommonsGit.getGraphFromGit(qname);
+        return getEditorGraph(qname, resM, getBestShapes(qname, resM));
     }
 
     public static List<String> getFocusPropsFromShape(List<String> shapeGraphs, String sourceType, String prefixedUri)
@@ -269,7 +188,7 @@ public class CommonsRead {
 
     public static void main(String[] arg) throws Exception {
         EditConfig.init();
-        System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707"));
+        System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707", null));
         Model res = getEditorGraph("bdr:P1019");
         System.out.println("---------------------------------------------------");
         res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());

@@ -5,6 +5,10 @@ import static io.bdrc.libraries.Models.BDG;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -12,6 +16,8 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
@@ -23,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.GitRepo;
 import io.bdrc.edit.helpers.GitRepositories;
 import io.bdrc.edit.helpers.Helpers;
@@ -40,83 +47,108 @@ import io.bdrc.libraries.Models;
 public class CommonsGit {
 
     public static Logger log = LoggerFactory.getLogger(CommonsGit.class);
+    
+    public final static Map<String,String> prefixToRepoPath = new HashMap<>();
+    static {
+        prefixToRepoPath.put("WAS", "works");
+        prefixToRepoPath.put("ITW", "items");
+        prefixToRepoPath.put("PRA", "subscribers");
+        prefixToRepoPath.put("WA", "works");
+        prefixToRepoPath.put("MW", "instances");
+        prefixToRepoPath.put("PR", "collections");
+        prefixToRepoPath.put("IE", "einstances");
+        //prefixToRepoPath.put("UT", "etexts");
+        prefixToRepoPath.put("IT", "items");
+        prefixToRepoPath.put("W", "iinstances");
+        prefixToRepoPath.put("P", "persons");
+        prefixToRepoPath.put("G", "places");
+        prefixToRepoPath.put("R", "roles");
+        prefixToRepoPath.put("L", "lineages");
+        prefixToRepoPath.put("C", "corporations");
+        prefixToRepoPath.put("T", "topics");
+    }
 
-    public static String putAndCommitSingleResource(Model newModel, String prefixedId)
+    public final static Map<String,String> gitIdToRepoPath = new HashMap<>();
+    static {
+        gitIdToRepoPath.put("GR0008", "works");
+        gitIdToRepoPath.put("GR0015", "subscribers");
+        gitIdToRepoPath.put("GR0012", "instances");
+        gitIdToRepoPath.put("GR0011", "collections");
+        gitIdToRepoPath.put("GR0013", "einstances");
+        //gitIdToRepoPath.put("GR0002", "etexts");
+        gitIdToRepoPath.put("GR0003", "items");
+        gitIdToRepoPath.put("GR0014", "iinstances");
+        gitIdToRepoPath.put("GR0006", "persons");
+        gitIdToRepoPath.put("GR0005", "places");
+        gitIdToRepoPath.put("GR0010", "roles");
+        gitIdToRepoPath.put("GR0004", "lineages");
+        gitIdToRepoPath.put("GR0001", "corporations");
+        gitIdToRepoPath.put("GR0007", "topics");
+    }
+    
+    public static String gitPathFromLname(final String lname) {
+        final String typePrefix = RIDController.getTypePrefix(lname);
+        if (typePrefix == null)
+            return null;
+        final String md5 = Models.getMd5(lname);
+        final String repoPath = prefixToRepoPath.get(typePrefix);
+        return repoPath+"/"+md5+"/"+lname+".trig";
+    }
+    
+    public static String gitPathFromAdmin(final Resource admin) {
+        String gitPath = null;
+        String gitRepoLname = null;
+        StmtIterator ni = admin.listProperties(EditConstants.GIT_PATH);
+        if (ni.hasNext()) {
+            gitPath = ni.next().getObject().asLiteral().getString();
+        }
+        ni = admin.listProperties(EditConstants.GIT_REPO);
+        if (ni.hasNext()) {
+            gitRepoLname = ni.next().getObject().asResource().getLocalName();
+        }
+        final String gitRepoPath = gitIdToRepoPath.get(gitRepoLname);
+        return gitRepoPath+"/"+gitPath;
+    }
+    
+    public static String getRevFromLatestLogEntry(final Model newModel, final String lname) {
+        // TODO: read the log entries, etc.
+        return "updating "+lname;
+    }
+    
+    public static String putAndCommitSingleResource(final Model newModel, final String lname)
             throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
-        String resType = CommonsRead.getFullResourceTypeUri(prefixedId, newModel, false);
-        Model current = CommonsGit.getGraphFromGit(prefixedId);
-        // at this point, there's no conflict and the newModel is validated.
-        // we are now merging the new model and the current one to apply the changes
-        Model merged = ModelUtils.mergeModel(current, newModel);
-        // Now writing the changes -merged model- to the local git repo
-        // Getting admin data
-        Model admin = merged.getResource(Models.BDA + prefixedId).getModel();
-        String gitPath = null;
-        String gitRepo = null;
-        NodeIterator ni = admin.listObjectsOfProperty(EditConstants.GIT_PATH);
-        if (ni.hasNext()) {
-            gitPath = ni.next().asLiteral().getString();
-        }
-        ni = admin.listObjectsOfProperty(EditConstants.GIT_REPO);
-        if (ni.hasNext()) {
-            gitRepo = ni.next().asResource().getLocalName();
-        }
-        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"),
-                Models.BDA + gitRepo, gitPath);
-        log.info("Gitrepository object {}", GitRepositories.getRepoByUri(Models.ADM + gitRepo));
-        FileOutputStream fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot")
-                + GitRepositories.getRepoByUri(Models.BDA + gitRepo).getGitRepoName() + "/" + gitPath);
-        modelToOutputStream(merged, fos, Models.BDR + (prefixedId.substring(prefixedId.lastIndexOf(":") + 1)));
-        RevCommit rev = GitHelpers.commitChanges(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(),
-                "Committed model :" + prefixedId);
+        final String gitPath = gitPathFromLname(lname);
+        final String typePrefix = RIDController.getTypePrefix(lname);
+        final String repoPath = prefixToRepoPath.get(typePrefix);
+        final Model current = ModelFactory.createModelForGraph(Helpers
+                .buildGraphFromTrig(GlobalHelpers.readFileContent(
+                        EditConfig.getProperty("gitLocalRoot") + gitPath))
+                .getUnionGraph());;
+        final Model merged = ModelUtils.mergeModel(current, newModel);
+        FileOutputStream fos = new FileOutputStream(EditConfig.getProperty("gitLocalRoot") + gitPath);
+        modelToOutputStream(merged, fos, Models.BDR + lname);
+        RevCommit rev = GitHelpers.commitChanges(repoPath, getRevFromLatestLogEntry(newModel, lname));
         if (rev != null) {
-            GitHelpers.push(resType.substring(resType.lastIndexOf("/") + 1).toLowerCase(),
+            GitHelpers.push(repoPath,
                     EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"),
                     EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
             return rev.getName();
         }
         return null;
     }
+    
+    public static Model getModelFromFuseki(final String graphLname) {
+        final Model m = QueryProcessor.getGraph(Models.BDG + graphLname, null);
+        return m;
+    }
 
-    public static Model getGraphFromGit(String graphUri)
+    public static Model getGraphFromGit(final String lname)
             throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String rootId = "";
-        if (graphUri.indexOf("/") > 0 && !graphUri.startsWith(Models.BDR)) {
-            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
-        }
-        if (graphUri.indexOf("/") == -1 && !graphUri.startsWith("bdr:")) {
-            throw new UnknownBdrcResourceException(graphUri + " is not a BDRC resource Uri");
-        }
-        if (graphUri.indexOf("/") > 0) {
-            rootId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        }
-        if (graphUri.indexOf("/") == -1) {
-            rootId = graphUri.substring(graphUri.lastIndexOf(":") + 1);
-        }
-        log.info("Getting graph for {} ", Models.BDG + rootId);
-        Model m = QueryProcessor.getGraph(Models.BDG + rootId, null);
-        NodeIterator g_path = m.listObjectsOfProperty(EditConstants.GIT_PATH);
-        String gitPath = null;
-        if (g_path.hasNext()) {
-            gitPath = g_path.next().asLiteral().getString();
-        }
-        NodeIterator g_repo = m.listObjectsOfProperty(EditConstants.GIT_REPO);
-        String gitRepo = null;
-        if (g_repo.hasNext()) {
-            gitRepo = g_repo.next().asResource().getURI();
-        }
-        if (gitPath == null || gitRepo == null) {
-            throw new NotModifiableException(
-                    graphUri + " is not a modifiable BDRC resource - gitPath=" + gitPath + " and gitRepo=" + gitRepo);
-        }
-        log.info("Local Git root: {} gitRepo is {} and gitPath is {}", EditConfig.getProperty("gitLocalRoot"),
-                Models.BDA + gitRepo, gitPath);
-
-        GitRepo repo = GitRepositories.getRepoByUri(gitRepo);
+        final String gitPath = gitPathFromLname(lname);
         return ModelFactory.createModelForGraph(Helpers
                 .buildGraphFromTrig(GlobalHelpers.readFileContent(
-                        EditConfig.getProperty("gitLocalRoot") + repo.getGitRepoName() + "/" + gitPath))
+                        EditConfig.getProperty("gitLocalRoot") + gitPath))
                 .getUnionGraph());
     }
 

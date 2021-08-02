@@ -71,6 +71,17 @@ public class RIDController {
     public static final List<String> entity_prefix_1 = Arrays.asList("W", "P", "G", "R", "L", "C", "T", "I");
     public static final List<String> entitySubs = Arrays.asList("I", "UT");
     
+    public static String getTypePrefix(final String lname) {
+        if (lname.isEmpty()) return null;
+        if (lname.length() >= 3 && entity_prefix_3.contains(lname.substring(0,3)))
+            return lname.substring(0,3);
+        if (lname.length() >= 2 && entity_prefix_2.contains(lname.substring(0,2)))
+            return lname.substring(0,2);
+        if (entity_prefix_1.contains(lname.substring(0,1)))
+            return lname.substring(0,1);
+        return null;
+    }
+    
     public static boolean prefixIsValid(final String prefix) {
         if (prefixIndexes.containsKey(prefix))
             return true;

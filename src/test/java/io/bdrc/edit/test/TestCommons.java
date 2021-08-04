@@ -56,8 +56,8 @@ public class TestCommons {
 
     // @Test
     public void testWithdrawn() throws IOException {
-        assert (!CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583", false));
-        assert (CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583uuuuuuuuuuu", false));
+        //assert (!CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583", false));
+        //assert (CommonsValidate.isWithdrawn("http://purl.bdrc.io/resource/P1583uuuuuuuuuuu", false));
         InputStream in = TestCommons.class.getClassLoader().getResourceAsStream("P705.ttl");
         Model m = ModelFactory.createDefaultModel();
         m.read(in, null, "TTL");

@@ -22,6 +22,10 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.topbraid.shacl.engine.ShapesGraph;
+import org.topbraid.shacl.validation.ValidationEngineConfiguration;
+
+import io.bdrc.edit.commons.ops.CommonsRead;
 
 public class Shapes implements Runnable {
     
@@ -29,6 +33,9 @@ public class Shapes implements Runnable {
     private static int delayInSeconds = 2;
     static Repository localRepo;
     public static Model fullMod = null;
+    public static org.apache.jena.shacl.Shapes fullShapes = null;
+    public static final ValidationEngineConfiguration configuration = new ValidationEngineConfiguration().setValidateShapes(true);
+    public static ShapesGraph shapesGraph = null;
     public static HashMap<String, Model> modelsBase = new HashMap<>();
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
@@ -58,7 +65,11 @@ public class Shapes implements Runnable {
                 log.info("OntManagerDoc : {}", uri);
                 OntModel om = odm.getOntology(uri, oms);
                 fullMod.add(om);
+                
             }
+            fullShapes = org.apache.jena.shacl.Shapes.parse(fullMod);
+            CommonsRead.nodeShapesToProps = new HashMap<>();
+            //shapesGraph = ShapesGraphFactory.get().createShapesGraph(shapesModel);
             log.info("Done with OntShapesData initialization ! Uri set is {}", modelsBase.keySet());
         } catch (Exception ex) {
             log.error("Error updating OntShapesData Model", ex);

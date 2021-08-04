@@ -3,8 +3,11 @@ package io.bdrc.edit.commons.ops;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.commons.collections4.SetUtils;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
@@ -20,16 +23,12 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.rdfconnection.RDFConnectionFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.reasoner.Reasoner;
-import org.apache.jena.shacl.ShaclValidator;
-import org.apache.jena.shacl.Shapes;
-import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.topbraid.shacl.validation.ValidationUtil;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -55,23 +54,42 @@ public class CommonsValidate {
     static final Property SH_CONFORMS = ResourceFactory.createProperty(SH + "conforms");
     static final Property SH_RESULT = ResourceFactory.createProperty(SH + "result");
     static final Property SH_VALUE = ResourceFactory.createProperty(SH + "value");
+    static final Property LOGENTRY = ResourceFactory.createProperty(Models.ADM + "logEntry");
 
     static final Literal FALSE = ModelFactory.createDefaultModel().createTypedLiteral(false);
     static final Literal TRUE = ModelFactory.createDefaultModel().createTypedLiteral(true);
 
-    public static boolean validateCommit(Model newModel, String graphUri) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        String shortName = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        Model current = QueryProcessor.getGraph(Models.BDG + shortName);
-        current.write(System.out, "TURTLE");
-        try {
-            log.info("New model commit >> {}", CommonsRead.getCommit(newModel, graphUri));
-            log.info("Current model commit >> {}", CommonsRead.getCommit(current, graphUri));
-            if (!CommonsRead.getCommit(newModel, graphUri).equals(CommonsRead.getCommit(current, graphUri))) {
-                return false;
-            }
-        } catch (Exception ex) {
+    public static Resource getAdmin(final Model m, final String lname) {
+        // TODO: do it properly
+        return m.createResource(Models.BDA+lname);
+    }
+    
+    // arguments need to be focus graphs
+    public static boolean validateCommit(final Model newModel, final Model gitModel, final String lname) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+        // check that the new model is exactly one commit ahead of the git model
+        Resource admin = getAdmin(newModel, lname);
+        Set<RDFNode> newLogEntries = newModel.listObjectsOfProperty(LOGENTRY).toSet();
+        Set<RDFNode> originalLogEntries = new HashSet<>();
+        if (gitModel != null)
+            originalLogEntries = gitModel.listObjectsOfProperty(LOGENTRY).toSet();
+        if (newLogEntries.size() != originalLogEntries.size()+1) {
+            log.error("cannot validate model, number of log entries doesn't match: {} vs. {}", newLogEntries.size(), newLogEntries.size());
             return false;
         }
+        Set<RDFNode> diff = SetUtils.difference(newLogEntries, originalLogEntries);
+        if (diff.size() != 1) {
+            log.error("cannot validate model, {} entries not in the original", diff.size());
+            return false;
+        }
+        return true;
+    }
+    
+    public static boolean validateFocusing(final Model unfocused, final Model focused) {
+        return unfocused.size() == focused.size();
+    }
+    
+    public static boolean validateNode(Model m, Resource r, Resource shape) {
+        // todo: implement
         return true;
     }
 
@@ -87,7 +105,7 @@ public class CommonsValidate {
         return type;
     }
 
-    public static boolean isWithdrawn(String resourceUri, boolean prefixed) {
+    public static boolean extIsWithdrawn(String resourceUri, boolean prefixed) {
         String shortName = "";
         if (prefixed) {
             shortName = resourceUri.substring(resourceUri.lastIndexOf(":") + 1);
@@ -166,7 +184,7 @@ public class CommonsValidate {
 
     public static boolean completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
             ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
-        Model editorGraph = CommonsRead.getEditorGraph(EditConstants.BDR + Helpers.getShortName(graphUri));
+        Model editorGraph = null;//
         HashMap<String, HashMap<String, List<Statement>>> map = findTriplesToProcess(editorGraph, edited,
                 EditConstants.BDR + Helpers.getShortName(graphUri));
         HashMap<String, Model> models = new HashMap<>();
@@ -208,25 +226,9 @@ public class CommonsValidate {
         return true;
     }
 
-    public static ValidationReport validate(Model m_data, String prefixedId) {
-        Model shapes_mod = CommonsRead.getValidationShapesForType(prefixedId);
-        shapes_mod.write(System.out, "TURTLE");
-        Shapes shapes = Shapes.parse(shapes_mod.getGraph());
-        Model data = CommonsRead.getFullDataValidationModel(m_data);
-        ShaclValidator sv = ShaclValidator.get();
-        ValidationReport report = sv.validate(shapes, data.getGraph());
-        return report;
-    }
-
-    public static Resource validateTQ(Model m_data, String prefixedId) {
-        Model shapes_mod = CommonsRead.getValidationShapesForType(prefixedId);
-        Resource r = ValidationUtil.validateModel(m_data, shapes_mod, true);
-        return r;
-    }
-
     public static void main(String[] args) throws Exception {
         EditConfig.init();
-        Model m = CommonsRead.getEditorGraph("P:707");
+        //Model m = CommonsRead.getEditorGraph("P:707");
         //Resource r = validateTQ(m, "bdo:Person");
         // System.out.println(existResource(Models.BDR + "P1583"));
 

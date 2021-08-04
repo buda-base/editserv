@@ -20,7 +20,6 @@ public class AdminData {
 
     public static String USER_RES_TYPE = "user";
 
-    public GitRepo gitRepo;
     public String resId;
     public String gitPath;
     public String resourceType;
@@ -32,9 +31,6 @@ public class AdminData {
         this.uri = "http://purl.bdrc.io/admindata/" + resId;
         this.resId = resId;
         this.resourceType = resourceType;
-        if (!resourceType.equals(USER_RES_TYPE)) {
-            this.gitRepo = GitRepositories.getRepoByType(resourceType);
-        }
         this.gitPath = gitPath;
     }
 
@@ -43,7 +39,6 @@ public class AdminData {
         this.resId = resId;
         this.resourceType = resourceType;
         if (!resourceType.equals(USER_RES_TYPE)) {
-            this.gitRepo = GitRepositories.getRepoByType(resourceType);
 
             Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
             NodeIterator ni = adm.listObjectsOfProperty(EditConstants.GIT_PATH);
@@ -56,13 +51,9 @@ public class AdminData {
     }
 
     public Model asModel() {
-        log.info("GIT REPO = {}", gitRepo);
         Model m = ModelFactory.createDefaultModel();
         Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
         m.add(ResourceFactory.createStatement(r, RDF.type, EditConstants.ADMIN_DATA));
-        if (gitRepo != null) {
-            m.add(ResourceFactory.createStatement(r, EditConstants.GIT_REPO, ResourceFactory.createResource(gitRepo.getFullResId())));
-        }
         if (gitPath != null) {
             m.add(ResourceFactory.createStatement(r, EditConstants.GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
         }
@@ -71,14 +62,6 @@ public class AdminData {
         m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_STATUS, EditConstants.STATUS_PROV));
         m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         return m;
-    }
-
-    public GitRepo getGitRepo() {
-        return gitRepo;
-    }
-
-    public void setGitRepo(GitRepo gitRepo) {
-        this.gitRepo = gitRepo;
     }
 
     public String getGitPath() {
@@ -91,7 +74,7 @@ public class AdminData {
 
     @Override
     public String toString() {
-        return "AdminData [gitRepo=" + gitRepo + ", resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
+        return "AdminData [resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
     }
 
     public static void main(String[] args) throws Exception {

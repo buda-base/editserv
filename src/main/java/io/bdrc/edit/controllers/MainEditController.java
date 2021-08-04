@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +48,18 @@ public class MainEditController {
     @GetMapping(value = "/focusGraph/{qname}", produces = "text/turtle")
     public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
-        Model m = ModelFactory.createDefaultModel();
+        Model m = null;
+        if (!qname.startsWith("bdr:"))
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+                    .body(StreamingHelpers.getStream("No graph could be found for " + qname));
+        final String lname = qname.substring(4);
         try {
-            m = CommonsRead.getEditorGraph(qname);
+            m = CommonsGit.getGraphFromGit(lname);
+            if (m == null || m.isEmpty())
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+                        .body(StreamingHelpers.getStream("No graph could be found for " + qname));
+            Resource shape = CommonsRead.getShapeForEntity(lname);
+            m = CommonsRead.getFocusGraph(m, m.createResource(Models.BDR+lname), shape);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
@@ -57,7 +68,7 @@ public class MainEditController {
         response.addHeader("Content-Type", "text/turtle");
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
-
+    
     @PutMapping(value = "/putresource/{qname}")
     public ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
@@ -75,28 +86,28 @@ public class MainEditController {
         if (med != null) {
             jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
             log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
-
         } else {
             log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
-        Model m = ModelFactory.createDefaultModel();
-        m.read(in, null, jenaLang.getLabel());
-        // m.write(System.out, "TURTLE");
-        if (!CommonsValidate.validateCommit(m, Models.BDR + qname.substring(qname.lastIndexOf(":") + 1))) {
+        final Model inModel = ModelFactory.createDefaultModel();
+        inModel.read(in, null, jenaLang.getLabel());
+        final String lname = qname.substring(4);
+        final Resource subject = ResourceFactory.createResource(Models.BDR+lname);
+        final Resource shape = CommonsRead.getShapeForEntity(lname);
+        // TODO: validate in that step
+        final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, subject, shape);
+        if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
+            throw new VersionConflictException("Graph does not conform shape");
+        }
+        final Model gitGraph = CommonsGit.getGraphFromGit(lname);
+        final Model gitFocusGraph = CommonsRead.getFocusGraph(gitGraph, subject, shape);
+        if (!CommonsValidate.validateCommit(inFocusGraph, gitFocusGraph, qname.substring(4))) {
             throw new VersionConflictException("Version conflict while trying to save " + qname);
         }
-        // if (!CommonsValidate.validateShacl(m, Models.BDR +
-        // prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) {
-        /*
-         * if (!CommonsValidate.validateShacl(CommonsRead.getEditorGraph(
-         * prefixedId, m), Models.BDR +
-         * prefixedId.substring(prefixedId.lastIndexOf(":") + 1))) { throw new
-         * ValidationException("Could not validate " + prefixedId); }
-         */
-        String commitId = CommonsGit.putAndCommitSingleResource(m,
-                Models.BDR + qname.substring(qname.lastIndexOf(":") + 1));
+        final Model newGitGraph = CommonsRead.createFinalGraph(inFocusGraph, gitGraph, gitFocusGraph);
+        String commitId = CommonsGit.putAndCommitSingleResource(newGitGraph, lname);
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }

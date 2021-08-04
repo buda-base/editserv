@@ -86,6 +86,17 @@ public class CommonsRead {
     
     public static Map<Resource, ShaclProps> nodeShapesToProps = new HashMap<>();
     
+    // create the final graph that will be saved on git. It does so by first taking all the triples
+    // in the git graph that are not in the gitFocusGraph, and adds them to the inFocusGraph
+    public static Model createFinalGraph(final Model inFocusGraph, final Model gitGraph, final Model gitFocusGraph) {
+        if (gitGraph == null || gitGraph.size() == 0)
+            return inFocusGraph;
+        final Model res = gitGraph.difference(gitFocusGraph);
+        // at this point res contains all the triples in git but not in the focus graph
+        res.add(inFocusGraph);
+        return res;
+    }
+    
     public static ShaclProps getShaclPropsFor(Resource shape) {
         if (nodeShapesToProps.containsKey(shape)) {
             return nodeShapesToProps.get(shape);

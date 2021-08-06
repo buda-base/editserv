@@ -4,7 +4,6 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.vocabulary.RDF;
@@ -13,52 +12,47 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.libraries.GlobalHelpers;
 
 public class AdminData {
 
     public static String USER_RES_TYPE = "user";
 
-    public String resId;
+    public String resLname;
     public String gitPath;
-    public String resourceType;
+    public String typePrefix;
+    public String repoPath;
     public String uri;
 
     public final static Logger log = LoggerFactory.getLogger(AdminData.class.getName());
 
-    public AdminData(String resId, String resourceType, String gitPath) {
-        this.uri = "http://purl.bdrc.io/admindata/" + resId;
-        this.resId = resId;
-        this.resourceType = resourceType;
+    public AdminData(String resLname, String gitPath) {
+        this.uri = "http://purl.bdrc.io/admindata/" + resLname;
+        this.resLname = resLname;
+        this.typePrefix = RIDController.getTypePrefix(resLname);
         this.gitPath = gitPath;
+        this.repoPath = CommonsGit.prefixToRepoPath.get(this.typePrefix);
     }
 
-    public AdminData(String resId, String resourceType) throws NoSuchAlgorithmException {
-        this.uri = "http://purl.bdrc.io/admindata/" + resId;
-        this.resId = resId;
-        this.resourceType = resourceType;
-        if (!resourceType.equals(USER_RES_TYPE)) {
-
-            Model adm = QueryProcessor.describeModel(EditConstants.BDA + resId, null);
-            NodeIterator ni = adm.listObjectsOfProperty(EditConstants.GIT_PATH);
-            if (ni.hasNext()) {
-                this.gitPath = ni.next().asLiteral().getString();
-            }
-        } else {
-            this.gitPath = GlobalHelpers.getTwoLettersBucket(resId) + "/" + resId + ".trig";
-        }
+    public AdminData(String resLname) {
+        this.uri = "http://purl.bdrc.io/admindata/" + resLname;
+        this.resLname = resLname;
+        this.typePrefix = RIDController.getTypePrefix(resLname);
+        this.gitPath = GlobalHelpers.getTwoLettersBucket(resLname) + "/" + resLname + ".trig";
+        this.repoPath = CommonsGit.prefixToRepoPath.get(this.typePrefix);
     }
 
     public Model asModel() {
         Model m = ModelFactory.createDefaultModel();
-        Resource r = ResourceFactory.createResource(EditConstants.BDA + resId);
+        Resource r = ResourceFactory.createResource(EditConstants.BDA + resLname);
         m.add(ResourceFactory.createStatement(r, RDF.type, EditConstants.ADMIN_DATA));
         if (gitPath != null) {
             m.add(ResourceFactory.createStatement(r, EditConstants.GIT_PATH, ResourceFactory.createPlainLiteral(gitPath)));
         }
-        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resId)));
-        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resId)));
+        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_GRAPH_ID, ResourceFactory.createResource(EditConstants.BDG + resLname)));
+        m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_ABOUT, ResourceFactory.createResource(EditConstants.BDR + resLname)));
         m.add(ResourceFactory.createStatement(r, EditConstants.ADMIN_STATUS, EditConstants.STATUS_PROV));
         m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         return m;
@@ -74,7 +68,7 @@ public class AdminData {
 
     @Override
     public String toString() {
-        return "AdminData [resId=" + resId + ", gitPath=" + gitPath + ", resourceType=" + resourceType + "]";
+        return "AdminData [resId=" + resLname + ", gitPath=" + gitPath + "]";
     }
 
     public static void main(String[] args) throws Exception {

@@ -68,7 +68,7 @@ public class RIDController {
     
     public static final List<String> entity_prefix_3 = Arrays.asList("WAS", "ITW", "PRA");
     public static final List<String> entity_prefix_2 = Arrays.asList("WA", "MW", "PR", "IE", "UT", "IT");
-    public static final List<String> entity_prefix_1 = Arrays.asList("W", "P", "G", "R", "L", "C", "T", "I");
+    public static final List<String> entity_prefix_1 = Arrays.asList("W", "P", "G", "R", "L", "C", "T", "I", "U");
     public static final List<String> entitySubs = Arrays.asList("I", "UT");
     
     public static String getTypePrefix(final String lname) {

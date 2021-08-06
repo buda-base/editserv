@@ -139,7 +139,7 @@ public class ToSkipForNowTestValidation {
         Model initial = ModelFactory.createDefaultModel();
         InputStream in = null;
         initial.read("http://purl.bdrc.io/resource/P707.ttl", null, "TTL");
-        initial = CommonsRead.getFullDataValidationModel(initial);
+        //initial = CommonsRead.getFullDataValidationModel(initial);
         Resource valid = CommonsValidate.validateTQ(initial, "bdo:Person");
         valid.getModel().write(System.out, "TURTLE");
         assert (!conforms(valid));

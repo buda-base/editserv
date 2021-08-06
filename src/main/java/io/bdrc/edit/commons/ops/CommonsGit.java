@@ -61,6 +61,7 @@ public class CommonsGit {
         prefixToRepoPath.put("L", "lineages");
         prefixToRepoPath.put("C", "corporations");
         prefixToRepoPath.put("T", "topics");
+        prefixToRepoPath.put("U", "users");
     }
 
     public final static Map<String,String> gitIdToRepoPath = new HashMap<>();

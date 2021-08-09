@@ -167,24 +167,6 @@ public class TestModelUtils {
         System.out.println("-------------------------------------------");
     }
 
-    @Test
-    public void findNeighboursTriplesToProcess() throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        HashMap<String, HashMap<String, List<Statement>>> map = CommonsValidate.findTriplesToProcess(initial, edited,
-                "http://purl.bdrc.io/resource/P705");
-        System.out.println("-----------------USING VALIDATES STATEMENTS TO ADD --------------------------");
-        HashMap<String, List<Statement>> add = map.get(CommonsValidate.TO_ADD);
-        for (String graph : add.keySet()) {
-            System.out.println("For graph " + graph + " we must add :" + add.get(graph));
-        }
-        System.out.println("-------------------------------------------");
-        System.out.println("-----------------USING VALIDATES STATEMENTS TO REMOVE --------------------------");
-        HashMap<String, List<Statement>> remove = map.get(CommonsValidate.TO_REMOVE);
-        for (String graph : remove.keySet()) {
-            System.out.println("For graph " + graph + " we must add :" + remove.get(graph));
-        }
-        System.out.println("-------------------------------------------");
-    }
-
     public static Set<Statement> getDiffRemovedTriples(Model graphEditor, Model edited) {
         return ModelUtils.ModelComplementAsSet(graphEditor, edited);
     }

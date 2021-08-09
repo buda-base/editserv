@@ -340,7 +340,7 @@ public class BudaUser {
         res.add(pub);
         res.add(priv);
         String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-        AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
+        AdminData ad = new AdminData(userId, bucket + "/" + userId + ".trig");
         pub.add(ad.asModel());
         GitBudaUserCreate gitTask = new GitBudaUserCreate(userId, pub, priv, user.getName());
         Thread t = new Thread(gitTask);

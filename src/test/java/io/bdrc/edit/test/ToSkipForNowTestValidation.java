@@ -40,6 +40,7 @@ import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.MainEditController;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -61,7 +62,6 @@ public class ToSkipForNowTestValidation {
     @BeforeClass
     public static void init() throws Exception {
         EditConfig.init();
-        OntologyData.init();
         prepareData();
     }
 
@@ -140,46 +140,30 @@ public class ToSkipForNowTestValidation {
         InputStream in = null;
         initial.read("http://purl.bdrc.io/resource/P707.ttl", null, "TTL");
         //initial = CommonsRead.getFullDataValidationModel(initial);
-        Resource valid = CommonsValidate.validateTQ(initial, "bdo:Person");
-        valid.getModel().write(System.out, "TURTLE");
-        assert (!conforms(valid));
+        boolean valid = CommonsValidate.validateShacl(initial);
+        assert (!valid);
     }
 
     // shapes graph parsing error for now
     // @Test
     public void editorModelValidationJenaShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        Model initial = CommonsRead.getEditorGraph("bdr:P707");
-        initial.write(System.out, "TURTLE");
-        boolean conforms = CommonsValidate.validate(initial, "bdr:P707").conforms();
-        System.out.println("Conforms >> " + conforms);
-        assert (conforms);
-        initial = ModelFactory.createDefaultModel();
+        Model initial = ModelFactory.createDefaultModel();
         InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
         initial.read(in, null, "TTL");
         in.close();
-        conforms = CommonsValidate.validate(initial, "bdr:P707").conforms();
-        System.out.println("Conforms >> " + conforms);
+        boolean conforms = CommonsValidate.validateShacl(initial);
         assertTrue(!conforms);
     }
 
     // Using pre-processed graph (editor graph) and ontology data
     // @Test
     public void editorModelValidationTQShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
-        log.info("Running validation test on graph editor + ont data with valid graph");
-        Model initial = CommonsRead.getEditorGraph("bdr:P707");
-        initial = CommonsRead.getFullDataValidationModel(initial);
-        Resource r = CommonsValidate.validateTQ(initial, "bdo:Person");
-        r.getModel().write(System.out, "TURTLE");
-        assertTrue(conforms(r));
-        log.info("Running validation test on graph editor + ont data with missing name");
         Model err = ModelFactory.createDefaultModel();
         InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
         err.read(in, null, "TTL");
-        err = CommonsRead.getFullDataValidationModel(err);
         in.close();
-        r = CommonsValidate.validateTQ(err, "bdo:Person");
-        r.getModel().write(System.out, "TURTLE");
-        assertTrue(!conforms(r));
+        boolean r = CommonsValidate.validateShacl(err);
+        assertTrue(!r);
     }
 
     public boolean conforms(Resource r) {

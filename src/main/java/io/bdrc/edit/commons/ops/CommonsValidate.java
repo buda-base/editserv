@@ -1,10 +1,7 @@
 package io.bdrc.edit.commons.ops;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections4.SetUtils;
@@ -20,28 +17,18 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.rdfconnection.RDFConnectionFactory;
-import org.apache.jena.rdfconnection.RDFConnectionFuseki;
-import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.shacl.ShaclValidator;
+import org.apache.jena.shacl.ValidationReport;
+import org.apache.jena.shacl.lib.ShLib;
 import org.apache.jena.vocabulary.RDF;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.data.QueryProcessor;
-import io.bdrc.edit.helpers.EditServReasoner;
-import io.bdrc.edit.helpers.Helpers;
-import io.bdrc.edit.helpers.ModelUtils;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.ParameterFormatException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.edit.txn.exceptions.ValidationException;
-import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.Models;
 
 public class CommonsValidate {
@@ -67,7 +54,6 @@ public class CommonsValidate {
     // arguments need to be focus graphs
     public static boolean validateCommit(final Model newModel, final Model gitModel, final String lname) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         // check that the new model is exactly one commit ahead of the git model
-        Resource admin = getAdmin(newModel, lname);
         Set<RDFNode> newLogEntries = newModel.listObjectsOfProperty(LOGENTRY).toSet();
         Set<RDFNode> originalLogEntries = new HashSet<>();
         if (gitModel != null)
@@ -145,87 +131,31 @@ public class CommonsValidate {
         return false;
     }
 
-    public static HashMap<String, HashMap<String, List<Statement>>> findTriplesToProcess(Model init, Model edit, String resUri)
-            throws IOException, UnknownBdrcResourceException, NotModifiableException {
-        HashMap<String, HashMap<String, List<Statement>>> map = new HashMap<>();
-        Reasoner editReasoner = OntologyData.getEditServReasoner();
-        Model oldInferredModel = ModelFactory.createInfModel(editReasoner, init).getDeductionsModel();
-        oldInferredModel.remove(EditServReasoner.deReasonToRemove(OntologyData.ONTOLOGY, oldInferredModel));
-        Model newInferredModel = ModelFactory.createInfModel(editReasoner, edit).getDeductionsModel();
-        newInferredModel.remove(EditServReasoner.deReasonToRemove(OntologyData.ONTOLOGY, newInferredModel));
-        List<Statement> triplesToRemove = oldInferredModel.difference(newInferredModel).listStatements().toList();
-        List<Statement> triplesToAdd = newInferredModel.difference(oldInferredModel).listStatements().toList();
-        HashMap<String, List<Statement>> rem = new HashMap<>();
-        HashMap<String, List<Statement>> add = new HashMap<>();
-        for (Statement st : triplesToRemove) {
-            String resourceUri = st.getSubject().getURI();
-            String graphUri = EditConstants.BDG + Helpers.getShortName(resourceUri);
-            List<Statement> tmp = rem.get(graphUri);
-            if (tmp == null) {
-                tmp = new ArrayList<Statement>();
-            }
-            tmp.add(st);
-            rem.put(graphUri, tmp);
-        }
-        for (Statement st : triplesToAdd) {
-            String resourceUri = st.getSubject().getURI();
-            String graphUri = EditConstants.BDG + Helpers.getShortName(resourceUri);
-            List<Statement> tmp = add.get(graphUri);
-            if (tmp == null) {
-                tmp = new ArrayList<Statement>();
-            }
-            tmp.add(st);
-            add.put(graphUri, tmp);
-        }
-        map.put(TO_REMOVE, rem);
-        map.put(TO_ADD, add);
-        return map;
+    public static boolean validateShacl(final Model m) {
+        ValidationReport report = ShaclValidator.get().validate(Shapes.fullShapes, m.getGraph());
+        if (report.conforms())
+            return true;
+        StringBuilder reportStrb = new StringBuilder();
+        report.getEntries().forEach(e->{
+            reportStrb.append("Node="+ShLib.displayStr(e.focusNode())+"\n");
+            if ( e.resultPath() != null )
+                reportStrb.append("  Path="+e.resultPath()+"\n");
+            if ( e.value() != null )
+                reportStrb.append("  Value: "+ShLib.displayStr(e.value())+"\n");
+            if ( e.message() != null )
+                reportStrb.append("  Message: "+ e.message()+"\n");
+        });
+        log.error("shacl validation report contains errors, report: \n"+reportStrb.toString());
+        return false;
     }
 
-    public static boolean completeNeighbours(String graphUri, Model edited) throws IOException, UnknownBdrcResourceException, NotModifiableException,
-            ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, VersionConflictException, GitAPIException {
-        Model editorGraph = null;//
-        HashMap<String, HashMap<String, List<Statement>>> map = findTriplesToProcess(editorGraph, edited,
-                EditConstants.BDR + Helpers.getShortName(graphUri));
-        HashMap<String, Model> models = new HashMap<>();
-        HashMap<String, Model> added_models = new HashMap<>();
-        HashMap<String, List<Statement>> rem = map.get(TO_REMOVE);
-        for (String graph : rem.keySet()) {
-            List<Statement> stmt = rem.get(graph);
-            Model m = ModelUtils.removeTriples(graph, stmt);
-            models.put(graph, m);
-        }
-        HashMap<String, List<Statement>> add = map.get(TO_ADD);
-        for (String graph : add.keySet()) {
-            List<Statement> stmt = add.get(graph);
-            Model m = ModelUtils.addTriples(graph, stmt);
-            added_models.put(graph, m);
-        }
-        RDFConnectionFuseki rvf = null;
-        try {
-            rvf = RDFConnectionFactory.connectFuseki(EditConfig.getProperty("fusekiUrl"));
-            for (String graph : models.keySet()) {
-                String name = CommonsGit.putAndCommitSingleResource(models.get(graph), Helpers.getShortName(graph));
-                Model updated = ModelUtils.updateGitRevision(graphUri, models.get(graph), name);
-                rvf.put(graph, updated);
-            }
-            for (String graph : added_models.keySet()) {
-                String name = CommonsGit.putAndCommitSingleResource(added_models.get(graph), Helpers.getShortName(graph));
-                Model updated = ModelUtils.updateGitRevision(graphUri, added_models.get(graph), name);
-                rvf.put(graph, updated);
-            }
-            rvf.close();
-        } catch (Exception ex) {
-            if (!rvf.isClosed()) {
-                rvf.close();
-            }
-            log.error("completeNeighbours failed ", ex);
-            return false;
-            // eventually send an email;
-        }
+    public static boolean validateExtRIDs(final Model m) {
+        // TODO: get all paths of external shapes
+        // check that they are in the BDR namespace and that their RID correspond to their expected type
         return true;
     }
 
+    
     public static void main(String[] args) throws Exception {
         EditConfig.init();
         //Model m = CommonsRead.getEditorGraph("P:707");

@@ -106,6 +106,12 @@ public class MainEditController {
         if (!CommonsValidate.validateCommit(inFocusGraph, gitFocusGraph, qname.substring(4))) {
             throw new VersionConflictException("Version conflict while trying to save " + qname);
         }
+        if (!CommonsValidate.validateShacl(inFocusGraph)) {
+            throw new VersionConflictException("Shacl did not validate, check logs");
+        }
+        if (!CommonsValidate.validateExtRIDs(inFocusGraph)) {
+            throw new VersionConflictException("Some external resources do not have a correct RID, check logs");
+        }
         final Model newGitGraph = CommonsRead.createFinalGraph(inFocusGraph, gitGraph, gitFocusGraph);
         String commitId = CommonsGit.putAndCommitSingleResource(newGitGraph, lname);
         if (commitId == null) {

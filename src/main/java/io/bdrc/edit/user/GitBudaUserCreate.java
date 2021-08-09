@@ -44,7 +44,7 @@ public class GitBudaUserCreate implements Runnable {
         FileOutputStream fos = null;
         try {
             String bucket = GlobalHelpers.getTwoLettersBucket(userId);
-            AdminData ad = new AdminData(userId, AdminData.USER_RES_TYPE, bucket + "/" + userId + ".trig");
+            AdminData ad = new AdminData(userId, bucket + "/" + userId + ".trig");
             Model adm = ad.asModel();
             Helpers.createDirIfNotExists(dirpath + bucket + "/");
             fos = new FileOutputStream(dirpath + bucket + "/" + userId + ".trig");

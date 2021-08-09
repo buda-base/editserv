@@ -161,7 +161,6 @@ public class CommonsRead {
             } else {
                 StmtIterator si = m.listStatements(subject, m.createProperty(path), (RDFNode) null);
                 while (si.hasNext()) {
-                    fg.add(si.next());
                     final Statement s = si.next();
                     fg.add(s);
                     if (subShape != null)

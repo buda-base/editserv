@@ -3,22 +3,48 @@ package io.bdrc.edit.test;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.riot.RDFParser;
+import org.apache.jena.riot.system.StreamRDFLib;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
+import io.bdrc.libraries.Models;
 
 public class TestCommons {
 
+    public static Model personData = null;
+    final static String TESTDIR = "src/test/resources/";
+    
     @BeforeClass
     public static void init() throws Exception {
-        EditConfig.init();
+        EditConfig.initForTests(null);
+        personData = ModelFactory.createDefaultModel();
+        Graph g = personData.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"PersonTest.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(g));
+        Model m = ModelFactory.createDefaultModel();
+        g = m.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"PersonShapes.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(g));
+        Shapes.initFromModel(m);
+        //Shapes.init();
     }
     
     @Test
@@ -70,4 +96,11 @@ public class TestCommons {
         assert (!CommonsValidate.isWithdrawn(m, "http://purl.bdrc.io/resource/P705", false));
     }
 
+    @Test
+    public void testFocusGraph() throws IOException {
+        System.out.println("toto");
+        Model fg = CommonsRead.getFocusGraph(personData, ResourceFactory.createResource(Models.BDR+"P1583"), ResourceFactory.createResource(EditConstants.BDS+"PersonShape"));
+        fg.write(System.out, "TTL");
+    }
+    
 }

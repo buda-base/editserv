@@ -1,0 +1,105 @@
+@prefix adm: <http://purl.bdrc.io/ontology/admin/> .
+@prefix bda: <http://purl.bdrc.io/admin.data/> .
+@prefix bdg: <http://purl.bdrc.io/graph/> .
+@prefix bdo: <http://purl.bdrc.io/ontology/core/> .
+@prefix bdr: <http://purl.bdrc.io/resource/> .
+@prefix bds: <http://purl.bdrc.io/ontology/shapes/core/> .
+@prefix bdsa: <http://purl.bdrc.io/ontology/shapes/adm/> .
+@prefix bf: <http://id.loc.gov/ontologies/bibframe/> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tosh: <http://topbraid.org/tosh#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+bds:PersonShape
+  a sh:NodeShape ;
+  bds:identifierPrefix "P" ;
+  sh:namespace "http://purl.bdrc.io/resource/" ;
+  rdfs:label "Person Shape"@en ;
+  sh:property bds:PersonShape-personEvent ;
+  sh:property bds:CommonShape-prefLabel ;
+  sh:property bds:PersonShape-adminData ;
+.
+
+bds:PersonShape-adminData 
+  a sh:PropertyShape ;
+  sh:path [ sh:inversePath adm:adminAbout ] ;
+  bds:propertyShapeType  bds:FacetShape ;
+  sh:maxCount 1 ;
+  sh:minCount 1 ;
+  bds:readOnly true ;
+.
+
+bds:PersonShape-hasSon
+  a sh:PropertyShape ;
+  bds:propertyShapeType bds:ExternalShape ;
+  sh:path bdo:hasSon ;
+  sh:class bdo:Person ;
+.
+
+bds:CommonShape-prefLabel
+  sh:message "There must be at least one skos:prefLabel"@en ;
+  sh:minCount 1 ;
+  a sh:PropertyShape ;
+  sh:path skos:prefLabel ;
+  sh:datatype rdf:langString ;
+  sh:uniqueLang true ;
+.
+
+bdsa:AdmEntityShape
+  a sh:NodeShape ;
+  sh:namespace "http://purl.bdrc.io/admindata/" ;
+  rdfs:label "Admin Entity shape"@en ;
+  sh:property bdsa:AdmEntityShape-status ;
+  sh:targetClass bdo:Entity ;
+  sh:targetSubjectsOf adm:adminAbout ;
+.
+bdsa:AdmEntityShape-status
+      a sh:PropertyShape ;
+      sh:path adm:status ;
+      sh:class adm:Status ;
+      sh:maxCount 1 ;
+      sh:minCount 1 ;
+      sh:in ( bda:StatusReleased bda:StatusWithdrawn bda:StatusEditing bda:StatusOnHold bda:StatusProvisional bda:StatusScanned bda:StatusSeekingOut bda:StatusAccessioned bda:StatusAcquiring ) ;
+      sh:nodeKind sh:IRI ;
+.
+
+bds:PersonShape-personEvent
+  a sh:PropertyShape ;
+  sh:path bdo:personEvent ;
+  sh:message ":personEvent object must be an IRI - no blank nodes"@en ;
+  sh:nodeKind sh:IRI ;
+  bds:propertyShapeType bds:FacetShape ;
+.
+bds:PersonEventShape
+  a sh:NodeShape ;
+  bds:identifierPrefix "EV" ;
+  bds:nodeShapeType bds:FacetShape ;
+  rdfs:label "Person Event Shape"@en ;
+  sh:property bds:PersonEventShape-type , bds:EventShape-onYear ;
+  sh:targetClass bdo:PersonEvent ;
+  sh:targetObjectsOf bdo:personEvent ;
+.
+bds:PersonEventShape-type
+  a sh:PropertyShape ;
+  sh:path rdf:type ;
+  sh:in ( bdo:PersonBirth bdo:PersonDeath bdo:PersonFlourished bdo:PersonAffiliation bdo:PersonOccupiesSeat bdo:PersonAssumesOffice bdo:PersonFinalOrdination bdo:PersonGterMaDiscovery bdo:PersonInResidence bdo:PersonLeavesOffice bdo:PersonLeavesSeat bdo:PersonMarriage bdo:PersonRabByungOrdination bdo:PersonDivorce bdo:PersonEventNotSpecified ) ;
+  sh:message "A PersonEvent must have one type"@en ;
+  sh:class bdo:PersonEvent ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+.
+bds:EventShape-onYear
+  a sh:PropertyShape ;
+  sh:message "there must be at most one :onYear, and it must be an xsd:gYear"@en ;
+  sh:path bdo:onYear ;
+  sh:datatype xsd:gYear ;
+  sh:maxCount 1 ;
+  sh:minExclusive "-4000"^^xsd:gYear ;
+  sh:maxExclusive "2100"^^xsd:gYear ;
+.

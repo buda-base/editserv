@@ -39,8 +39,8 @@ public class Shapes implements Runnable {
     public static HashMap<String, Model> modelsBase = new HashMap<>();
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
-    
-    static {
+
+    public static void init() {
         try {
             commonUpdateRepo(System.getProperty("user.dir") + "/editor-templates/", GIT_SHAPES_REMOTE_URL);
             updateFromRepo();
@@ -48,7 +48,7 @@ public class Shapes implements Runnable {
             log.error("error initializing shapes", e);
         }
     }
-
+    
     public static void updateFromRepo() {
         try {
             modelsBase = new HashMap<>();
@@ -74,6 +74,12 @@ public class Shapes implements Runnable {
         } catch (Exception ex) {
             log.error("Error updating OntShapesData Model", ex);
         }
+    }
+    
+    // for tests
+    public static void initFromModel(Model m) {
+        fullMod = m;
+        fullShapes = org.apache.jena.shacl.Shapes.parse(fullMod);
     }
     
     public static String commonUpdateRepo(String localPath, String remoteUrl)

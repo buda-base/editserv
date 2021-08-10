@@ -6,12 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.sun.tools.sjavac.Log;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.commons.data.OntologyData;
+import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.user.UsersCache;
 import io.bdrc.libraries.Prefix;
 
@@ -25,6 +30,8 @@ public class EditConfig {
     public static String FUSEKI_DATA = "fusekiData";
     public final static String QUERY_TIMEOUT = "timeout";
     public static Prefix prefix;
+    
+    final static Logger log = LoggerFactory.getLogger(Shapes.class);
 
     public static void init() throws Exception {
         InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
@@ -37,15 +44,21 @@ public class EditConfig {
             prop.load(input);
             input.close();
         }
-        InputStream is = new FileInputStream("/etc/buda/share/shared-private.properties");
-        prop.load(is);            
-        is.close();
+        final File privateProps = new File("/etc/buda/share/shared-private.properties");
+        if (privateProps.canRead()) {
+            InputStream is = new FileInputStream(privateProps);
+            prop.load(is);            
+            is.close();
+        } else {
+            log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
+        }
         AuthProps.init(prop);
         if (useAuth()) {
             RdfAuthModel.init();
         }
         UsersCache.init();
         OntologyData.init();
+        Shapes.init();
         if (prop.getProperty("prefixesFilePath") != null) {
             prefix = new Prefix(prop.getProperty("prefixesFilePath"));
         } else {

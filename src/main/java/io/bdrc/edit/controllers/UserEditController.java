@@ -89,7 +89,7 @@ public class UserEditController {
                         .body(null);
             }
             MediaType mediaType = BudaMediaTypes.selectVariant(format, BudaMediaTypes.resVariantsNoHtml);
-            if (mediaType == null) { mediaType = MediaType.APPLICATION_JSON_UTF8 ; }
+            if (mediaType == null) { mediaType = MediaType.APPLICATION_JSON ; }
             String ext = BudaMediaTypes.getExtFromMime(mediaType);
             return ResponseEntity.status(200).contentType(mediaType)
                     .header("Location", "/resource-nc/user/" + usr.getLocalName())

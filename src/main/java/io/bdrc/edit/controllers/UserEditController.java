@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -36,6 +37,7 @@ import io.bdrc.edit.user.GitUserPatchModule;
 import io.bdrc.edit.user.GitUserRevisionModule;
 import io.bdrc.edit.user.UserPatchModule;
 import io.bdrc.edit.user.UserTransaction;
+import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -48,8 +50,8 @@ public class UserEditController {
         // TODO Auto-generated constructor stub
     }
 
-    @GetMapping(value = "/resource-nc/user/me", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<StreamingResponseBody> meUser(HttpServletResponse response, HttpServletRequest request)
+    @GetMapping(value = "/resource-nc/user/me")
+    public ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
             throws IOException, GitAPIException, NoSuchAlgorithmException {
         try {
             log.info("Call meUser()");
@@ -60,36 +62,39 @@ public class UserEditController {
                 err.put("cause", "No token was found");
                 return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON_UTF8)
                         .body(StreamingHelpers.getJsonObjectStream(err));
-            } else {
-                Access acc = (Access) request.getAttribute("access");
-                log.info("meUser() Access >> {} ", acc);
-                String authId = acc.getUser().getAuthId();
-                if (authId == null || authId.isEmpty()) {
-                    log.error("couldn't find authId for "+token);
-                    return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
-                            .body(null);
-                }
-                String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
-                log.info("meUser() auth0Id >> {}", auth0Id);
-                Resource usr = BudaUser.getRdfProfile(auth0Id);
-                log.info("meUser() Buda usr >> {}", usr);
-                Model userModel = null;
-                if (usr == null) {
-                    userModel = BudaUser.addNewBudaUser(acc.getUser());
-                    usr = BudaUser.getRdfProfile(auth0Id, userModel);
-                    log.info("meUser() User new created Resource >> {}", usr);
-                } else {
-                    userModel = BudaUser.getUserModel(true, usr);
-                }
-                if (userModel == null) {
-                    log.error("couldn't find user model for authId "+authId);
-                    return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
-                            .body(null);
-                }
-                return ResponseEntity.status(200).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .header("Location", "/resource-nc/user/" + usr.getLocalName())
-                        .body(StreamingHelpers.getModelStream(userModel, "json", EditConfig.prefix.getPrefixMap()));
             }
+            Access acc = (Access) request.getAttribute("access");
+            log.info("meUser() Access >> {} ", acc);
+            String authId = acc.getUser().getAuthId();
+            if (authId == null || authId.isEmpty()) {
+                log.error("couldn't find authId for "+token);
+                return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .body(null);
+            }
+            String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
+            log.info("meUser() auth0Id >> {}", auth0Id);
+            Resource usr = BudaUser.getRdfProfile(auth0Id);
+            log.info("meUser() Buda usr >> {}", usr);
+            Model userModel = null;
+            if (usr == null) {
+                userModel = BudaUser.addNewBudaUser(acc.getUser());
+                usr = BudaUser.getRdfProfile(auth0Id, userModel);
+                log.info("meUser() User new created Resource >> {}", usr);
+            } else {
+                userModel = BudaUser.getUserModel(true, usr);
+            }
+            if (userModel == null) {
+                log.error("couldn't find user model for authId "+authId);
+                return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .body(null);
+            }
+            MediaType mediaType = BudaMediaTypes.selectVariant(format, BudaMediaTypes.resVariantsNoHtml);
+            if (mediaType == null) { mediaType = MediaType.APPLICATION_JSON_UTF8 ; }
+            String ext = BudaMediaTypes.getExtFromMime(mediaType);
+            return ResponseEntity.status(200).contentType(mediaType)
+                    .header("Location", "/resource-nc/user/" + usr.getLocalName())
+                    .body(StreamingHelpers.getModelStream(userModel, ext,
+                            usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
         } catch (IOException | GitAPIException e) {
             log.error("/resource-nc/user/me failed ", e);
             throw e;

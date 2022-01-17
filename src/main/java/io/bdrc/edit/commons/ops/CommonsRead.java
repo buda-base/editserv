@@ -9,12 +9,14 @@ import java.util.Map.Entry;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFList;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,6 +115,10 @@ public class CommonsRead {
             Resource pathInverse = null;
             String sparqlPath = null;
             boolean pathIsInverse = false;
+            boolean listMode = false;
+            final Resource node = shProp.getPropertyResourceValue(EditConstants.SH_NODE);
+            if (node != null && node.getURI().endsWith("ListShape"))
+                listMode = true;
             
             if (path != null && !path.isAnon()) {
                 sparqlPath = path.getURI();
@@ -125,6 +131,10 @@ public class CommonsRead {
             }
             if (sparqlPath == null)
                 continue;
+            if (listMode) {
+                sparqlPath += "[]";
+                continue;
+            }
             Resource subShape = null;
             final Resource shapeType = shProp.getPropertyResourceValue(EditConstants.PROPERTY_SHAPE_TYPE);
             if (EditConstants.FACET_SHAPE.equals(shapeType)) {
@@ -148,6 +158,17 @@ public class CommonsRead {
         return res;
     }
     
+    public static void addListToFocus(final Model m, final Model fg, final Resource head) {
+        final StmtIterator si = head.listProperties();
+        while (si.hasNext()) {
+            final Statement s = si.next();
+            fg.add(s);
+            if (s.getPredicate().equals(RDF.rest)) {
+                addListToFocus(m, fg, s.getResource());
+            }
+        }
+    }
+    
     public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape) {
         final ShaclProps sp = getShaclPropsFor(shape);
         if (sp == null) 
@@ -166,10 +187,14 @@ public class CommonsRead {
                         addToFocusGraph(m, fg, s.getSubject(), subShape);
                 }
             } else {
+                final Boolean listMode = path.endsWith("[]");
                 StmtIterator si = m.listStatements(subject, m.createProperty(path), (RDFNode) null);
                 while (si.hasNext()) {
                     final Statement s = si.next();
                     fg.add(s);
+                    if (listMode) {
+                        addListToFocus(m, fg, s.getResource());
+                    }
                     if (subShape != null)
                         addToFocusGraph(m, fg, s.getResource(), subShape);
                 }

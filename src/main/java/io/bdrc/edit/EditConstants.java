@@ -32,6 +32,7 @@ public class EditConstants {
     public static final Property ADMIN_GRAPH_ID = ResourceFactory.createProperty(EditConstants.ADM + "graphId");
     public static final Property SH_PROPERTY = ResourceFactory.createProperty(EditConstants.SH + "property");
     public static final Property SH_PATH = ResourceFactory.createProperty(EditConstants.SH + "path");
+    public static final Property SH_NODE = ResourceFactory.createProperty(EditConstants.SH + "node");
     public static final Property SH_INVERSE_PATH = ResourceFactory.createProperty(EditConstants.SH + "inversePath");
     public static final Property PROPERTY_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.BDS + "propertyShapeType");
     public static final Resource FACET_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "FacetShape");

@@ -45,6 +45,7 @@ public class CommonsRead {
     public static Property UI_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "uiShapeGraph");
     public static HashMap<String, Model> ENTITY_MAP;
     static final String ONT_GRAPH_URL = "/graph/ontologySchema.ttl";
+    public static final Resource userProfileShape = ResourceFactory.createResource(EditConstants.BDS+"UserProfileShape");
     
     public final static Map<String,String> shapeUriToFocusSparql = new HashMap<>();
     

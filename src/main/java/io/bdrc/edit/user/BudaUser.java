@@ -250,6 +250,54 @@ public class BudaUser {
         log.error("couldn't find an available ID after 10 attempts, aborting");
         return null;
     }
+
+    public static Model publicFromPrivate(Model prv, Resource user) throws IOException {
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+        RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
+        log.info("createBudaUserModels for user {}", usr);
+        Model[] mods = new Model[2];
+        Model publicModel = ModelFactory.createDefaultModel();
+        String userId = createUserId(usr.getAuthId());
+        if (userId == null) {
+            return null;
+        }
+        log.debug("createBudaUserModel for >> {}", userId);
+        Resource bUser = ResourceFactory.createResource(BDU_PFX + userId);
+        publicModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
+        publicModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
+        publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
+        publicModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
+        // TODO there should be some language detection based on the first character:
+        // if Chinese, then @zh-hani, if Tibetan then @bo, else no lang tag
+        if (usr.getName() != null)
+            publicModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
+        mods[0] = publicModel;
+
+        Model privateModel = ModelFactory.createDefaultModel();
+        privateModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
+        privateModel.add(bUser, RDF.type, ResourceFactory.createResource(FOAF + "Person"));
+        privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDOU_PFX + "User"));
+        privateModel.add(bUser, RDF.type, ResourceFactory.createResource(BDO + "Person"));
+        log.info("hasUserProfile in createBudaUserModels = {}", usr.getUserId());
+        String auth0Id = usr.getUserId();
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "isActive"), ResourceFactory.createPlainLiteral("true"));
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "hasUserProfile"), ResourceFactory.createResource(ADR_PFX + auth0Id));
+        if (usr.getEmail() != null)
+            privateModel.add(bUser, ResourceFactory.createProperty(FOAF + "mbox"), ResourceFactory.createPlainLiteral(usr.getEmail()));
+        
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "accountCreation"),
+                ResourceFactory.createTypedLiteral(sdf.format(new Date()), XSDDatatype.XSDdateTime));
+        privateModel.add(bUser, ResourceFactory.createProperty(BDOU_PFX + "preferredLangTags"), ResourceFactory.createPlainLiteral("en"));
+        if (usr.getName() != null)
+            privateModel.add(bUser, SKOS_PREF_LABEL, ResourceFactory.createPlainLiteral(usr.getName()));
+
+        mods[0] = publicModel;
+        mods[1] = privateModel;
+        fusConn.put(PUBLIC_PFX + userId, publicModel);
+        fusConn.put(PRIVATE_PFX + userId, publicModel);
+        fusConn.close();
+        return mods;
+    }
     
     public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     public static Model[] createBudaUserModels(User usr) throws IOException {

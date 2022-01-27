@@ -52,7 +52,7 @@ public class CommonsValidate {
     }
     
     // arguments need to be focus graphs
-    public static boolean validateCommit(final Model newModel, final Model gitModel, final String lname) throws UnknownBdrcResourceException, NotModifiableException, IOException {
+    public static boolean validateCommit(final Model newModel, final Model gitModel, final Resource main) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         // check that the new model is exactly one commit ahead of the git model
         Set<RDFNode> newLogEntries = newModel.listObjectsOfProperty(LOGENTRY).toSet();
         Set<RDFNode> originalLogEntries = new HashSet<>();

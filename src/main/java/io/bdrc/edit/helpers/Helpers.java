@@ -108,6 +108,12 @@ public class Helpers {
         return ds.asDatasetGraph();
     }
 
+    public static Dataset datasetFromTrig(final String data) {
+        Dataset ds = DatasetFactory.create();
+        RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
+        return ds;
+    }
+    
     public static void putModelWithInference(RDFConnectionFuseki fusConn, String graph, Model m, Reasoner reasoner) {
         fusConn.begin(ReadWrite.WRITE);
         Model mi = ModelFactory.createInfModel(reasoner, m);

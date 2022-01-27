@@ -95,15 +95,15 @@ public class MainEditController {
         inModel.read(in, null, jenaLang.getLabel());
         final String lname = qname.substring(4);
         final Resource subject = ResourceFactory.createResource(Models.BDR+lname);
-        final Resource shape = CommonsRead.getShapeForEntity(lname);
+        final Resource shape = CommonsRead.getShapeForEntity(subject);
         // TODO: validate in that step
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, subject, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
             throw new VersionConflictException("Graph does not conform shape");
         }
-        final Model gitGraph = CommonsGit.getGraphFromGit(lname);
+        final Model gitGraph = CommonsGit.getGraphFromGit(subject);
         final Model gitFocusGraph = CommonsRead.getFocusGraph(gitGraph, subject, shape);
-        if (!CommonsValidate.validateCommit(inFocusGraph, gitFocusGraph, qname.substring(4))) {
+        if (!CommonsValidate.validateCommit(inFocusGraph, gitFocusGraph, subject)) {
             throw new VersionConflictException("Version conflict while trying to save " + qname);
         }
         if (!CommonsValidate.validateShacl(inFocusGraph)) {
@@ -113,7 +113,7 @@ public class MainEditController {
             throw new VersionConflictException("Some external resources do not have a correct RID, check logs");
         }
         final Model newGitGraph = CommonsRead.createFinalGraph(inFocusGraph, gitGraph, gitFocusGraph);
-        String commitId = CommonsGit.putAndCommitSingleResource(newGitGraph, lname);
+        String commitId = CommonsGit.putAndCommitSingleResource(newGitGraph, subject);
         if (commitId == null) {
             ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
         }

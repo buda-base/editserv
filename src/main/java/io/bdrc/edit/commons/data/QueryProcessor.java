@@ -20,9 +20,6 @@ public class QueryProcessor {
     public final static Logger log = LoggerFactory.getLogger(QueryProcessor.class.getName());
 
     public static Model describeModel(String fullUri, String fusekiUrl) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty("fusekiData");
-        }
         Model m = ModelFactory.createDefaultModel();
         try {
             final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + " describe <" + fullUri.trim() + ">");
@@ -41,9 +38,6 @@ public class QueryProcessor {
 
     public static void dropGraph(String graphUri, String fusekiDataUrl) {
         try {
-            if (fusekiDataUrl == null) {
-                fusekiDataUrl = EditConfig.getProperty("fusekiData");
-            }
             RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(fusekiDataUrl);
             RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
             fusConn.delete(graphUri);
@@ -54,9 +48,6 @@ public class QueryProcessor {
     }
 
     public static Model getTriplesWithObject(String fullUri, String fusekiUrl) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
-        }
         String query = "construct {?s ?p <" + fullUri + ">} where { { ?s ?p <" + fullUri + "> } }";
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
@@ -68,9 +59,6 @@ public class QueryProcessor {
     }
 
     public static Model getGraph(String fullUri, String fusekiUrl) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
-        }
         String query = " construct {?s ?p ?o} where { graph <" + fullUri + "> { ?s ?p ?o } }";
         log.info("Query Processor looking for graph {} ", fullUri);
         log.info("Query Processor graph query {} ", query);
@@ -80,18 +68,12 @@ public class QueryProcessor {
     }
 
     public static Model getQueryGraph(String fusekiUrl, String query) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
-        }
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execConstruct();
     }
 
     public static ResultSet getSelectResultSet(String query, String fusekiUrl) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
-        }
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         return qe.execSelect();
@@ -107,19 +89,11 @@ public class QueryProcessor {
     }
 
     public static QueryExecution getResultSet(String query, String fusekiUrl) {
-        if (fusekiUrl == null) {
-            fusekiUrl = EditConfig.getProperty(EditConfig.FUSEKI_URL);
-        }
         QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, QueryFactory.create(query));
         qe.setTimeout(Long.parseLong(EditConfig.getProperty(EditConfig.QUERY_TIMEOUT)));
         return qe;
     }
     
-    public static void main(String[] args) throws Exception {
-        EditConfig.init();
-        Model m = QueryProcessor.describeModel("http://purl.bdrc.io/resource/P1583", null);
-        m.write(System.out, "TURTLE");
-        // dropGraph("http://purl.bdrc.io/graph/P1524X");
-    }
+    
 
 }

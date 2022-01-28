@@ -49,8 +49,9 @@ public class CommonsGit {
     public static Logger log = LoggerFactory.getLogger(CommonsGit.class);
     
     public static final class GitInfo {
-        public String repoLname;
-        public String pathInRepo;
+        public String repoLname = null;
+        public String pathInRepo = null;
+        public String revId = null;
         // in the case of a new resource ,the dataset doesn't exist and is null
         public Dataset ds = null;
     }
@@ -143,15 +144,14 @@ public class CommonsGit {
         return null;
     }
     
-    public static void readyForFuseki(final Dataset ds, final GitInfo gi, final Resource r, final String commitId) {
-        // TODO: add revision and git info
-        // TODO: run inference
+    public static boolean pushRelevant(final String repoPath) {
+        // TODO: make sure we don't push every time
+        return true;
     }
     
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized Dataset saveInGit(final Model newModel, final Resource r, final Resource shape)
-            throws UnknownBdrcResourceException, NotModifiableException, IOException, VersionConflictException,
-            ParameterFormatException, ValidationException, InvalidRemoteException, TransportException, GitAPIException {
+    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape)
+            throws IOException, VersionConflictException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
         String graphUri;
@@ -163,7 +163,7 @@ public class CommonsGit {
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);
             graphUri = graph.getURI();
-            // next lines changes result
+            // next lines changes the result variable directly
             ModelUtils.mergeModel(result, graphUri, newModel, r, shape);            
         }
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
@@ -171,11 +171,16 @@ public class CommonsGit {
         final FileOutputStream fos = new FileOutputStream(filePath);
         datasetToOutputStream(result, fos);
         final RevCommit rev = GitHelpers.commitChanges(repoPath, getRevFromLatestLogEntry(newModel, r));
-        GitHelpers.push(repoPath,
-                EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"),
-                EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
-        readyForFuseki(result, gi, r, rev.getName());
-        return result;
+        try {
+            GitHelpers.push(repoPath,
+                    EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"),
+                    EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
+        } catch (GitAPIException e) {
+            log.error("could not push ", repoPath, e);
+        }
+        gi.ds = result;
+        gi.revId = rev.getName();
+        return gi;
     }
 
     private static void datasetToOutputStream(Dataset ds, OutputStream out) throws IOException {

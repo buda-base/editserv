@@ -67,6 +67,8 @@ public class CommonsRead {
         prefixToTopShape.put("L", ResourceFactory.createResource(EditConstants.BDS+"LineageShape"));
         prefixToTopShape.put("C", ResourceFactory.createResource(EditConstants.BDS+"CorporationShape"));
         prefixToTopShape.put("T", ResourceFactory.createResource(EditConstants.BDS+"TopicShape"));
+        prefixToTopShape.put("I", ResourceFactory.createResource(EditConstants.BDS+"ImageGroupShape"));
+        prefixToTopShape.put("U", ResourceFactory.createResource(EditConstants.BDS+"UserProfileShape"));
     }
 
     static {
@@ -76,11 +78,11 @@ public class CommonsRead {
         ENTITY_MAP = new HashMap<>();
     }
 
-    public static Resource getShapeForEntity(final String lname) {
-        final String typePrefix = RIDController.getTypePrefix(lname);
+    public static Resource getShapeForEntity(final Resource r) {
+        final String typePrefix = RIDController.getTypePrefix(r.getLocalName());
         return prefixToTopShape.get(typePrefix);
     }
-
+    
     public static final class ShaclProps {
         // recursive type, map is sparql path as key, ShaclProps as object
         // object is non-null only in the case of facets (not datatype properties or external properties)
@@ -204,6 +206,7 @@ public class CommonsRead {
     }
     
     public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) {
+        
         final Model res = ModelFactory.createDefaultModel();
         res.setNsPrefixes(m.getNsPrefixMap());
         addToFocusGraph(m, res, subject, shape);

@@ -31,8 +31,10 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;
@@ -53,13 +55,15 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                     .body(StreamingHelpers.getStream("No graph could be found for " + qname));
         final String lname = qname.substring(4);
+        final Resource r = ResourceFactory.createResource(Models.BDR+lname);
         try {
-            m = CommonsGit.getGraphFromGit(lname);
-            if (m == null || m.isEmpty())
+            CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(r);
+            if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
-            Resource shape = CommonsRead.getShapeForEntity(lname);
-            m = CommonsRead.getFocusGraph(m, m.createResource(Models.BDR+lname), shape);
+            Resource shape = CommonsRead.getShapeForEntity(r);
+            m = ModelUtils.getMainModel(gi.ds);
+            m = CommonsRead.getFocusGraph(m, r, shape);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
@@ -78,9 +82,6 @@ public class MainEditController {
         if (!acc.getUserProfile().isAdmin())
             return ResponseEntity.status(403).body("this requires being logged in with an admin account");
         InputStream in = new ByteArrayInputStream(model.getBytes());
-        // for testing purpose
-        // InputStream in =
-        // MainEditController.class.getClassLoader().getResourceAsStream("P705.ttl");
         MediaType med = MediaType.parseMediaType(req.getHeader("Content-Type"));
         Lang jenaLang = null;
         if (med != null) {
@@ -95,16 +96,16 @@ public class MainEditController {
         inModel.read(in, null, jenaLang.getLabel());
         final String lname = qname.substring(4);
         final Resource subject = ResourceFactory.createResource(Models.BDR+lname);
-        final Resource shape = CommonsRead.getShapeForEntity(subject);
-        // TODO: validate in that step
-        final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, subject, shape);
+        final String revId = saveResource(inModel, subject);
+        response.addHeader("Content-Type", "text/plain;charset=utf-8");
+        return ResponseEntity.ok().body(revId);
+    }
+
+    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException {
+        final Resource shape = CommonsRead.getShapeForEntity(r);
+        final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
             throw new VersionConflictException("Graph does not conform shape");
-        }
-        final Model gitGraph = CommonsGit.getGraphFromGit(subject);
-        final Model gitFocusGraph = CommonsRead.getFocusGraph(gitGraph, subject, shape);
-        if (!CommonsValidate.validateCommit(inFocusGraph, gitFocusGraph, subject)) {
-            throw new VersionConflictException("Version conflict while trying to save " + qname);
         }
         if (!CommonsValidate.validateShacl(inFocusGraph)) {
             throw new VersionConflictException("Shacl did not validate, check logs");
@@ -112,15 +113,10 @@ public class MainEditController {
         if (!CommonsValidate.validateExtRIDs(inFocusGraph)) {
             throw new VersionConflictException("Some external resources do not have a correct RID, check logs");
         }
-        final Model newGitGraph = CommonsRead.createFinalGraph(inFocusGraph, gitGraph, gitFocusGraph);
-        String commitId = CommonsGit.putAndCommitSingleResource(newGitGraph, subject);
-        if (commitId == null) {
-            ResponseEntity.status(HttpStatus.CONFLICT).body("Request cannot be processed - Git commitId is null");
-        }
-        response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body(commitId);
+        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape);
+        return gi.revId;
     }
-
+    
     @RequestMapping(value = "/callbacks/model/bdrc-auth", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> readAuthModel() {
         log.info("updating Auth data model() >>");

@@ -27,8 +27,10 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
+import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.Models;
 
 public class ModelUtils {
@@ -79,15 +81,50 @@ public class ModelUtils {
         return res;
     }
     
+    public static Model getMainModel(final Dataset ds) {
+        final Resource r = getMainGraph(ds);
+        if (r == null)
+            return null;
+        return ds.getNamedModel(r.getURI());
+    }
+    
+    public static Model getPublicUserModel(final Dataset ds) {
+        final Iterator<String> graphUrisIt = ds.listNames();
+        Model res = ModelFactory.createDefaultModel();
+        while (graphUrisIt.hasNext()) {
+            final String graphUri = graphUrisIt.next();
+            if (graphUri.startsWith("http://purl.bdrc.io/admindata/") || graphUri.startsWith("http://purl.bdrc.io/graph-nc/user/")) {
+                res.add(ds.getNamedModel(graphUri));
+            }
+        }
+        return res;
+    }
+    
+    public static Model getPrivateUserModel(final Dataset ds) {
+        final Iterator<String> graphUrisIt = ds.listNames();
+        Model res = ModelFactory.createDefaultModel();
+        while (graphUrisIt.hasNext()) {
+            final String graphUri = graphUrisIt.next();
+            if (graphUri.startsWith("http://purl.bdrc.io/admindata/") || graphUri.startsWith("http://purl.bdrc.io/graph-nc/user-private/")) {
+                res.add(ds.getNamedModel(graphUri));
+            }
+        }
+        return res;
+    }
+    
     public static final class ChangeInfo {
         public Model minus;
         public Model plus;
     }
     
     // changes completeSet, and returns plus and minus
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape) {
+    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape) throws VersionConflictException {
         final Model original = completeSet.getNamedModel(graphUri);
         final Model focusedOriginal = CommonsRead.getFocusGraph(original, r, shape);
+        // TODO: don't validate commit for users
+        if (!CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
+            throw new VersionConflictException("Version conflict while trying to save " + r.getURI());
+        }
         final Model outOfFocusOriginal = original.difference(focusedOriginal);
         final Model resModel = outOfFocusOriginal.add(newFocusModel);
         completeSet.replaceNamedModel(graphUri, resModel);
@@ -133,6 +170,8 @@ public class ModelUtils {
             return null;
         }
     }
+    
+    /*
 
     public static Model removeTriples(String graphUri, List<Statement> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
         Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
@@ -161,6 +200,8 @@ public class ModelUtils {
         // m.write(System.out, "TURTLE");
         return m;
     }
+
+    */
 
     public static Model updateGitRevision(String graphUri, Model m, String gitRev) {
         Dataset ds = DatasetFactory.create(m);

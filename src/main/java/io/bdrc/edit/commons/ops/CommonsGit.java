@@ -15,6 +15,8 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -54,6 +56,10 @@ public class CommonsGit {
         public String revId = null;
         // in the case of a new resource ,the dataset doesn't exist and is null
         public Dataset ds = null;
+        
+        public String toString() {
+            return "repoLname: "+repoLname+", pathInRepo: "+pathInRepo+", revId: "+revId;
+        }
     }
     
     public final static Map<String,String> prefixToGitLname = new HashMap<>();
@@ -93,6 +99,29 @@ public class CommonsGit {
         prefixToGitLname.put("T", "GR0007");
     }
     
+    public static GitInfo gitInfoFromFuseki(final Resource r) {
+        log.info("search graph for ", r, " in Fuseki");
+        final String query = "select distinct ?g ?repo ?path { graph ?g { <"+r.getURI()+"> a ?t } . ?adm adm:graphId ?g ; adm:gitPath ?path ; adm:gitRepo ?repo . }";
+        ResultSet rs = QueryProcessor.getSelectResultSet(query, null);
+        if (!rs.hasNext()) {
+            log.info("did not find graph for ", r, " in Fuseki");
+            return null;
+        }
+        final QuerySolution qs = rs.next();
+        if (log.isDebugEnabled()) {
+            log.debug(qs.toString());
+        }
+        final Resource graph = qs.getResource("g");
+        if (!graph.getURI().startsWith(Models.BDG)) {
+            log.error("received unexpected graph URL for ", r, ": ", graph);
+            return null;
+        }
+        final GitInfo res = new GitInfo();
+        res.repoLname = qs.getResource("repo").getLocalName();
+        res.pathInRepo = qs.getLiteral("path").getString();
+        return res;
+    }
+    
     public static GitInfo gitInfoForResource(final Resource r) throws IOException {
         final String rLname = r.getLocalName();
         // first we guess and check if the file exists
@@ -122,7 +151,17 @@ public class CommonsGit {
         }
         // if not we fall back to fuseki and look at the adminData
         
-        // TODO
+        final GitInfo fromFuseki = gitInfoFromFuseki(r);
+        if (fromFuseki != null) {
+            guessedPath = gitLnameToRepoPath.get(fromFuseki.repoLname)+"/"+fromFuseki.pathInRepo;
+            if ((new File(guessedPath)).exists()) {
+                fromFuseki.ds = Helpers.datasetFromTrig(GlobalHelpers.readFileContent(guessedPath));
+                log.info("found git file %s for resource %s", guessedPath, r);
+            } else {
+                log.error("found in Fuseki that ", r, " should be on "+guessedPath+" but it's not!");
+            }
+            return fromFuseki;
+        }
         
         // if not, we just return the guess with a null dataset
         
@@ -156,15 +195,18 @@ public class CommonsGit {
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
+            log.info("resource is new");
             // new resource
             result = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {
+            log.info("resource already exists in git");
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);
+            log.debug("main graph is ", graph);
             graphUri = graph.getURI();
             // next lines changes the result variable directly
-            ModelUtils.mergeModel(result, graphUri, newModel, r, shape);            
+            ModelUtils.mergeModel(result, graphUri, newModel, r, shape, gi.repoLname);            
         }
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
         final String filePath = repoPath+"/"+gi.pathInRepo;

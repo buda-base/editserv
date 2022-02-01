@@ -1,7 +1,9 @@
 package io.bdrc.edit.helpers;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -16,25 +18,42 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.SKOS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
-import io.bdrc.libraries.Models;
+import io.bdrc.jena.sttl.STriGWriter;
 
 public class ModelUtils {
+    
+    public static Logger log = LoggerFactory.getLogger(ModelUtils.class);
 
+    public static String modelToTtl(final Model m) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        m.write(baos, "TTL");
+        return baos.toString(StandardCharsets.UTF_8);
+    }
+    
+    public static String datasetToTrig(final Dataset ds) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new STriGWriter().write(baos, ds.asDatasetGraph(), EditConfig.prefix.getPrefixMap(), null, Helpers.createWriterContext());
+        return baos.toString(StandardCharsets.UTF_8);
+    }
+    
     public static Set<Statement> ModelToSet(Model m) {
         StmtIterator st = m.listStatements();
         List<Statement> stList = IteratorUtils.toList(st);
@@ -100,6 +119,28 @@ public class ModelUtils {
         return res;
     }
     
+    public static Resource getPublicUserGraph(final Dataset ds) {
+        final Iterator<String> graphUrisIt = ds.listNames();
+        while (graphUrisIt.hasNext()) {
+            final String graphUri = graphUrisIt.next();
+            if (graphUri.startsWith("http://purl.bdrc.io/graph-nc/user/")) {
+                return ResourceFactory.createResource(graphUri);
+            }
+        }
+        return null;
+    }
+    
+    public static Resource getPrivateUserGraph(final Dataset ds) {
+        final Iterator<String> graphUrisIt = ds.listNames();
+        while (graphUrisIt.hasNext()) {
+            final String graphUri = graphUrisIt.next();
+            if (graphUri.startsWith("http://purl.bdrc.io/graph-nc/user-private/")) {
+                return ResourceFactory.createResource(graphUri);
+            }
+        }
+        return null;
+    }
+    
     public static Model getPrivateUserModel(final Dataset ds) {
         final Iterator<String> graphUrisIt = ds.listNames();
         Model res = ModelFactory.createDefaultModel();
@@ -117,19 +158,46 @@ public class ModelUtils {
         public Model plus;
     }
     
-    // changes completeSet, and returns plus and minus
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape) throws VersionConflictException {
+    public static final List<Property> toCopy = Arrays.asList(SKOS.prefLabel, SKOS.altLabel, RDF.type);
+    
+    public static Model publicUserModelFromPrivate(final Model m, final Resource r) {
+        final Model res = ModelFactory.createDefaultModel();
+        for (final Property p : toCopy) {
+            final StmtIterator it = m.listStatements(null, p, (RDFNode) null);
+            while (it.hasNext()) {
+                res.add(it.next());
+            }
+        }
+        return res;
+    }
+    
+    // changes completeSet (later can return plus and minus)
+    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws VersionConflictException {
+        final boolean isUser = repoLname.equals("GR0100");
+        log.info("merging new model for ", r);
         final Model original = completeSet.getNamedModel(graphUri);
+        if (log.isDebugEnabled())
+            log.debug("original model is ", modelToTtl(original));
         final Model focusedOriginal = CommonsRead.getFocusGraph(original, r, shape);
-        // TODO: don't validate commit for users
-        if (!CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
+        if (log.isDebugEnabled())
+            log.debug("focused original model is ", modelToTtl(focusedOriginal));
+        // don't validate commit for users
+        if (!isUser && !CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
             throw new VersionConflictException("Version conflict while trying to save " + r.getURI());
         }
         final Model outOfFocusOriginal = original.difference(focusedOriginal);
+        if (log.isDebugEnabled())
+            log.debug("out of focused original model is ", modelToTtl(outOfFocusOriginal));
         final Model resModel = outOfFocusOriginal.add(newFocusModel);
+        if (log.isDebugEnabled())
+            log.debug("result of the merge is  ", modelToTtl(resModel));
         completeSet.replaceNamedModel(graphUri, resModel);
-        // TODO: if user, derive the public model and replace it
-        // TODO: option to also remove / add symmetric and inverse triples in other models
+        if (isUser) {
+            // derive the public model and replace it
+            
+            // no need to change the admin model
+        }
+        // TODO: option to also return removed / added symmetric and inverse triples in other models
     }
     
     public static Model mergeModel(Model complement, Model focusEdited) {

@@ -29,6 +29,7 @@ public class EditConfig {
     public static String FUSEKI_DATA = "fusekiData";
     public final static String QUERY_TIMEOUT = "timeout";
     public static Prefix prefix;
+    public static boolean dryrunmode = false;
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
 
@@ -51,6 +52,7 @@ public class EditConfig {
         } else {
             log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
         }
+        dryrunmode = "true".equals(prop.getProperty("dryrunmode"));
         AuthProps.init(prop);
         if (useAuth()) {
             RdfAuthModel.init();

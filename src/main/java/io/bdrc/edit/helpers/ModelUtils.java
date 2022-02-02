@@ -27,6 +27,8 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.SKOS;
+import org.seaborne.patch.RDFPatch;
+import org.seaborne.patch.changes.RDFChangesApply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,7 +173,7 @@ public class ModelUtils {
         return res;
     }
     
-    // changes completeSet (later can return plus and minus)
+    // changes completeSet with a new model (later can return plus and minus)
     public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws VersionConflictException {
         final boolean isUser = repoLname.equals("GR0100");
         log.info("merging new model for ", r);
@@ -200,6 +202,31 @@ public class ModelUtils {
             // no need to change the admin model
         }
         // TODO: option to also return removed / added symmetric and inverse triples in other models
+    }
+    
+    // copy a dataset
+    public static Dataset copyDataset(final Dataset ds) {
+        final Dataset res = DatasetFactory.create();
+        final Iterator<String> graphUrisIt = ds.listNames();
+        while (graphUrisIt.hasNext()) {
+            final String graphUri = graphUrisIt.next();
+            res.addNamedModel(graphUri, ModelFactory.createDefaultModel().add(ds.getNamedModel(graphUri)));
+        }
+        return res;
+    }
+    
+    // changes completeSet with a patch
+    public static void mergeModel(Dataset completeSet, final String graphUri, RDFPatch patch, final Resource r, final Resource shape, final String repoLname) throws VersionConflictException {
+        log.info("patching model for ", r);
+        // patches only apply on datasets, so we copy the original one and apply the patch
+        final Dataset newDataset = copyDataset(completeSet);
+        final RDFChangesApply apply = new RDFChangesApply(newDataset.asDatasetGraph());
+        patch.apply(apply);
+        final Model newModel = newDataset.getNamedModel(graphUri);
+        final Model newFocusGraph = CommonsRead.getFocusGraph(newModel, r, shape);
+        if (log.isDebugEnabled())
+            log.debug("obtained new focus graph ", modelToTtl(newFocusGraph));
+        mergeModel(completeSet, graphUri, newFocusGraph, r, shape, repoLname);
     }
     
     public static Model mergeModel(Model complement, Model focusEdited) {

@@ -1,8 +1,10 @@
 package io.bdrc.edit.commons.ops;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,6 +15,7 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
@@ -22,6 +25,8 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.seaborne.patch.RDFPatch;
+import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -295,6 +300,33 @@ public class CommonsGit {
             graphUri = graph.getURI();
             // next lines changes the result variable directly
             ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
+        }
+        // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
+        commitAndPush(gi, getCommitMessage(newModel, r));
+        return gi;
+    }
+    
+    // This saves the new model in git and returns a Fuseki-ready dataset
+    public static synchronized GitInfo saveInGit(final RDFPatch patch, final Resource r, final Resource shape)
+            throws IOException, VersionConflictException, GitAPIException {
+        final GitInfo gi = gitInfoForResource(r);
+        Dataset result = null;
+        String graphUri;
+        if (gi.ds == null) {
+            log.info("resource is new");
+            // new resource
+            gi.ds = createDatasetForNewResource(ModelFactory.createDefaultModel(), r);
+            ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
+            // TODO: create admin data for users?
+            graphUri = Models.BDG+r.getLocalName();
+        } else {
+            log.info("resource already exists in git");
+            result = gi.ds;
+            final Resource graph = ModelUtils.getMainGraph(result);
+            log.debug("main graph is ", graph);
+            graphUri = graph.getURI();
+            // next lines changes the result variable directly
+            ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
         }
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
         commitAndPush(gi, getCommitMessage(newModel, r));

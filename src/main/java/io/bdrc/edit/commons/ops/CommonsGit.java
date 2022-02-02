@@ -1,48 +1,34 @@
 package io.bdrc.edit.commons.ops;
 
-import static io.bdrc.libraries.Models.BDG;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.ResourceFactory;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.sparql.core.DatasetGraph;
+import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.ParameterFormatException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
-import io.bdrc.edit.txn.exceptions.ValidationException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.jena.sttl.STriGWriter;
-import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
 
@@ -64,6 +50,8 @@ public class CommonsGit {
     
     public final static Map<String,String> prefixToGitLname = new HashMap<>();
     public final static Map<String,String> gitLnameToRepoPath = new HashMap<>();
+    public final static Map<String,String> gitLnameToRemoteUrl = new HashMap<>();
+    public static UsernamePasswordCredentialsProvider gitCredentialProvider = null;
     
     public static void init() {
         gitLnameToRepoPath.put("GR0100", EditConfig.getProperty("usersGitLocalRoot"));
@@ -82,6 +70,21 @@ public class CommonsGit {
         gitLnameToRepoPath.put("GR0004", normalPath+"lineages");
         gitLnameToRepoPath.put("GR0001", normalPath+"corporations");
         gitLnameToRepoPath.put("GR0007", normalPath+"topics");
+        gitLnameToRepoPath.put("GR0100", EditConfig.getProperty("usersGitLocalRoot"));
+        final String normalBase = EditConfig.getProperty("gitRemoteBase");
+        gitLnameToRemoteUrl.put("GR0008", normalBase+"works");
+        gitLnameToRemoteUrl.put("GR0015", normalBase+"subscribers");
+        gitLnameToRemoteUrl.put("GR0012", normalBase+"instances");
+        gitLnameToRemoteUrl.put("GR0011", normalBase+"collections");
+        gitLnameToRemoteUrl.put("GR0013", normalBase+"einstances");
+        gitLnameToRemoteUrl.put("GR0003", normalBase+"items");
+        gitLnameToRemoteUrl.put("GR0014", normalBase+"iinstances");
+        gitLnameToRemoteUrl.put("GR0006", normalBase+"persons");
+        gitLnameToRemoteUrl.put("GR0005", normalBase+"places");
+        gitLnameToRemoteUrl.put("GR0010", normalBase+"roles");
+        gitLnameToRemoteUrl.put("GR0004", normalBase+"lineages");
+        gitLnameToRemoteUrl.put("GR0001", normalBase+"corporations");
+        gitLnameToRemoteUrl.put("GR0007", normalBase+"topics");
         prefixToGitLname.put("WAS", "GR0008");
         prefixToGitLname.put("ITW", "GR0003");
         prefixToGitLname.put("PRA", "GR0015");
@@ -97,6 +100,7 @@ public class CommonsGit {
         prefixToGitLname.put("L", "GR0004");
         prefixToGitLname.put("C", "GR0001");
         prefixToGitLname.put("T", "GR0007");
+        gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
     }
     
     public static GitInfo gitInfoFromFuseki(final Resource r) {
@@ -168,7 +172,7 @@ public class CommonsGit {
         return guessedGitInfo;
     }
     
-    public static String getRevFromLatestLogEntry(final Model newModel, final Resource r) {
+    public static String getCommitMessage(final Model newModel, final Resource r) {
         // TODO: read the log entries, etc.
         return "updating "+r.getLocalName();
     }
@@ -183,21 +187,88 @@ public class CommonsGit {
         return null;
     }
     
-    public static boolean pushRelevant(final String repoPath) {
-        // TODO: make sure we don't push every time
+    public static Map<String,Repository> lNameToRepoList = new HashMap<>();
+    
+    public static synchronized Repository getRepository(final String repoLname) {
+        if (lNameToRepoList.containsKey(repoLname)) {
+            return lNameToRepoList.get(repoLname);
+        }
+        final String path = gitLnameToRepoPath.get(repoLname);
+        FileRepositoryBuilder builder = new FileRepositoryBuilder();
+        File gitDir = new File(path + "/.git");
+        File wtDir = new File(path);
+        try {
+            Repository repository = builder.setGitDir(gitDir).setWorkTree(wtDir)
+                    .setMustExist( true )
+                    .readEnvironment() // scan environment GIT_* variables
+                    .build();
+            lNameToRepoList.put(repoLname, repository);
+            return repository;
+        } catch (IOException e) {
+            log.error("cannot parse git repo on ", path, e);
+            return null;
+        }
+    }
+    
+    public static synchronized boolean pushRelevant(final String repoLname) {
+        // TODO: push only every 10mn or even every hour
         return true;
+    }
+    
+    // commits and pushes, and returns the revision name
+    public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
+        log.info("commit and push ", gi, commitMessage);
+        if (EditConfig.dryrunmode)
+            return;
+        // write the file
+        final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
+        final String filePath = repoPath+"/"+gi.pathInRepo;
+        final FileOutputStream fos = new FileOutputStream(filePath);
+        log.info("write ", filePath);
+        datasetToOutputStream(gi.ds, fos);
+        // add and commit the file
+        Repository r = getRepository(gi.repoLname);
+        Git git = new Git(r);
+        RevCommit revR = null;
+        try {
+            if (git.status().addPath(gi.pathInRepo).call().isClean()) {
+                log.debug("file hasn't changed, nothing to do");
+                // if the file hasn't changed
+                git.close();
+                return;
+            }
+            git.add().addFilepattern(gi.pathInRepo).call();
+            revR = git.commit().setMessage(commitMessage).call();
+            gi.revId = revR.getName();
+        } catch (GitAPIException e) {
+            log.error("could not commit ", gi.pathInRepo, e);
+            git.close();
+            throw e;
+        }
+        // push if necessary
+        final String remoteUrl = gitLnameToRemoteUrl.get(gi.repoLname);
+        // no remote for some repositories, such as users
+        if (remoteUrl != null && pushRelevant(gi.repoLname)) {
+            try {
+                git.push().setCredentialsProvider(gitCredentialProvider).setRemote(remoteUrl).call();
+            } catch (GitAPIException e) {
+                log.error("unable to push ", gi.repoLname, " to ", remoteUrl, e);
+                // not being able to push is bad but shouldn't be blocking everything
+            }
+        }
+        git.close();       
     }
     
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape)
-            throws IOException, VersionConflictException {
+            throws IOException, VersionConflictException, GitAPIException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
             log.info("resource is new");
             // new resource
-            result = createDatasetForNewResource(newModel, r);
+            gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {
             log.info("resource already exists in git");
@@ -206,22 +277,10 @@ public class CommonsGit {
             log.debug("main graph is ", graph);
             graphUri = graph.getURI();
             // next lines changes the result variable directly
-            ModelUtils.mergeModel(result, graphUri, newModel, r, shape, gi.repoLname);            
+            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
         }
-        final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
-        final String filePath = repoPath+"/"+gi.pathInRepo;
-        final FileOutputStream fos = new FileOutputStream(filePath);
-        datasetToOutputStream(result, fos);
-        final RevCommit rev = GitHelpers.commitChanges(repoPath, getRevFromLatestLogEntry(newModel, r));
-        try {
-            GitHelpers.push(repoPath,
-                    EditConfig.getProperty("gitRemoteBase"), EditConfig.getProperty("gitUser"),
-                    EditConfig.getProperty("gitPass"), EditConfig.getProperty("gitLocalRoot"));
-        } catch (GitAPIException e) {
-            log.error("could not push ", repoPath, e);
-        }
-        gi.ds = result;
-        gi.revId = rev.getName();
+        // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
+        commitAndPush(gi, getCommitMessage(newModel, r));
         return gi;
     }
 

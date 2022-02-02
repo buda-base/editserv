@@ -194,7 +194,9 @@ public class ModelUtils {
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it
-            
+            final Model publicModel = publicUserModelFromPrivate(resModel, r);
+            final Resource publicGraph = ModelUtils.getPublicUserGraph(completeSet);
+            completeSet.replaceNamedModel(publicGraph.getURI(), publicModel);
             // no need to change the admin model
         }
         // TODO: option to also return removed / added symmetric and inverse triples in other models

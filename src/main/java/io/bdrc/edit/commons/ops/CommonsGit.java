@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.jena.query.Dataset;
@@ -14,7 +15,9 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -215,11 +218,23 @@ public class CommonsGit {
         return true;
     }
     
+    public static String getLastRefOfFile(Git git, String pathInRepo) throws GitAPIException {
+        Iterator<RevCommit> commits;
+        commits = git.log().addPath(pathInRepo).setMaxCount(1).call().iterator();
+        if (!commits.hasNext()) {
+            log.info("can't find any revision for ", pathInRepo);
+            return null;
+        }
+        return commits.next().getName();
+    }
+    
     // commits and pushes, and returns the revision name
     public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
         log.info("commit and push ", gi, commitMessage);
-        if (EditConfig.dryrunmode)
+        if (EditConfig.dryrunmode) {
+            gi.revId = "drymoderev";
             return;
+        }
         // write the file
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
         final String filePath = repoPath+"/"+gi.pathInRepo;
@@ -231,9 +246,11 @@ public class CommonsGit {
         Git git = new Git(r);
         RevCommit revR = null;
         try {
-            if (git.status().addPath(gi.pathInRepo).call().isClean()) {
-                log.debug("file hasn't changed, nothing to do");
-                // if the file hasn't changed
+            final Status status = git.status().addPath(gi.pathInRepo).call();
+            if (status.isClean()) {
+                log.debug("file hasn't changed, getting the latest revision of the file");
+                // kind of a strange case, in which we extract the latest revision
+                gi.revId = getLastRefOfFile(git, gi.pathInRepo);
                 git.close();
                 return;
             }

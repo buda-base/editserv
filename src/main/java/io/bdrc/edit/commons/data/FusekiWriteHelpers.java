@@ -196,7 +196,7 @@ public class FusekiWriteHelpers {
         return getInferredModel(m);
     }
     
-    static void putDataset(final GitInfo gi) {
+    public static void putDataset(final GitInfo gi) {
         logger.debug("putDataset", gi);
         // two path: the simple case
         if (!gi.repoLname.equals("GR0100")) {

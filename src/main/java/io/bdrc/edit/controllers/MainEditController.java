@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.bdrc.auth.Access;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.commons.ops.CommonsRead;
@@ -101,7 +103,7 @@ public class MainEditController {
         return ResponseEntity.ok().body(revId);
     }
 
-    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException {
+    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
@@ -114,6 +116,7 @@ public class MainEditController {
             throw new VersionConflictException("Some external resources do not have a correct RID, check logs");
         }
         final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape);
+        FusekiWriteHelpers.putDataset(gi);
         return gi.revId;
     }
     

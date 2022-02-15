@@ -3,10 +3,7 @@ package io.bdrc.edit.commons.data;
 import static io.bdrc.libraries.Models.ADM;
 import static io.bdrc.libraries.Models.BDG;
 
-import java.io.ByteArrayOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,11 +27,8 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
-import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.Models;
-import jdk.internal.jline.internal.Log;
 
 
 public class FusekiWriteHelpers {

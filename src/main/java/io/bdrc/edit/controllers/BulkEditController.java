@@ -54,7 +54,8 @@ public class BulkEditController {
             String withdrawn = node.findValue("withdrawn").asText();
             String valid = node.findValue("valid").asText();
             String fusekiUrl = node.findValue("fusekiUrl").asText();
-            BulkOps.replaceAllDuplicateByValid(withdrawn, valid, fusekiUrl);
+            // TODO!
+            //BulkOps.replaceAllDuplicateByValid(withdrawn, valid, fusekiUrl);
         } catch (Exception e) {
             log.error("A error occured while processing withdraw operation for " + json);
             return new ResponseEntity<>(getJsonErrorString(e), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -111,6 +112,11 @@ public class BulkEditController {
                     lang = node.findValue("graphs").asText();
                 }
             }
+            
+            /*
+             * TODO!
+             *
+            
             // graphs param is not empty : building graphs list
             if (!graphs.equals("")) {
                 ArrayList<String> graphUris = (ArrayList<String>) Arrays.asList(graphs.split(";"));
@@ -152,6 +158,7 @@ public class BulkEditController {
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
+            */
 
         } catch (Exception e) {
             log.error("A error occured while processing withdraw operation for " + json);
@@ -197,14 +204,15 @@ public class BulkEditController {
             // graphs param is not empty : building graphs list
             if (!graphs.equals("")) {
                 ArrayList<String> graphUris = (ArrayList<String>) Arrays.asList(graphs.split(";"));
-                BulkOps.renameProp(graphUris, oldProp, newProp, fusekiUrl);
+                // TODO!
+                //BulkOps.renameProp(graphUris, oldProp, newProp, fusekiUrl);
 
             } else {
                 // using sparql request
                 if (!sparql.equals("")) {
                     HashMap<String, ArrayList<String>> map = SparqlCommons.getGraphsByGitRepos(sparql, fusekiUrl, EditConfig.prefix.getPrefixesString());
-                    BulkOps.renameProp(map, oldProp, newProp, fusekiUrl);
-
+                    // TODO!
+                    //BulkOps.renameProp(map, oldProp, newProp, fusekiUrl);
                 } else {
                     log.error("No graph list or valid sparql has been found to rename prop using params :" + json);
                     return new ResponseEntity<>("No graph list or valid sparql has been found to rename prop using params :" + json,

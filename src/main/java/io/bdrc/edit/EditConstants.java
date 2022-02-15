@@ -21,6 +21,12 @@ public class EditConstants {
     public static final String BDG = "http://purl.bdrc.io/graph/";
     public static final String BDS = "http://purl.bdrc.io/ontology/shapes/core/";
     public static final String OWL = "http://www.w3.org/2002/07/owl#";
+    public static final String BDU = "http://purl.bdrc.io/resource-nc/user/";
+    public static final String BDOU = "http://purl.bdrc.io/ontology/ext/user/";
+    public static final String BDGU = "http://purl.bdrc.io/graph-nc/user/";
+    public static final String BDGUP = "http://purl.bdrc.io/graph-nc/user-private/";
+    public static final String ADR = "http://purl.bdrc.io/resource-nc/auth/";
+    public static final String FOAF = "http://xmlns.com/foaf/0.1/";
 
     public static final Resource ADMIN_DATA = ResourceFactory.createResource("http://purl.bdrc.io/ontology/admin/AdminData");
     public static final Resource STATUS_PROV = ResourceFactory.createResource("http://purl.bdrc.io/admindata/StatusProvisional");

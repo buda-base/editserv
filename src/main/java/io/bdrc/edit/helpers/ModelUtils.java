@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
@@ -94,7 +93,7 @@ public class ModelUtils {
         // in which case we take the bdgup one, and will rederive the public one
         if (graphUris.size() == 3) {
             for (final String uri : graphUris) {
-                if (uri.startsWith("http://purl.bdrc.io/graph-nc/user-private/")) {
+                if (uri.startsWith(EditConstants.BDGUP)) {
                     return ResourceFactory.createResource(uri);
                 }
             }
@@ -114,7 +113,7 @@ public class ModelUtils {
         Model res = ModelFactory.createDefaultModel();
         while (graphUrisIt.hasNext()) {
             final String graphUri = graphUrisIt.next();
-            if (graphUri.startsWith("http://purl.bdrc.io/admindata/") || graphUri.startsWith("http://purl.bdrc.io/graph-nc/user/")) {
+            if (graphUri.startsWith(EditConstants.BDA) || graphUri.startsWith(EditConstants.BDGU)) {
                 res.add(ds.getNamedModel(graphUri));
             }
         }
@@ -125,7 +124,7 @@ public class ModelUtils {
         final Iterator<String> graphUrisIt = ds.listNames();
         while (graphUrisIt.hasNext()) {
             final String graphUri = graphUrisIt.next();
-            if (graphUri.startsWith("http://purl.bdrc.io/graph-nc/user/")) {
+            if (graphUri.startsWith(EditConstants.BDGU)) {
                 return ResourceFactory.createResource(graphUri);
             }
         }
@@ -136,7 +135,7 @@ public class ModelUtils {
         final Iterator<String> graphUrisIt = ds.listNames();
         while (graphUrisIt.hasNext()) {
             final String graphUri = graphUrisIt.next();
-            if (graphUri.startsWith("http://purl.bdrc.io/graph-nc/user-private/")) {
+            if (graphUri.startsWith(EditConstants.BDGUP)) {
                 return ResourceFactory.createResource(graphUri);
             }
         }
@@ -148,7 +147,7 @@ public class ModelUtils {
         Model res = ModelFactory.createDefaultModel();
         while (graphUrisIt.hasNext()) {
             final String graphUri = graphUrisIt.next();
-            if (graphUri.startsWith("http://purl.bdrc.io/admindata/") || graphUri.startsWith("http://purl.bdrc.io/graph-nc/user-private/")) {
+            if (graphUri.startsWith(EditConstants.BDA) || graphUri.startsWith(EditConstants.BDGUP)) {
                 res.add(ds.getNamedModel(graphUri));
             }
         }

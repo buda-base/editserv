@@ -1,10 +1,8 @@
 package io.bdrc.edit.helpers;
 
 import static io.bdrc.libraries.Models.ADM;
-import static io.bdrc.libraries.Models.BDA;
 import static io.bdrc.libraries.Models.BDG;
 import static io.bdrc.libraries.Models.BDO;
-import static io.bdrc.libraries.Models.BDR;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
@@ -31,17 +28,10 @@ import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.system.PrefixMap;
-import org.apache.jena.riot.system.PrefixMapFactory;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.util.Context;
 import org.apache.jena.sparql.util.Symbol;
-import org.apache.jena.vocabulary.OWL;
-import org.apache.jena.vocabulary.RDF;
-import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
-import org.apache.jena.vocabulary.VCARD4;
-import org.apache.jena.vocabulary.XSD;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -96,11 +86,6 @@ public class Helpers {
         return ph.getResourceType(resId);
     }
 
-    public static AdminData fetchAdminInfo(String graphUri, EditPatchHeaders ph) throws NoSuchAlgorithmException {
-        String resId = graphUri.substring(graphUri.lastIndexOf("/") + 1);
-        AdminData ad = new AdminData(resId, getResourceType(graphUri, ph));
-        return ad;
-    }
 
     public static DatasetGraph buildGraphFromTrig(String data) {
         Dataset ds = DatasetFactory.create();

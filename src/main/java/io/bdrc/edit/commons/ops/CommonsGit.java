@@ -1,10 +1,8 @@
 package io.bdrc.edit.commons.ops;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,13 +18,11 @@ import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.seaborne.patch.RDFPatch;
-import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -316,9 +312,9 @@ public class CommonsGit {
             log.info("resource is new");
             // new resource
             gi.ds = createDatasetForNewResource(ModelFactory.createDefaultModel(), r);
+            graphUri = Models.BDG+r.getLocalName();
             ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
             // TODO: create admin data for users?
-            graphUri = Models.BDG+r.getLocalName();
         } else {
             log.info("resource already exists in git");
             result = gi.ds;
@@ -329,7 +325,7 @@ public class CommonsGit {
             ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
         }
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
-        commitAndPush(gi, getCommitMessage(newModel, r));
+        commitAndPush(gi, getCommitMessage(null, r));
         return gi;
     }
 

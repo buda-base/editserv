@@ -1,6 +1,5 @@
 package io.bdrc.edit.commons.ops;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,8 +26,6 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.helpers.Shapes;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.libraries.Models;
 
 public class CommonsValidate {

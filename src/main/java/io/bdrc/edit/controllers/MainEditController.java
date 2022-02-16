@@ -38,6 +38,7 @@ import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.Models;
@@ -103,7 +104,7 @@ public class MainEditController {
         return ResponseEntity.ok().body(revId);
     }
 
-    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException, GitAPIException {
+    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {

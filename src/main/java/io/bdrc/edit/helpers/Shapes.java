@@ -68,7 +68,7 @@ public class Shapes implements Runnable {
                 // don't import UI shapes
                 if (uri.endsWith("UiShapes/") || uri.endsWith("UIShapes/"))
                     continue;
-                log.error("OntManagerDoc : {}", uri);
+                log.info("OntManagerDoc : {}", uri);
                 OntModel om = odm.getOntology(uri, oms);
                 fullMod.add(om);
             }

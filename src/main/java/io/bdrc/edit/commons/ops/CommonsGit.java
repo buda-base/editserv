@@ -31,6 +31,7 @@ import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
@@ -104,7 +105,8 @@ public class CommonsGit {
         prefixToGitLname.put("L", "GR0004");
         prefixToGitLname.put("C", "GR0001");
         prefixToGitLname.put("T", "GR0007");
-        gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
+        if (!EditConfig.dryrunmode)
+            gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
     }
     
     public static GitInfo gitInfoFromFuseki(final Resource r) {
@@ -130,19 +132,26 @@ public class CommonsGit {
         return res;
     }
     
-    public static GitInfo gitInfoForResource(final Resource r) throws IOException {
+    public static GitInfo gitInfoForResource(final Resource r) throws IOException, ModuleException {
         final String rLname = r.getLocalName();
         // first we guess and check if the file exists
         final GitInfo guessedGitInfo = new GitInfo();
         guessedGitInfo.pathInRepo = Models.getMd5(rLname)+"/"+rLname+".trig";
         final String typePrefix = RIDController.getTypePrefix(r.getLocalName());
+        if (typePrefix == null)
+            throw new ModuleException("unable to find type for "+r.getLocalName());
         final String repoLname = prefixToGitLname.get(typePrefix);
+        if (repoLname == null)
+            throw new ModuleException("unable to find repo lname for prefix "+typePrefix);
+        log.debug("typeprefix {} gitlname {}", typePrefix, repoLname);
         guessedGitInfo.repoLname = repoLname;
         String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+guessedGitInfo.pathInRepo;
         if ((new File(guessedPath)).exists()) {
             guessedGitInfo.ds = Helpers.datasetFromTrig(GlobalHelpers.readFileContent(guessedPath));
-            log.info("found git file %s for resource %s", guessedPath, r);
+            log.info("found git file {} for resource {}", guessedPath, r);
             return guessedGitInfo;
+        } else {
+            log.info("didn't find git file {} for resource {}", guessedPath, r);
         }
         // if not, we try to take the part before the first underscore
         final int underscore_idx = rLname.indexOf('_');
@@ -279,7 +288,7 @@ public class CommonsGit {
     
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape)
-            throws IOException, VersionConflictException, GitAPIException {
+            throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
         String graphUri;
@@ -304,7 +313,7 @@ public class CommonsGit {
     
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo saveInGit(final RDFPatch patch, final Resource r, final Resource shape)
-            throws IOException, VersionConflictException, GitAPIException {
+            throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
         String graphUri;

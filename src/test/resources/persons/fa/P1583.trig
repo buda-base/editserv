@@ -46,6 +46,8 @@
 @prefix srcs:  <https://sakyaresearch.org/sources/> .
 @prefix srcl:  <https://sakyaresearch.org/literary_forms/> .
 
+bdg:P1583 {
+
 bdr:NME2F236C649A1  a  bdo:PersonPrimaryName ;
         rdfs:label  "隆钦热降巴·赤墨俄色"@zh-hans .
 
@@ -114,3 +116,5 @@ bdr:NT93D338F6A346  a              bdo:Note ;
         bdo:noteLocationStatement  "v. 2, pp.104-112" ;
         bdo:noteText               "biography\ndates: 1308-1363"@en ;
         bdo:noteWork               bdr:W25268 .
+
+}

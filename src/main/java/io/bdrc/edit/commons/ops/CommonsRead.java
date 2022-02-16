@@ -175,8 +175,8 @@ public class CommonsRead {
         final ShaclProps sp = getShaclPropsFor(shape);
         if (sp == null) 
             return;
-        if (log.isInfoEnabled())
-            log.info(sp.toString());
+        if (log.isDebugEnabled())
+            log.debug(sp.toString());
         for (Entry<String,Resource> e : sp.properties.entrySet()) {
             final String path = e.getKey();
             final Resource subShape = e.getValue();

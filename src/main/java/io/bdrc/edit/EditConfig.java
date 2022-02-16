@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.commons.data.OntologyData;
+import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.user.UsersCache;
 import io.bdrc.libraries.Prefix;
@@ -53,10 +54,12 @@ public class EditConfig {
             log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
         }
         dryrunmode = "true".equals(prop.getProperty("dryrunmode"));
+        log.info("dry run: {}", dryrunmode);
         AuthProps.init(prop);
         if (useAuth()) {
             RdfAuthModel.init();
         }
+        CommonsGit.init();
         UsersCache.init();
         OntologyData.init();
         Shapes.init();

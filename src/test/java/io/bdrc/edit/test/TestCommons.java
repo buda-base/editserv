@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RDFParser;
@@ -18,6 +19,8 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.NotModifiableException;
 import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
@@ -54,22 +57,11 @@ public class TestCommons {
         String graphUri2 = "http://purl.bdrc.io/resource/P1583XZ";
 
         try {
-            CommonsGit.getGraphFromGit(graphUri1);
-        } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
-            assert (e instanceof UnknownBdrcResourceException);
-        }
-
-        try {
-            CommonsGit.getGraphFromGit(graphUri2);
-        } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
-            assert (e instanceof NotModifiableException);
-        }
-
-        try {
-            Model m = CommonsGit.getGraphFromGit(graphUri);
+            GitInfo gi = CommonsGit.gitInfoForResource(ResourceFactory.createResource(graphUri));
+            Model m = ModelUtils.getMainModel(gi.ds);
             assert (m.size() > 0);
             m.write(System.out, "TURTLE");
-        } catch (UnknownBdrcResourceException | NotModifiableException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

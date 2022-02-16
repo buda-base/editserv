@@ -11,6 +11,9 @@ import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.shacl.vocabulary.SHACL;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -54,7 +57,7 @@ public class Shapes implements Runnable {
             modelsBase = new HashMap<>();
             OntModelSpec oms = new OntModelSpec(OntModelSpec.OWL_MEM);
             OntDocumentManager odm = new OntDocumentManager(System.getProperty("user.dir") + "/editor-templates/ont-policy.rdf");
-            odm.setProcessImports(true);
+            odm.setProcessImports(false);
             odm.setCacheModels(false);
             odm.getFileManager().resetCache();
             oms.setDocumentManager(odm);
@@ -62,11 +65,14 @@ public class Shapes implements Runnable {
             fullMod = ModelFactory.createDefaultModel();
             while (it.hasNext()) {
                 String uri = it.next();
-                log.info("OntManagerDoc : {}", uri);
+                // don't import UI shapes
+                if (uri.endsWith("UiShapes/") || uri.endsWith("UIShapes/"))
+                    continue;
+                log.error("OntManagerDoc : {}", uri);
                 OntModel om = odm.getOntology(uri, oms);
                 fullMod.add(om);
-                
             }
+            //fullMod.write(System.out, "TTL");
             fullShapes = org.apache.jena.shacl.Shapes.parse(fullMod);
             CommonsRead.nodeShapesToProps = new HashMap<>();
             //shapesGraph = ShapesGraphFactory.get().createShapesGraph(shapesModel);
@@ -101,8 +107,7 @@ public class Shapes implements Runnable {
                 localRepo = builder.setGitDir(localGit).setWorkTree(WlocalGit).readEnvironment() // scan environment GIT_* variables
                         .build();
             } catch (IOException ex) {
-                ex.printStackTrace();
-                log.error("Git was unable to setup repository at init time " + localGit.getPath() + " directory ", ex.getMessage());
+                log.error("Git was unable to setup repository at init time " + localGit.getPath() + " directory ", ex);
             }
             commit = updateRepo(localRepo);
         }
@@ -116,8 +121,7 @@ public class Shapes implements Runnable {
             result.checkout().setName("master").call();
             result.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            log.error(" Git was unable to pull repository : " + remoteUrl + " directory ", ex.getMessage());
+            log.error(" Git was unable to pull repository : " + remoteUrl + " directory ", ex);
         }
     }
 
@@ -132,7 +136,7 @@ public class Shapes implements Runnable {
             commitId = localRepo.resolve(Constants.HEAD).getName().substring(0, 7);
             log.info("LOCAL REPO >> {} was updated with commit {}", localRepo, commitId);
         } catch (Exception ex) {
-            log.error(" Git was unable to pull in directory {}, message: {}", localRepo, ex.getMessage());
+            log.error(" Git was unable to pull in directory {}, message: {}", localRepo, ex);
         }
         return commitId;
     }

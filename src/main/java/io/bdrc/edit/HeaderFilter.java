@@ -4,57 +4,31 @@ import java.io.IOException;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
-@Order(1)
+@Order(2)
 public class HeaderFilter implements Filter {
-
-    @Value("${access-control.Allow-Origin}")
-    private String allowOrigin;
-    @Value("${access-control.Allow-Headers}")
-    private String allowHeaders;
-    @Value("${access-control.Allow-Credentials}")
-    private String allowCredentials;
-    @Value("${access-control.Allow-Methods}")
-    private String allowMethods;
-    @Value("${access-control.Expose-Headers}")
-    private String exposeHeaders;
-
-    @Override
-    public void destroy() {
-        // TODO Auto-generated method stub
-
-    }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest request = (HttpServletRequest) req;
-        String orig = request.getHeader("Origin");
-        if (orig == null) {
-            orig = allowOrigin;
-        }
         HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Access-Control-Allow-Origin", orig);
-        response.setHeader("Access-Control-Allow-Headers", allowHeaders);
-        response.setHeader("Access-Control-Allow-Credentials", allowCredentials);
-        response.setHeader("Access-Control-Allow-Methods", allowMethods);
-        response.setHeader("Access-Control-Expose-Headers", exposeHeaders);
-        chain.doFilter(req, res);
-    }
+        ((HttpServletResponse) response).addHeader("Access-Control-Allow-Origin", "*");
+        ((HttpServletResponse) response).addHeader("Access-Control-Allow-Credentials", "true");
+        ((HttpServletResponse) response).addHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+        ((HttpServletResponse) response).addHeader("Access-Control-Allow-Headers",
 
-    @Override
-    public void init(FilterConfig arg0) throws ServletException {
-        // TODO Auto-generated method stub
+                "Origin, Accept, X-Requested-With, Content-Type, " + "Access-Control-Request-Method, Access-Control-Request-Headers, "
+                        + "Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-None-Match, Cache-Control");
+        ((HttpServletResponse) response).addHeader("Access-Control-Expose-Headers",
+                "ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age");
+        chain.doFilter(req, res);
     }
 
 }

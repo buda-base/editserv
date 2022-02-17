@@ -270,14 +270,15 @@ public class UserAPICheck {
         // gets the buda user id from token
         TokenValidation tv = new TokenValidation(staffToken);
         UserProfile up = tv.getUser();
-        String userId = BudaUser.getRdfProfile(up.getUser().getUserId()).getLocalName();
+        Resource user = BudaUser.getRdfProfile(up.getUser().getUserId());
+        String userLname = user.getLocalName();
         HttpDelete hd = new HttpDelete(
-                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/" + userId);
+                "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/" + userLname);
         hd.addHeader("Authorization", "Bearer " + adminToken);
         resp = client.execute(hd);
         log.info("RESP STATUS disableBudaUser 2 >> {}", resp.getStatusLine());
         assert (resp.getStatusLine().getStatusCode() == 200);
-        assert (!BudaUser.isActive(userId));
+        assert (!BudaUser.isActive(user));
         // assert (up.getUser().isBlocked());
     }
 

@@ -99,8 +99,8 @@ public class BudaUser {
         return null;
     }
     
-    public static RDFNode getAuth0IdFromUserId(String userId) throws IOException {
-        String query = "select distinct ?o where  {  <" + EditConstants.BDU + userId + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
+    public static RDFNode getAuth0IdFromUser(Resource user) throws IOException {
+        String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
         ResultSet rs = qe.execSelect();
@@ -112,8 +112,8 @@ public class BudaUser {
         return null;
     }
 
-    public static boolean isActive(String userId) throws IOException {
-        String query = "select distinct ?o where  {  <" + EditConstants.BDU + userId + "> <http://purl.bdrc.io/ontology/ext/user/isActive> ?o }";
+    public static boolean isActive(Resource user) throws IOException {
+        String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/isActive> ?o }";
         log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
         ResultSet rs = qe.execSelect();
@@ -148,9 +148,10 @@ public class BudaUser {
         final String authId = usr.getAuthId();
         int toAdd = 0;
         while (toAdd < 10) {
-            String newId = "U0ES" + Integer.toString(Math.abs(authId.hashCode()+toAdd));
-            if (getAuth0IdFromUserId(newId) == null)
-                return ResourceFactory.createResource(EditConstants.BDU+newId);
+            final String newId = "U0ES" + Integer.toString(Math.abs(authId.hashCode()+toAdd));
+            final Resource user = ResourceFactory.createResource(EditConstants.BDU+newId);
+            if (getAuth0IdFromUser(user) == null)
+                return user;
             toAdd += 1;
         }
         log.error("couldn't find an available ID after 10 attempts, aborting");
@@ -209,13 +210,6 @@ public class BudaUser {
         // revision is in gi.rev
         FusekiWriteHelpers.putDataset(gi);
         return res;
-    }
-    
-    public static boolean isSameUser(User usr, String userResId) throws IOException {
-        String auth0Id = usr.getUserId();
-        String userAuthId = getAuth0IdFromUserId(userResId).toString();
-        userAuthId = userAuthId.substring(userAuthId.lastIndexOf("/") + 1);
-        return auth0Id.equals(userAuthId);
     }
 
     public static HashMap<String, List<String>> getUserPropsEditPolicies() {

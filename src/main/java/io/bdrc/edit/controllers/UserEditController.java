@@ -34,6 +34,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.Models;
@@ -54,19 +55,13 @@ public class UserEditController {
             throws IOException, GitAPIException, NoSuchAlgorithmException {
         try {
             log.info("Call meUser()");
-            String token = getToken(request.getHeader("Authorization"));
-            if (token == null) {
-                HashMap<String, String> err = new HashMap<>();
-                err.put("message", "No data available");
-                err.put("cause", "No token was found");
-                return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON_UTF8)
-                        .body(StreamingHelpers.getJsonObjectStream(err));
-            }
             Access acc = (Access) request.getAttribute("access");
+            if (!acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body(null);
             log.info("meUser() Access >> {} ", acc);
             String authId = acc.getUser().getAuthId();
             if (authId == null || authId.isEmpty()) {
-                log.error("couldn't find authId for "+token);
+                log.error("couldn't find authId");
                 return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
                         .body(null);
             }
@@ -101,51 +96,46 @@ public class UserEditController {
         }
     }
 
-    @PutMapping(value = "/resource-nc/user/{res}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> userPut(@PathVariable("res") final String res,
-            HttpServletResponse response, HttpServletRequest request, @RequestBody String model) throws Exception {
+    public static ResponseEntity<String> userPut(final String qname, HttpServletResponse response, HttpServletRequest request, String model) throws Exception {
         log.info("Call userPut()");
-        String token = getToken(request.getHeader("Authorization"));
-        if (token == null) {
-            HashMap<String, String> err = new HashMap<>();
-            err.put("message", "You must be authenticated in order to change this user");
-            err.put("cause", "No token was found");
-            // not great but will do
-            return ResponseEntity.status(401).body(err.toString());
-        }
-        String auth0IdOfRes = BudaUser.getAuth0IdFromUserId(res).asNode().getURI();
-        String auth0IdOfResLN = auth0IdOfRes.substring(auth0IdOfRes.lastIndexOf("/") + 1);
-        User usrOfRes = RdfAuthModel.getUser(auth0IdOfResLN);
-        Access acc = (Access) request.getAttribute("access");
-        String authId = acc.getUser().getAuthId();
-        if (authId == null || authId.isEmpty()) {
-            log.error("couldn't find authId for "+token);
-            return ResponseEntity.status(500).body("couldn't find authId for token "+token);
-        }
-        String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
-        log.info("meUser() auth0Id >> {}", auth0Id);
-        Resource usr = BudaUser.getRdfProfile(auth0Id);
-        log.info("userPatch() Token User {}", acc.getUser());
-        if (acc.getUserProfile().isAdmin() || usr.getLocalName().equals(res)) {
-            MediaType med = MediaType.parseMediaType(request.getHeader("Content-Type"));
-            Lang jenaLang = null;
-            if (med != null) {
-                jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
-                log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
-            } else {
-                log.error("Invalid or missing Content-Type header {}", request.getHeader("Content-Type"));
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Cannot parse Content-Type header " + request.getHeader("Content-Type"));
+        if (!qname.startsWith("bdu:"))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("you can only modify entities in the bdr namespace in this endpoit");
+        final Resource user = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
+        if (EditConfig.useAuth) {
+            //final String auth0IdOfRes = BudaUser.getAuth0IdFromUser(user).asNode().getURI();
+            //final String auth0IdOfResLN = auth0IdOfRes.substring(auth0IdOfRes.lastIndexOf("/") + 1);
+            //User usrOfRes = RdfAuthModel.getUser(auth0IdOfResLN);
+            final Access acc = (Access) request.getAttribute("access");
+            if (!acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body("you need to be logged in to use this service");
+            String authId = acc.getUser().getAuthId();
+            if (authId == null) {
+                log.error("couldn't find authId for {}"+acc.toString());
+                return ResponseEntity.status(500).body("couldn't find authId");
             }
-            final Model inModel = ModelFactory.createDefaultModel();
-            InputStream in = new ByteArrayInputStream(model.getBytes());
-            inModel.read(in, null, jenaLang.getLabel());
-            final Resource subject = ResourceFactory.createResource(Models.BDU+res);
-            final String revId = MainEditController.saveResource(inModel, subject);
-            response.addHeader("Content-Type", "text/plain;charset=utf-8");
-            return ResponseEntity.ok().body(revId);
+            final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
+            log.info("meUser() auth0Id >> {}", auth0Id);
+            final Resource usr = BudaUser.getRdfProfile(auth0Id);
+            log.info("userPatch() Token User {}", acc.getUser());
+            if (EditConfig.useAuth && !acc.getUserProfile().isAdmin() && !usr.getLocalName().equals(qname)) {
+                return ResponseEntity.status(403).body("only admins can modify other users");
+            }
         }
-        return ResponseEntity.status(403).body("only admins can modify other users");
+        final MediaType med = MediaType.parseMediaType(request.getHeader("Content-Type"));
+        if (med == null) {
+            log.error("Invalid or missing Content-Type header {}", request.getHeader("Content-Type"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse Content-Type header " + request.getHeader("Content-Type"));
+        }
+        final Lang jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
+        log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
+        final Model inModel = ModelFactory.createDefaultModel();
+        final InputStream in = new ByteArrayInputStream(model.getBytes());
+        inModel.read(in, null, jenaLang.getLabel());
+        final String revId = MainEditController.saveResource(inModel, user);
+        response.addHeader("Content-Type", "text/plain;charset=utf-8");
+        return ResponseEntity.ok().body(revId);
     }
 
     @GetMapping(value = "/userEditPolicies", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -153,13 +143,6 @@ public class UserEditController {
         log.info("Call to getUserEditPolicies()");
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON_UTF8)
                 .body(StreamingHelpers.getJsonObjectStream(BudaUser.getUserPropsEditPolicies()));
-    }
-
-    private String getToken(final String header) {
-        if (header == null || !header.startsWith("Bearer ")) {
-            return null;
-        }
-        return header.substring(7);
     }
 
     @PostMapping(value = "/callbacks/updateFuseki/", produces = MediaType.TEXT_HTML_VALUE)

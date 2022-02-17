@@ -173,6 +173,7 @@ public class CommonsRead {
     
     public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape) {
         final ShaclProps sp = getShaclPropsFor(shape);
+        log.info("shacl props {}", sp);
         if (sp == null) 
             return;
         //if (log.isDebugEnabled())
@@ -190,7 +191,11 @@ public class CommonsRead {
                 }
             } else {
                 final Boolean listMode = path.endsWith("[]");
-                StmtIterator si = m.listStatements(subject, m.createProperty(path), (RDFNode) null);
+                StmtIterator si;
+                if (listMode)
+                    si = m.listStatements(subject, m.createProperty(path.substring(0, path.length()-2)), (RDFNode) null);
+                else
+                    si = m.listStatements(subject, m.createProperty(path), (RDFNode) null);
                 while (si.hasNext()) {
                     final Statement s = si.next();
                     fg.add(s);
@@ -206,6 +211,7 @@ public class CommonsRead {
     
     public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) {
         final Model res = ModelFactory.createDefaultModel();
+        log.debug("build focus graph for {}", subject);
         res.setNsPrefixes(m.getNsPrefixMap());
         addToFocusGraph(m, res, subject, shape);
         return res;

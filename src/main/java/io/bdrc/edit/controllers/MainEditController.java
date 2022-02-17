@@ -52,7 +52,7 @@ public class MainEditController {
     public final static Logger log = LoggerFactory.getLogger(MainEditController.class.getName());
 
     @GetMapping(value = "/focusGraph/{qname}", produces = "text/turtle")
-    public ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
+    public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
         Model m = null;
         if (!qname.startsWith("bdr:"))
@@ -79,9 +79,14 @@ public class MainEditController {
     }
     
     @PutMapping(value = "/putresource/{qname}")
-    public ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
+    public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
-        if (!EditConfig.testMode) {
+        if (qname.startsWith("bdu:"))
+            return UserEditController.userPut(qname, response, req, model);
+        if (!qname.startsWith("bdr:"))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("you can only modify entities in the bdr namespace in this endpoit");
+        if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             if (acc == null || !acc.isUserLoggedIn())
                 return ResponseEntity.status(401).body("this requires being logged in with an admin account");
@@ -115,10 +120,9 @@ public class MainEditController {
 
     public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
+        log.info("use shape {}", shape);
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
-            //log.error(ModelUtils.modelToTtl(inFocusGraph));
-            //log.error(ModelUtils.modelToTtl(inModel));
             Model diff = inModel.difference(inFocusGraph);
             log.error("Focus graph is not the same size as initial graph, difference is {}", ModelUtils.modelToTtl(diff));
         }

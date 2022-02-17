@@ -122,13 +122,13 @@ public class CommonsRead {
             if (node != null && node.getURI().endsWith("ListShape"))
                 listMode = true;
             
-            if (path != null && !path.isAnon()) {
-                sparqlPath = path.getURI();
-            } else if (path != null && path.isAnon()) {
+            if (path != null) {
                 pathInverse = path.getPropertyResourceValue(EditConstants.SH_INVERSE_PATH);
                 if (pathInverse != null) {
                     sparqlPath = "^"+pathInverse.getURI();
                     pathIsInverse = true;
+                } else {
+                    sparqlPath = path.getURI();
                 }
             }
             if (sparqlPath == null)
@@ -175,8 +175,8 @@ public class CommonsRead {
         final ShaclProps sp = getShaclPropsFor(shape);
         if (sp == null) 
             return;
-        if (log.isDebugEnabled())
-            log.debug(sp.toString());
+        //if (log.isDebugEnabled())
+        //    log.debug(sp.toString());
         for (Entry<String,Resource> e : sp.properties.entrySet()) {
             final String path = e.getKey();
             final Resource subShape = e.getValue();
@@ -205,7 +205,6 @@ public class CommonsRead {
     }
     
     public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) {
-        
         final Model res = ModelFactory.createDefaultModel();
         res.setNsPrefixes(m.getNsPrefixMap());
         addToFocusGraph(m, res, subject, shape);

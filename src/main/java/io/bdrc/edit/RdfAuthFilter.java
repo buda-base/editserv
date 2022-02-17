@@ -31,7 +31,7 @@ public class RdfAuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         try {
             String method = ((HttpServletRequest) request).getMethod();
-            if (EditConfig.useAuth() && !method.equalsIgnoreCase("OPTIONS")) {
+            if (EditConfig.useAuth && !method.equalsIgnoreCase("OPTIONS")) {
                 HttpServletRequest req = (HttpServletRequest) request;
                 boolean isSecuredEndpoint = true;
                 request.setAttribute("access", new Access());
@@ -93,11 +93,11 @@ public class RdfAuthFilter implements Filter {
                     }
                 }
             }
-            chain.doFilter(request, response);
         } catch (Exception e) {
             log.error("Auth filter did not go through properly ", e);
             throw e;
         }
+        chain.doFilter(request, response);
     }
 
     public static String getToken(final String header) {

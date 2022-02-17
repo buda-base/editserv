@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RiotException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,7 @@ public class MainEditController {
             Resource shape = CommonsRead.getShapeForEntity(r);
             m = ModelUtils.getMainModel(gi.ds);
             m = CommonsRead.getFocusGraph(m, r, shape);
+            m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
@@ -79,11 +81,13 @@ public class MainEditController {
     @PutMapping(value = "/putresource/{qname}")
     public ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
-        Access acc = (Access) req.getAttribute("access");
-        if (acc == null || !acc.isUserLoggedIn())
-            return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-        if (!acc.getUserProfile().isAdmin())
-            return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        if (!EditConfig.testMode) {
+            Access acc = (Access) req.getAttribute("access");
+            if (acc == null || !acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
+            if (!acc.getUserProfile().isAdmin())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        }
         InputStream in = new ByteArrayInputStream(model.getBytes());
         MediaType med = MediaType.parseMediaType(req.getHeader("Content-Type"));
         Lang jenaLang = null;
@@ -96,7 +100,12 @@ public class MainEditController {
                     .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
         final Model inModel = ModelFactory.createDefaultModel();
-        inModel.read(in, null, jenaLang.getLabel());
+        try {
+            inModel.read(in, null, jenaLang.getLabel());
+        } catch (RiotException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse request content in " + req.getHeader("Content-Type"));
+        }
         final String lname = qname.substring(4);
         final Resource subject = ResourceFactory.createResource(Models.BDR+lname);
         final String revId = saveResource(inModel, subject);
@@ -108,7 +117,10 @@ public class MainEditController {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
-            throw new VersionConflictException("Graph does not conform shape");
+            //log.error(ModelUtils.modelToTtl(inFocusGraph));
+            //log.error(ModelUtils.modelToTtl(inModel));
+            Model diff = inModel.difference(inFocusGraph);
+            log.error("Focus graph is not the same size as initial graph, difference is {}", ModelUtils.modelToTtl(diff));
         }
         if (!CommonsValidate.validateShacl(inFocusGraph)) {
             throw new VersionConflictException("Shacl did not validate, check logs");

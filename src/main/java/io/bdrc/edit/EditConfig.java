@@ -30,6 +30,8 @@ public class EditConfig {
     public static String FUSEKI_DATA = "fusekiData";
     public final static String QUERY_TIMEOUT = "timeout";
     public static Prefix prefix;
+    public static boolean testMode = false;
+    public static boolean useAuth = true;
     public static boolean dryrunmode = false;
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
@@ -54,9 +56,11 @@ public class EditConfig {
             log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
         }
         dryrunmode = "true".equals(prop.getProperty("dryrunmode"));
+        testMode = "true".equals(prop.getProperty("testMode"));
+        useAuth = !"false".equals(prop.getProperty("useAuth"));
         log.info("dry run: {}", dryrunmode);
         AuthProps.init(prop);
-        if (useAuth()) {
+        if (useAuth) {
             RdfAuthModel.init();
         }
         CommonsGit.init();
@@ -71,8 +75,9 @@ public class EditConfig {
     }
 
     public static void initForTests(String fusekiUrl) throws JsonParseException, JsonMappingException, IOException {
+        testMode = true;
+        useAuth = false;
         try {
-
             InputStream input = new FileInputStream(new File("src/test/resources/test.properties"));
             // load a properties file
             prop.load(input);
@@ -85,10 +90,6 @@ public class EditConfig {
         if (fusekiUrl != null) {
             prop.setProperty(FUSEKI_URL, fusekiUrl);
         }
-    }
-
-    static boolean useAuth() {
-        return Boolean.parseBoolean(prop.getProperty("useAuth"));
     }
 
     public static String getProperty(String key) {

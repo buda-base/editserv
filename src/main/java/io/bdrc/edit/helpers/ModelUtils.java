@@ -36,7 +36,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
-import io.bdrc.edit.txn.exceptions.VersionConflictException;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.jena.sttl.STriGWriter;
 
 public class ModelUtils {
@@ -173,25 +173,25 @@ public class ModelUtils {
     }
     
     // changes completeSet with a new model (later can return plus and minus)
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws VersionConflictException {
+    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws ModuleException {
         final boolean isUser = repoLname.equals("GR0100");
-        log.info("merging new model for ", r);
+        log.info("merging new model for {}", r);
         final Model original = completeSet.getNamedModel(graphUri);
         if (log.isDebugEnabled())
-            log.debug("original model is ", modelToTtl(original));
+            log.debug("original model is {}", modelToTtl(original));
         final Model focusedOriginal = CommonsRead.getFocusGraph(original, r, shape);
         if (log.isDebugEnabled())
-            log.debug("focused original model is ", modelToTtl(focusedOriginal));
+            log.debug("focused original model is {}", modelToTtl(focusedOriginal));
         // don't validate commit for users
         if (!isUser && !CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
-            throw new VersionConflictException("Version conflict while trying to save " + r.getURI());
+            throw new ModuleException(500, "Version conflict while trying to save " + r.getURI());
         }
         final Model outOfFocusOriginal = original.difference(focusedOriginal);
         if (log.isDebugEnabled())
-            log.debug("out of focused original model is ", modelToTtl(outOfFocusOriginal));
+            log.debug("out of focused original model is {}", modelToTtl(outOfFocusOriginal));
         final Model resModel = outOfFocusOriginal.add(newFocusModel);
         if (log.isDebugEnabled())
-            log.debug("result of the merge is  ", modelToTtl(resModel));
+            log.debug("result of the merge is {}", modelToTtl(resModel));
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it
@@ -203,28 +203,45 @@ public class ModelUtils {
         // TODO: option to also return removed / added symmetric and inverse triples in other models
     }
     
-    // copy a dataset
-    public static Dataset copyDataset(final Dataset ds) {
-        final Dataset res = DatasetFactory.create();
-        final Iterator<String> graphUrisIt = ds.listNames();
-        while (graphUrisIt.hasNext()) {
-            final String graphUri = graphUrisIt.next();
-            res.addNamedModel(graphUri, ModelFactory.createDefaultModel().add(ds.getNamedModel(graphUri)));
+    // given a model from the user, the main resource and a shape, return a valid focus graph
+    // throw ModuleException if model is invalid
+    public static Model getValidFocusGraph(final Model inModel, final Resource r, final Resource shape) throws ModuleException {
+        final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
+        if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
+            Model diff = inModel.difference(inFocusGraph);
+            log.error("Focus graph is not the same size as initial graph, difference is {}", ModelUtils.modelToTtl(diff));
+            throw new ModuleException(400, "Focus graph is not the same size as initial graph");
         }
-        return res;
+        if (!CommonsValidate.validateShacl(inFocusGraph)) {
+            throw new ModuleException(400, "Shacl did not validate, check logs");
+        }
+        if (!CommonsValidate.validateExtRIDs(inFocusGraph)) {
+            throw new ModuleException(400, "Some external resources do not have a correct RID, check logs");
+        }
+        return inFocusGraph;
     }
     
     // changes completeSet with a patch
-    public static void mergeModel(Dataset completeSet, final String graphUri, RDFPatch patch, final Resource r, final Resource shape, final String repoLname) throws VersionConflictException {
-        log.info("patching model for ", r);
-        // patches only apply on datasets, so we copy the original one and apply the patch
-        final Dataset newDataset = copyDataset(completeSet);
+    public static void mergeModel(Dataset completeSet, final String graphUri, RDFPatch patch, final Resource r, final Resource shape, final String repoLname) throws ModuleException {
+        log.info("patching model for {}", r);
+        // patches only apply on datasets, so we get a dataset that contains only
+        // the focus graph of the main graph of the original dataset
+        final Dataset newDataset = DatasetFactory.create();
+        final Model initialModel = completeSet.getNamedModel(graphUri);
+        final Model initialFocusGraph = CommonsRead.getFocusGraph(initialModel, r, shape);
+        newDataset.addNamedModel(graphUri, initialFocusGraph);
         final RDFChangesApply apply = new RDFChangesApply(newDataset.asDatasetGraph());
         patch.apply(apply);
         final Model newModel = newDataset.getNamedModel(graphUri);
-        final Model newFocusGraph = CommonsRead.getFocusGraph(newModel, r, shape);
-        if (log.isDebugEnabled())
-            log.debug("obtained new focus graph ", modelToTtl(newFocusGraph));
+        if (log.isDebugEnabled()) {
+            log.debug("initial model that should be patched {}", modelToTtl(initialFocusGraph));
+            log.debug("focus graph of the initial model {}", modelToTtl(initialFocusGraph));
+            log.debug("patched focus graph {}", modelToTtl(newModel));
+        }
+        final Model newFocusGraph = getValidFocusGraph(newModel, r, shape);
+        if (log.isDebugEnabled()) {
+            log.debug("obtained new focus graph {}", modelToTtl(newFocusGraph));
+        }
         mergeModel(completeSet, graphUri, newFocusGraph, r, shape, repoLname);
     }
     

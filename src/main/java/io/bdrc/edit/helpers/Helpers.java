@@ -6,12 +6,10 @@ import static io.bdrc.libraries.Models.BDO;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -41,11 +39,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.TransactionLog;
 import io.bdrc.jena.sttl.CompareComplex;
 import io.bdrc.jena.sttl.ComparePredicates;
 import io.bdrc.jena.sttl.STTLWriter;
@@ -81,11 +75,6 @@ public class Helpers {
         ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "predicateBaseWidth"), 18);
         return ctx;
     }
-
-    public static String getResourceType(String resId, EditPatchHeaders ph) {
-        return ph.getResourceType(resId);
-    }
-
 
     public static DatasetGraph buildGraphFromTrig(String data) {
         Dataset ds = DatasetFactory.create();
@@ -210,25 +199,6 @@ public class Helpers {
         DatasetGraph dsg = DatasetFactory.create().asDatasetGraph();
         dsg.addGraph(graphUri, m.getGraph());
         new STriGWriter().write(out, dsg, EditConfig.prefix.getPrefixMap(), graphUri.toString(m), Helpers.createWriterContext());
-    }
-
-    public static boolean finalizeLog(TransactionLog log, String name) throws JsonProcessingException, IOException {
-        File f = new File(log.getPath());
-        System.out.println("LOG PATH >> " + log.getPath() + " exist ? =" + f.exists());
-        if (!f.exists()) {
-            f.mkdir();
-        }
-        System.out.println("LOG PATH AFTER >> " + log.getPath() + " exist ? =" + f.exists());
-        boolean ok = true;
-        HashMap<String, HashMap<String, String>> obj = new HashMap<>();
-        obj.put(TransactionLog.HEADER, log.header);
-        obj.put(TransactionLog.CONTENT, log.content);
-        obj.put(TransactionLog.ERROR, log.error);
-        ObjectMapper mapper = new ObjectMapper();
-        FileOutputStream fos = new FileOutputStream(new File(log.getPath() + name + ".log"));
-        mapper.writerWithDefaultPrettyPrinter().writeValue(fos, obj);
-        fos.close();
-        return ok;
     }
 
     public static String getShortName(String fullResUri) {

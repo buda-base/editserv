@@ -46,12 +46,8 @@ public class UserEditController {
 
     public final static Logger log = LoggerFactory.getLogger(UserEditController.class.getName());
 
-    public UserEditController() {
-        // TODO Auto-generated constructor stub
-    }
-
-    @GetMapping(value = "/resource-nc/user/me")
-    public ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
+    @GetMapping(value = "/me")
+    public static ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
             throws IOException, GitAPIException, NoSuchAlgorithmException {
         try {
             log.info("Call meUser()");

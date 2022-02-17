@@ -1,0 +1,6 @@
+H  graph   "http://purl.bdrc.io/graph-nc/user/U0ES1838013809,http://purl.bdrc.io/graph-nc/user-private/U0ES1838013809" .
+H  mapping "http://purl.bdrc.io/graph-nc/user/U0ES1838013809-user,http://purl.bdrc.io/graph-nc/user-private/U0ES1838013809-user" .
+H  scope   "http://purl.bdrc.io/graph-nc/user/U0ES1838013809-public,http://purl.bdrc.io/graph-nc/user-private/U0ES1838013809-private" . 
+TX . 
+A  <http://purl.bdrc.io/resource-nc/user/U0ES1838013809> <http://purl.bdrc.io/ontology/ext/user/mainResidenceArea> <http://purl.bdrc.io/ontology/tmp/amdo> <http://purl.bdrc.io/graph-nc/user-private/U0ES1838013809> .
+TC . 

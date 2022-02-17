@@ -13,7 +13,6 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
@@ -318,17 +317,17 @@ public class CommonsGit {
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
-            log.info("resource is new");
             // new resource
-            gi.ds = createDatasetForNewResource(ModelFactory.createDefaultModel(), r);
-            graphUri = Models.BDG+r.getLocalName();
-            ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
-            // TODO: create admin data for users?
+            // gi.ds = createDatasetForNewResource(ModelFactory.createDefaultModel(), r);
+            // graphUri = Models.BDG+r.getLocalName();
+            // ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
+            // create admin data for users?
+            throw new ModuleException(400, "attempt to patch a non-existing resource");
         } else {
             log.info("resource already exists in git");
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);
-            log.debug("main graph is ", graph);
+            log.debug("main graph is {}", graph);
             graphUri = graph.getURI();
             // next lines changes the result variable directly
             ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);

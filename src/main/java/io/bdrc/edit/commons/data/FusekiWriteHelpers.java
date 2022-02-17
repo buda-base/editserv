@@ -157,10 +157,11 @@ public class FusekiWriteHelpers {
     }
     
     static void addGitInfo(Model m, Resource graph, GitInfo gi) {
-        logger.info("add gitinfo", gi);
+        logger.info("add gitinfo for {}", graph);
         ResIterator admIt = m.listSubjectsWithProperty(EditConstants.ADMIN_GRAPH_ID, graph);
         if (!admIt.hasNext()) {
             logger.error("can't find admin data for ", graph.getURI());
+            return;
         }
         Resource adm = admIt.next();
         m.add(adm, EditConstants.GIT_PATH, m.createLiteral(gi.pathInRepo));

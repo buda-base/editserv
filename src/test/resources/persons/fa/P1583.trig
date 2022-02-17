@@ -46,7 +46,7 @@
 @prefix wd:    <http://www.wikidata.org/entity/> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
-bdr:P1583 {
+bdg:P1583 {
     bda:LG0648F5705843763B
         a                   adm:UpdateData ;
         adm:logDate         "2011-07-01T04:41:07.905Z"^^xsd:dateTime ;

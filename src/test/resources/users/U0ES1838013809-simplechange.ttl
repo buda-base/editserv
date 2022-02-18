@@ -48,5 +48,6 @@
 
     bdu:U0ES1838013809
         foaf:mbox           "youpi@my-mail.fr2" ;
+        bdou:preferredUiLiteralLangs ( "sa-Deva" "bo" ) ;
         tmp:agreeEmail      true ;
 .

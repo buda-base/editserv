@@ -28,7 +28,9 @@ import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.SKOS;
 import org.seaborne.patch.RDFPatch;
+import org.seaborne.patch.RDFPatchOps;
 import org.seaborne.patch.changes.RDFChangesApply;
+import org.seaborne.patch.changes.RDFChangesCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,6 +174,23 @@ public class ModelUtils {
         return res;
     }
     
+    public static String getPatchStr(final Model original, final Model modified, final Resource graph) {
+        final RDFChangesCollector cc = new RDFChangesCollector();
+        final Model minus = original.difference(modified);
+        StmtIterator sti = minus.listStatements();
+        while (sti.hasNext()) {
+            final Statement st = sti.next();
+            cc.delete(graph.asNode(), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
+        }
+        final Model plus = modified.difference(original);
+        sti = plus.listStatements();
+        while (sti.hasNext()) {
+            final Statement st = sti.next();
+            cc.add(graph.asNode(), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
+        }
+        return RDFPatchOps.str(cc.getRDFPatch());
+    }
+    
     // changes completeSet with a new model (later can return plus and minus)
     public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws ModuleException {
         final boolean isUser = repoLname.equals("GR0100");
@@ -190,8 +209,10 @@ public class ModelUtils {
         if (log.isDebugEnabled())
             log.debug("out of focused original model is {}", modelToTtl(outOfFocusOriginal));
         final Model resModel = outOfFocusOriginal.add(newFocusModel);
-        if (log.isDebugEnabled())
+        if (log.isDebugEnabled()) {
             log.debug("result of the merge is {}", modelToTtl(resModel));
+            log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
+        }
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it

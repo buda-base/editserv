@@ -63,8 +63,9 @@ bdgup:U0ES1838013809 {
         bdou:interest       tmp:BonpoTexts , tmp:ChineseTexts , tmp:Maps , tmp:other ;
         bdou:isActive       "true" ;
         bdou:mainResidenceArea  tmp:outside ;
-        bdou:preferredLangTags  "eng" ;
+        bdou:preferredUiLang  "en" ;
         tmp:otherInterest   "test"@en ;
+        bdou:preferredUiLiteralLangs ( "bo" "sa-Deva" ) ;
         foaf:mbox           "youpi@my-mail.fr" .
 }
 

@@ -43,6 +43,7 @@ import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.libraries.Models;
 
 public class BudaUser {
@@ -137,6 +138,15 @@ public class BudaUser {
         return fetched;
     }
 
+    public static Model getUserModelFromGit(final Resource user) throws IOException, ModuleException {
+        final GitInfo gi = CommonsGit.gitInfoForResource(user);
+        if (gi.ds == null)
+            return null;
+        final Model m = ModelUtils.getMainModel(gi.ds);
+        removeAdminData(m, user.getLocalName());
+        return m;
+    }
+    
     public static void removeAdminData(Model m, String resLocalName) {
         Resource r = m.getResource("http://purl.bdrc.io/admindata/"+resLocalName);
         m.removeAll(r, null, (RDFNode) null);

@@ -16,7 +16,6 @@ import org.apache.jena.riot.RiotException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.seaborne.patch.RDFPatch;
 import org.seaborne.patch.RDFPatchOps;
-import org.seaborne.patch.text.RDFPatchReaderText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -41,7 +40,6 @@ import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.commons.ops.CommonsRead;
-import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.ModuleException;
@@ -177,9 +175,8 @@ public class MainEditController {
                         .body(e.getMessage());
             }
         }
-        
-        InputStream in = new ByteArrayInputStream(patch.getBytes());
-        RDFPatch rdfPatch = RDFPatchOps.read(in);
+        final InputStream in = new ByteArrayInputStream(patch.getBytes());
+        final RDFPatch rdfPatch = RDFPatchOps.read(in);
         final String revId = saveResource(rdfPatch, res);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body(revId);

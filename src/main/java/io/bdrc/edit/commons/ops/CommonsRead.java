@@ -217,41 +217,4 @@ public class CommonsRead {
         return res;
     }
 
-
-    public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM + "graphId");
-    public static final Property gitRevision = ResourceFactory.createProperty(Models.ADM + "gitRevision");
-    public static String getCommit(final Model m, final String graphUri) {
-        final Resource graph = ResourceFactory.createResource(graphUri);
-        final StmtIterator si = m.listStatements(null, admGraphId, graph);
-        if (!si.hasNext())
-            return null;
-        final Resource admin = si.next().getSubject();
-        SimpleSelector s = new SimpleSelector(admin, gitRevision, (RDFNode) null);
-        StmtIterator it = m.listStatements(s);
-        if (it.hasNext()) {
-            Statement st = it.next();
-            if (st.getObject().isLiteral()) {
-                return st.getObject().asLiteral().toString();
-            }
-        }
-        return null;
-    }
-
-    public static void main(String[] arg) throws Exception {
-        EditConfig.init();
-        //System.out.println("BEST SHAPES >> " + getBestShapes("bdr:P707", null));
-        //Model res = getEditorGraph("bdr:P1019");
-        System.out.println("---------------------------------------------------");
-        //res.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
-        //res.write(System.out, "TTL");
-        /*
-         * System.out.println(getLocalShapeUri("bdo:Person"));
-         * System.out.println(getTopShapeUri("bdo:Person"));
-         * System.out.println(getUIShapeUri("bdo:Person"));
-         * System.out.println(getLocalShapeModel("bdo:Person")); Model mm =
-         * getValidationShapesForType("bdo:Person");
-         * mm.setNsPrefixes(Prefixes.getMap()); mm.write(System.out, "TURTLE");
-         */
-    }
-
 }

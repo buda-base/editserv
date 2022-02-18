@@ -35,6 +35,8 @@ import io.bdrc.auth.model.User;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.Models;
@@ -46,9 +48,9 @@ public class UserEditController {
 
     public final static Logger log = LoggerFactory.getLogger(UserEditController.class.getName());
 
-    @GetMapping(value = "/me")
+    @GetMapping(value = "/me/focusgraph")
     public static ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
-            throws IOException, GitAPIException, NoSuchAlgorithmException {
+            throws IOException, GitAPIException, ModuleException {
         try {
             log.info("Call meUser()");
             Access acc = (Access) request.getAttribute("access");
@@ -72,13 +74,16 @@ public class UserEditController {
                 userModel = BudaUser.createAndSaveUser(acc.getUser(), usr);
                 log.info("meUser() User new created Resource >> {}", usr);
             } else {
-                userModel = BudaUser.getUserModelFromFuseki(usr);
+                userModel = BudaUser.getUserModelFromGit(usr);
             }
             if (userModel == null) {
                 log.error("couldn't find user model for authId "+authId);
                 return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON_UTF8)
                         .body(null);
             }
+            Resource shape = CommonsRead.getShapeForEntity(usr);
+            userModel = CommonsRead.getFocusGraph(userModel, usr, shape);
+            userModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
             MediaType mediaType = BudaMediaTypes.selectVariant(format, BudaMediaTypes.resVariantsNoHtml);
             if (mediaType == null) { mediaType = MediaType.APPLICATION_JSON ; }
             String ext = BudaMediaTypes.getExtFromMime(mediaType);
@@ -87,51 +92,9 @@ public class UserEditController {
                     .body(StreamingHelpers.getModelStream(userModel, ext,
                             usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
         } catch (IOException | GitAPIException e) {
-            log.error("/resource-nc/user/me failed ", e);
+            log.error("/me/focusgraph failed ", e);
             throw e;
         }
-    }
-
-    public static ResponseEntity<String> userPut(final String qname, HttpServletResponse response, HttpServletRequest request, String model) throws Exception {
-        log.info("Call userPut()");
-        if (!qname.startsWith("bdu:"))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("you can only modify entities in the bdr namespace in this endpoit");
-        final Resource user = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
-        if (EditConfig.useAuth) {
-            //final String auth0IdOfRes = BudaUser.getAuth0IdFromUser(user).asNode().getURI();
-            //final String auth0IdOfResLN = auth0IdOfRes.substring(auth0IdOfRes.lastIndexOf("/") + 1);
-            //User usrOfRes = RdfAuthModel.getUser(auth0IdOfResLN);
-            final Access acc = (Access) request.getAttribute("access");
-            if (!acc.isUserLoggedIn())
-                return ResponseEntity.status(401).body("you need to be logged in to use this service");
-            String authId = acc.getUser().getAuthId();
-            if (authId == null) {
-                log.error("couldn't find authId for {}"+acc.toString());
-                return ResponseEntity.status(500).body("couldn't find authId");
-            }
-            final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
-            log.info("meUser() auth0Id >> {}", auth0Id);
-            final Resource usr = BudaUser.getRdfProfile(auth0Id);
-            log.info("userPatch() Token User {}", acc.getUser());
-            if (EditConfig.useAuth && !acc.getUserProfile().isAdmin() && !usr.getLocalName().equals(qname)) {
-                return ResponseEntity.status(403).body("only admins can modify other users");
-            }
-        }
-        final MediaType med = MediaType.parseMediaType(request.getHeader("Content-Type"));
-        if (med == null) {
-            log.error("Invalid or missing Content-Type header {}", request.getHeader("Content-Type"));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Cannot parse Content-Type header " + request.getHeader("Content-Type"));
-        }
-        final Lang jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
-        log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
-        final Model inModel = ModelFactory.createDefaultModel();
-        final InputStream in = new ByteArrayInputStream(model.getBytes());
-        inModel.read(in, null, jenaLang.getLabel());
-        final String revId = MainEditController.saveResource(inModel, user);
-        response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body(revId);
     }
 
     @GetMapping(value = "/userEditPolicies", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)

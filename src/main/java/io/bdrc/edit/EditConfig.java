@@ -33,6 +33,7 @@ public class EditConfig {
     public static boolean testMode = false;
     public static boolean useAuth = true;
     public static boolean dryrunmode = false;
+    public static boolean dryrunmodeusers = false;
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
 
@@ -56,6 +57,7 @@ public class EditConfig {
             log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
         }
         dryrunmode = "true".equals(prop.getProperty("dryrunmode"));
+        dryrunmodeusers = "true".equals(prop.getProperty("dryrunmode.users"));
         testMode = "true".equals(prop.getProperty("testMode"));
         useAuth = !"false".equals(prop.getProperty("useAuth"));
         log.info("dry run: {}", dryrunmode);

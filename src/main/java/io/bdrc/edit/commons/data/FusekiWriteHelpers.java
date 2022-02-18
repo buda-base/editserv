@@ -145,8 +145,10 @@ public class FusekiWriteHelpers {
         logger.info("put ", graphName, "to Fuseki");
         if (logger.isDebugEnabled())
             logger.debug(ModelUtils.modelToTtl(model));
-        if (EditConfig.dryrunmode)
+        if (EditConfig.dryrunmode && (EditConfig.dryrunmodeusers || distantDB == CORE)) {
+            logger.error("stop here because of dryrun mode");
             return;
+        }
         openConnection(distantDB);
         RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
         if (!conn.isInTransaction()) {
@@ -271,6 +273,7 @@ public class FusekiWriteHelpers {
     
     public static synchronized void updateSyncModel(final String repoLname, final String revId, final int dbType) {
         logger.info("update sync model");
+        if (EditConfig.dryrunmode) return;
         final Model model = getSyncModel(dbType);
         Resource res = repoLnameToSyncModelResource.get(repoLname);
         Literal lit = model.createLiteral(revId);

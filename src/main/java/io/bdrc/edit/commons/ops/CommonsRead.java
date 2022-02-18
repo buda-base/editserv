@@ -132,7 +132,6 @@ public class CommonsRead {
                 continue;
             if (listMode) {
                 sparqlPath += "[]";
-                continue;
             }
             Resource subShape = null;
             final Resource shapeType = shProp.getPropertyResourceValue(EditConstants.PROPERTY_SHAPE_TYPE);

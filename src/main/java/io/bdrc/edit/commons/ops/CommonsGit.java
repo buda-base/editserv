@@ -242,7 +242,7 @@ public class CommonsGit {
     // commits and pushes, and returns the revision name
     public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
         log.info("commit and push ", gi, commitMessage);
-        if (EditConfig.dryrunmode) {
+        if (EditConfig.dryrunmode && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
             gi.revId = "drymoderev";
             return;
         }

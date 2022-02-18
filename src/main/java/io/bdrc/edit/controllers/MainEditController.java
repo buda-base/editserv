@@ -135,6 +135,52 @@ public class MainEditController {
         }
     }
     
+    @PutMapping(value = "{qname}/focusgraph")
+    public static ResponseEntity<String> putFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
+            HttpServletResponse response, @RequestBody String model) throws Exception {
+        final boolean userMode = qname.startsWith("bdu:");
+        final Resource res;
+        if (userMode) {
+            res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
+        } else {
+            if (!qname.startsWith("bdr:"))
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("you can only modify entities in the bdr namespace in this endpoit");
+            res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
+        }
+        if (EditConfig.useAuth) {
+            Access acc = (Access) req.getAttribute("access");
+            try {
+                ensureAccess(acc, res);
+            } catch (ModuleException e) {
+                return ResponseEntity.status(e.getHttpStatus())
+                        .body(e.getMessage());
+            }
+        }
+        InputStream in = new ByteArrayInputStream(model.getBytes());
+        MediaType med = MediaType.parseMediaType(req.getHeader("Content-Type"));
+        Lang jenaLang = null;
+        if (med != null) {
+            jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
+            log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
+        } else {
+            log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
+        }
+        final Model inModel = ModelFactory.createDefaultModel();
+        try {
+            inModel.read(in, null, jenaLang.getLabel());
+        } catch (RiotException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse request content in " + req.getHeader("Content-Type"));
+        }
+        final String revId = saveResource(inModel, res);
+        response.addHeader("Content-Type", "text/plain;charset=utf-8");
+        return ResponseEntity.ok().body(revId);
+    }
+
+    // TODO: finish this
     @PutMapping(value = "{qname}")
     public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
@@ -182,7 +228,7 @@ public class MainEditController {
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body(revId);
     }
-
+    
     @PatchMapping(value = "{qname}")
     public static ResponseEntity<String> patchResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String patch) throws Exception {

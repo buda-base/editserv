@@ -7,6 +7,8 @@ import java.io.InputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.jena.query.Dataset;
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -46,6 +48,7 @@ import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
+import io.bdrc.libraries.Models;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -137,9 +140,12 @@ public class MainEditController {
     public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
         final boolean userMode = qname.startsWith("bdu:");
+        final boolean graphMode = qname.startsWith("bdg:");
         final Resource res;
         if (userMode) {
             res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
+        } else if (graphMode) {
+            res = ResourceFactory.createResource(EditConstants.BDG+qname.substring(4));
         } else {
             if (!qname.startsWith("bdr:"))
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -173,7 +179,7 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final String revId = saveResource(inModel, res);
+        final String revId = graphMode ? putGraph(inModel, res) : saveResource(inModel, res);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body(revId);
     }
@@ -213,6 +219,20 @@ public class MainEditController {
         log.info("use shape {}", shape);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
         final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape);
+        FusekiWriteHelpers.putDataset(gi);
+        return gi.revId;
+    }
+    
+    // bypasses all checks and just write the model in the relevant graph on git and Fuseki
+    // this is not the normal API and should be kept for edge cases only
+    public static String putGraph(final Model inModel, final Resource graph) throws IOException, VersionConflictException, GitAPIException, ModuleException {
+        final GitInfo gi = CommonsGit.gitInfoForResource(graph);
+        final Dataset result = DatasetFactory.create();
+        // TODO: adjust for user graphs
+        result.addNamedModel(graph.getURI(), inModel);
+        gi.ds = result;
+        // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
+        CommonsGit.commitAndPush(gi, "force full graph replacement");
         FusekiWriteHelpers.putDataset(gi);
         return gi.revId;
     }

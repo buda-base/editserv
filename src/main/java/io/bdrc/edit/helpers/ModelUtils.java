@@ -48,13 +48,13 @@ public class ModelUtils {
     public static String modelToTtl(final Model m) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         m.write(baos, "TTL");
-        return baos.toString(StandardCharsets.UTF_8);
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
     }
     
     public static String datasetToTrig(final Dataset ds) {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new STriGWriter().write(baos, ds.asDatasetGraph(), EditConfig.prefix.getPrefixMap(), null, Helpers.createWriterContext());
-        return baos.toString(StandardCharsets.UTF_8);
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
     }
     
     public static Set<Statement> ModelToSet(Model m) {

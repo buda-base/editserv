@@ -46,7 +46,6 @@ import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
-import io.bdrc.libraries.Models;
 import io.bdrc.libraries.StreamingHelpers;
 
 @Controller
@@ -58,20 +57,47 @@ public class MainEditController {
     @GetMapping(value = "/{qname}/focusGraph", produces = "text/turtle")
     public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
+        return getGraph(qname, req, response, true);
+    }
+    
+    @GetMapping(value = "/{qname}", produces = "text/turtle")
+    public static ResponseEntity<StreamingResponseBody> getFullGraph(@PathVariable("qname") String qname,
+            HttpServletRequest req, HttpServletResponse response) {
+        return getGraph(qname, req, response, false);
+    }
+    
+    public static ResponseEntity<StreamingResponseBody> getGraph(final String qname,
+            final HttpServletRequest req, final HttpServletResponse response, boolean focus) {
         Model m = null;
-        if (!qname.startsWith("bdr:"))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
-                    .body(StreamingHelpers.getStream("No graph could be found for " + qname));
-        final String lname = qname.substring(4);
-        final Resource r = ResourceFactory.createResource(Models.BDR+lname);
+        final boolean userMode = qname.startsWith("bdu:");
+        final Resource res;
+        if (userMode) {
+            res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
+        } else {
+            if (!qname.startsWith("bdr:") && (focus || !qname.startsWith("bdg:")))
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+                        .body(StreamingHelpers.getStream("No graph could be found for " + qname));
+            // oddly enough, just considering bdg: like bdr: works in pretty much all cases
+            res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
+        }
+        if (EditConfig.useAuth && userMode) {
+            Access acc = (Access) req.getAttribute("access");
+            try {
+                ensureAccess(acc, res);
+            } catch (ModuleException e) {
+                return ResponseEntity.status(e.getHttpStatus())
+                        .body(StreamingHelpers.getStream(e.getMessage()));
+            }
+        }
         try {
-            CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(r);
+            CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res);
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
-            Resource shape = CommonsRead.getShapeForEntity(r);
+            Resource shape = CommonsRead.getShapeForEntity(res);
             m = ModelUtils.getMainModel(gi.ds);
-            m = CommonsRead.getFocusGraph(m, r, shape);
+            if (focus)
+                m = CommonsRead.getFocusGraph(m, res, shape);
             m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);

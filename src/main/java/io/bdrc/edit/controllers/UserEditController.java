@@ -63,7 +63,7 @@ public class UserEditController {
                 gi = BudaUser.createAndSaveUser(acc.getUser(), usr);
                 log.info("meUser() User new created Resource >> {}", usr);
             } else {
-                gi = CommonsGit.gitInfoForResource(usr);
+                gi = CommonsGit.gitInfoForResource(usr, true);
                 if (gi.ds == null) {
                     log.error("couldn't find user model for authId "+authId);
                     return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON)

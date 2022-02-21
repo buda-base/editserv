@@ -105,7 +105,7 @@ public class MainEditController {
         }
         // TODO: handle revision
         try {
-            CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res);
+            CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res, false);
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
@@ -300,7 +300,7 @@ public class MainEditController {
     // bypasses all checks and just write the model in the relevant graph on git and Fuseki
     // this is not the normal API and should be kept for edge cases only
     public static GitInfo putGraph(final Model inModel, final Resource graph) throws IOException, VersionConflictException, GitAPIException, ModuleException {
-        final GitInfo gi = CommonsGit.gitInfoForResource(graph);
+        final GitInfo gi = CommonsGit.gitInfoForResource(graph, false);
         final Dataset result = DatasetFactory.create();
         // TODO: adjust for user graphs
         result.addNamedModel(graph.getURI(), inModel);

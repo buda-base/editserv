@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Helpers;
@@ -110,7 +111,7 @@ public class CommonsGit {
     public static GitInfo gitInfoFromFuseki(final Resource r) {
         log.info("search graph for ", r, " in Fuseki");
         final String query = "select distinct ?g ?repo ?path { graph ?g { <"+r.getURI()+"> a ?t } . ?adm adm:graphId ?g ; adm:gitPath ?path ; adm:gitRepo ?repo . }";
-        ResultSet rs = QueryProcessor.getSelectResultSet(query, null);
+        ResultSet rs = QueryProcessor.getSelectResultSet(query, FusekiWriteHelpers.FusekiUrl);
         if (!rs.hasNext()) {
             log.info("did not find graph for ", r, " in Fuseki");
             return null;

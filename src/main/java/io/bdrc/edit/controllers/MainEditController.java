@@ -16,8 +16,6 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RiotException;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.seaborne.patch.RDFPatch;
-import org.seaborne.patch.RDFPatchOps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -25,11 +23,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -59,17 +57,31 @@ public class MainEditController {
     @GetMapping(value = "/{qname}/focusGraph", produces = "text/turtle")
     public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
-        return getGraph(qname, req, response, true);
+        return getGraph(qname, req, response, true, null);
+    }
+    
+    @GetMapping(value = "/{qname}/revision/{revId}/focusGraph", produces = "text/turtle")
+    public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
+            @PathVariable("revId") String revId, HttpServletRequest req, HttpServletResponse response) {
+        return getGraph(qname, req, response, true, revId);
     }
     
     @GetMapping(value = "/{qname}", produces = "text/turtle")
     public static ResponseEntity<StreamingResponseBody> getFullGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
-        return getGraph(qname, req, response, false);
+        return getGraph(qname, req, response, false, null);
     }
     
+    @GetMapping(value = "/{qname}/revision/{revId}", produces = "text/turtle")
+    public static ResponseEntity<StreamingResponseBody> getFullGraph(@PathVariable("qname") String qname,
+            @PathVariable("revId") String revId, HttpServletRequest req, HttpServletResponse response) {
+        return getGraph(qname, req, response, true, revId);
+    }
+    
+    // TODO: implement the HEAD endpoints
+    
     public static ResponseEntity<StreamingResponseBody> getGraph(final String qname,
-            final HttpServletRequest req, final HttpServletResponse response, boolean focus) {
+            final HttpServletRequest req, final HttpServletResponse response, final boolean focus, final String revision) {
         Model m = null;
         final boolean userMode = qname.startsWith("bdu:");
         final Resource res;
@@ -91,12 +103,14 @@ public class MainEditController {
                         .body(StreamingHelpers.getStream(e.getMessage()));
             }
         }
+        // TODO: handle revision
         try {
             CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res);
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
             Resource shape = CommonsRead.getShapeForEntity(res);
+            response.addHeader("Etag", gi.revId);
             m = ModelUtils.getMainModel(gi.ds);
             if (focus)
                 m = CommonsRead.getFocusGraph(m, res, shape);
@@ -138,16 +152,7 @@ public class MainEditController {
     @PutMapping(value = "{qname}/focusgraph")
     public static ResponseEntity<String> putFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
-        final boolean userMode = qname.startsWith("bdu:");
-        final Resource res;
-        if (userMode) {
-            res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
-        } else {
-            if (!qname.startsWith("bdr:"))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("you can only modify entities in the bdr namespace in this endpoit");
-            res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
-        }
+        final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             try {
@@ -157,8 +162,8 @@ public class MainEditController {
                         .body(e.getMessage());
             }
         }
-        InputStream in = new ByteArrayInputStream(model.getBytes());
-        MediaType med = MediaType.parseMediaType(req.getHeader("Content-Type"));
+        final InputStream in = new ByteArrayInputStream(model.getBytes());
+        final MediaType med = MediaType.parseMediaType(req.getHeader("Content-Type"));
         Lang jenaLang = null;
         if (med != null) {
             jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
@@ -175,11 +180,60 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final String revId = saveResource(inModel, res);
+        final GitInfo gi = saveResource(inModel, res, null);
+        response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body(revId);
+        return ResponseEntity.ok().body("");
     }
 
+    @PostMapping(value = "{qname}/focusgraph")
+    public static ResponseEntity<String> postFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
+            HttpServletResponse response, @RequestBody String model, @RequestHeader("Content-Type") String ct, @RequestHeader(value = "If-Match", required = true) String ifMatch) throws Exception {
+        final boolean userMode = qname.startsWith("bdu:");
+        final Resource res;
+        if (userMode) {
+            res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
+        } else {
+            if (!qname.startsWith("bdr:"))
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("you can only modify entities in the bdr namespace in this endpoit");
+            res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
+        }
+        
+        if (EditConfig.useAuth) {
+            Access acc = (Access) req.getAttribute("access");
+            try {
+                ensureAccess(acc, res);
+            } catch (ModuleException e) {
+                return ResponseEntity.status(e.getHttpStatus())
+                        .body(e.getMessage());
+            }
+        }
+        final InputStream in = new ByteArrayInputStream(model.getBytes());
+        final MediaType med = MediaType.parseMediaType(ct);
+        Lang jenaLang = null;
+        if (med != null) {
+            jenaLang = BudaMediaTypes.getJenaLangFromExtension(BudaMediaTypes.getExtFromMime(med));
+            log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
+        } else {
+            log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
+        }
+        final Model inModel = ModelFactory.createDefaultModel();
+        try {
+            inModel.read(in, null, jenaLang.getLabel());
+        } catch (RiotException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Cannot parse request content in " + req.getHeader("Content-Type"));
+        }
+        final GitInfo gi = saveResource(inModel, res, ifMatch);
+        response.addHeader("Etag", gi.revId);
+        response.addHeader("Content-Type", "text/plain;charset=utf-8");
+        return ResponseEntity.ok().body("");
+    }
+
+    
     // TODO: finish this
     @PutMapping(value = "{qname}")
     public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
@@ -224,53 +278,26 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final String revId = graphMode ? putGraph(inModel, res) : saveResource(inModel, res);
+        // TODO: this probably doesn't work for bdr: qname values
+        final GitInfo gi = putGraph(inModel, res);
+        response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body(revId);
+        return ResponseEntity.ok().body("");
     }
     
-    @PatchMapping(value = "{qname}")
-    public static ResponseEntity<String> patchResource(@PathVariable("qname") String qname, HttpServletRequest req,
-            HttpServletResponse response, @RequestBody String patch) throws Exception {
-        // TODO: we could check that content-type is "application/rdf-patch"
-        final boolean userMode = qname.startsWith("bdu:");
-        final Resource res;
-        if (userMode) {
-            res = ResourceFactory.createResource(EditConstants.BDU+qname.substring(4));
-        } else {
-            if (!qname.startsWith("bdr:"))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("you can only modify entities in the bdr namespace in this endpoit");
-            res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
-        }
-        if (EditConfig.useAuth) {
-            Access acc = (Access) req.getAttribute("access");
-            try {
-                ensureAccess(acc, res);
-            } catch (ModuleException e) {
-                return ResponseEntity.status(e.getHttpStatus())
-                        .body(e.getMessage());
-            }
-        }
-        final InputStream in = new ByteArrayInputStream(patch.getBytes());
-        final RDFPatch rdfPatch = RDFPatchOps.read(in);
-        final String revId = saveResource(rdfPatch, res);
-        response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body(revId);
-    }
-    
-    public static String saveResource(final Model inModel, final Resource r) throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    // previousRev is the previous revision that the resource must have
+    // when null, the resource must not exist already
+    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev) throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
-        log.info("use shape {}", shape);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
-        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape);
+        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev);
         FusekiWriteHelpers.putDataset(gi);
-        return gi.revId;
+        return gi;
     }
     
     // bypasses all checks and just write the model in the relevant graph on git and Fuseki
     // this is not the normal API and should be kept for edge cases only
-    public static String putGraph(final Model inModel, final Resource graph) throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    public static GitInfo putGraph(final Model inModel, final Resource graph) throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final GitInfo gi = CommonsGit.gitInfoForResource(graph);
         final Dataset result = DatasetFactory.create();
         // TODO: adjust for user graphs
@@ -279,16 +306,7 @@ public class MainEditController {
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
         CommonsGit.commitAndPush(gi, "force full graph replacement");
         FusekiWriteHelpers.putDataset(gi);
-        return gi.revId;
-    }
-    
-    public static String saveResource(final RDFPatch patch, final Resource r) throws IOException, VersionConflictException, GitAPIException, ModuleException {
-        final Resource shape = CommonsRead.getShapeForEntity(r);
-        log.info("use shape {}", shape);
-        // the saveInGit function takes care of the applying and validating the patch
-        final GitInfo gi = CommonsGit.saveInGit(patch, r, shape);
-        FusekiWriteHelpers.putDataset(gi);
-        return gi.revId;
+        return gi;
     }
     
     @RequestMapping(value = "/callbacks/model/bdrc-auth", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)

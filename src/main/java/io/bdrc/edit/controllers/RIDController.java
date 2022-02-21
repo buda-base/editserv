@@ -137,7 +137,7 @@ public class RIDController {
     
     // gets the largest ID
     // no admin rights required
-    @GetMapping(value = "/ID/prefix/{prefix}")
+    @GetMapping(value = "/ID/{prefix}")
     public ResponseEntity<String> getLatestID(@PathVariable("prefix") String prefix) {
         String latestId = lastId(prefix);
         if (latestId == null)
@@ -146,7 +146,7 @@ public class RIDController {
     }
     
     // creates a new ID in a prefix, requires admin rights
-    @PutMapping(value = "/ID/prefix/{prefix}")
+    @PutMapping(value = "/ID/{prefix}")
     public ResponseEntity<String> reserveNextID(@PathVariable("prefix") String prefix, HttpServletRequest request) {
         Access acc = (Access) request.getAttribute("access");
         if (acc == null || !acc.isUserLoggedIn())

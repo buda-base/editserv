@@ -204,7 +204,7 @@ public class BudaUser {
         return res;
     }
     
-    public static Model createAndSaveUser(final User usr, final Resource userR) throws IOException, GitAPIException {
+    public static GitInfo createAndSaveUser(final User usr, final Resource userR) throws IOException, GitAPIException {
         final GitInfo gi = new GitInfo();
         final String rLname = userR.getLocalName();
         gi.pathInRepo = Models.getMd5(rLname)+"/"+rLname+".trig";
@@ -215,11 +215,10 @@ public class BudaUser {
             return null;
         }
         gi.ds = createUserDataset(usr, rLname);
-        final Model res = gi.ds.getNamedModel(EditConstants.BDGUP+rLname);
         CommonsGit.commitAndPush(gi, "create new user");
         // revision is in gi.rev
         FusekiWriteHelpers.putDataset(gi);
-        return res;
+        return gi;
     }
 
     public static HashMap<String, List<String>> getUserPropsEditPolicies() {

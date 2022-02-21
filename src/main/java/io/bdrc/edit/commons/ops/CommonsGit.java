@@ -21,7 +21,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.seaborne.patch.RDFPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,6 +148,7 @@ public class CommonsGit {
         String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+guessedGitInfo.pathInRepo;
         if ((new File(guessedPath)).exists()) {
             guessedGitInfo.ds = Helpers.datasetFromTrig(GlobalHelpers.readFileContent(guessedPath));
+            fillLastRev(guessedGitInfo);
             log.info("found git file {} for resource {}", guessedPath, r);
             return guessedGitInfo;
         } else {
@@ -163,6 +163,7 @@ public class CommonsGit {
             guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+guessedGitInfo.pathInRepo;
             if ((new File(guessedPath)).exists()) {
                 guessedGitInfo.ds = Helpers.datasetFromTrig(GlobalHelpers.readFileContent(guessedPath));
+                fillLastRev(guessedGitInfo);
                 log.info("found git file %s for resource %s", guessedPath, r);
                 return guessedGitInfo;
             }
@@ -174,6 +175,7 @@ public class CommonsGit {
             guessedPath = gitLnameToRepoPath.get(fromFuseki.repoLname)+"/"+fromFuseki.pathInRepo;
             if ((new File(guessedPath)).exists()) {
                 fromFuseki.ds = Helpers.datasetFromTrig(GlobalHelpers.readFileContent(guessedPath));
+                fillLastRev(fromFuseki);
                 log.info("found git file %s for resource %s", guessedPath, r);
             } else {
                 log.error("found in Fuseki that ", r, " should be on "+guessedPath+" but it's not!");
@@ -228,15 +230,32 @@ public class CommonsGit {
         // TODO: push only every 10mn or even every hour
         return true;
     }
-    
-    public static String getLastRefOfFile(Git git, String pathInRepo) throws GitAPIException {
-        Iterator<RevCommit> commits;
-        commits = git.log().addPath(pathInRepo).setMaxCount(1).call().iterator();
+
+    public static String getLastRevOfFile(final Git git, final String pathInRepo) throws GitAPIException {
+        final Iterator<RevCommit> commits = git.log().addPath(pathInRepo).setMaxCount(1).call().iterator();
         if (!commits.hasNext()) {
             log.info("can't find any revision for ", pathInRepo);
             return null;
         }
         return commits.next().getName();
+    }
+    
+    public static void fillLastRev(final GitInfo gi) throws ModuleException {
+        Repository r = getRepository(gi.repoLname);
+        Git git = new Git(r);
+        Iterator<RevCommit> commits;
+        try {
+            commits = git.log().addPath(gi.pathInRepo).setMaxCount(1).call().iterator();
+        } catch (GitAPIException e) {
+            git.close();
+            throw new ModuleException(500, "cannot read last git revision of "+gi.pathInRepo, e);
+        }
+        if (!commits.hasNext()) {
+            git.close();
+            throw new ModuleException(500, "cannot read last git revision of "+gi.pathInRepo);
+        }
+        gi.revId = commits.next().getName();
+        git.close();
     }
     
     // commits and pushes, and returns the revision name
@@ -261,7 +280,7 @@ public class CommonsGit {
             if (status.isClean()) {
                 log.debug("file hasn't changed, getting the latest revision of the file");
                 // kind of a strange case, in which we extract the latest revision
-                gi.revId = getLastRefOfFile(git, gi.pathInRepo);
+                gi.revId = getLastRevOfFile(git, gi.pathInRepo);
                 git.close();
                 return;
             }
@@ -288,17 +307,52 @@ public class CommonsGit {
     }
     
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape)
+    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision)
             throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
+            if (previousRevision != null)
+                throw new ModuleException(404, "Resource doesn't exist");
             log.info("resource is new");
             // new resource
             gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {
+            if (previousRevision == null)
+                throw new ModuleException(422, "Resource already exists");
+            if (!previousRevision.equals(gi.revId))
+                throw new ModuleException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
+            log.info("resource already exists in git");
+            result = gi.ds;
+            final Resource graph = ModelUtils.getMainGraph(result);
+            log.debug("main graph is ", graph);
+            graphUri = graph.getURI();
+            // next lines changes the result variable directly
+            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
+        }
+        // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
+        commitAndPush(gi, getCommitMessage(newModel, r));
+        return gi;
+    }
+
+    // This saves the new model in git and returns a Fuseki-ready dataset
+    public static synchronized GitInfo forceSaveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision)
+            throws IOException, VersionConflictException, GitAPIException, ModuleException {
+        final GitInfo gi = gitInfoForResource(r);
+        Dataset result = null;
+        String graphUri;
+        if (gi.ds == null) {
+            if (previousRevision != null)
+                throw new ModuleException(422, "Resource already exists");
+            log.info("resource is new");
+            // new resource
+            gi.ds = createDatasetForNewResource(newModel, r);
+            graphUri = Models.BDG+r.getLocalName();
+        } else {
+            if (previousRevision.equals(gi.revId))
+                throw new ModuleException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
             log.info("resource already exists in git");
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);
@@ -312,33 +366,6 @@ public class CommonsGit {
         return gi;
     }
     
-    // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo saveInGit(final RDFPatch patch, final Resource r, final Resource shape)
-            throws IOException, VersionConflictException, GitAPIException, ModuleException {
-        final GitInfo gi = gitInfoForResource(r);
-        Dataset result = null;
-        String graphUri;
-        if (gi.ds == null) {
-            // new resource
-            // gi.ds = createDatasetForNewResource(ModelFactory.createDefaultModel(), r);
-            // graphUri = Models.BDG+r.getLocalName();
-            // ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
-            // create admin data for users?
-            throw new ModuleException(400, "attempt to patch a non-existing resource");
-        } else {
-            log.info("resource already exists in git");
-            result = gi.ds;
-            final Resource graph = ModelUtils.getMainGraph(result);
-            log.debug("main graph is {}", graph);
-            graphUri = graph.getURI();
-            // next lines changes the result variable directly
-            ModelUtils.mergeModel(gi.ds, graphUri, patch, r, shape, gi.repoLname);
-        }
-        // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
-        commitAndPush(gi, getCommitMessage(null, r));
-        return gi;
-    }
-
     private static void datasetToOutputStream(Dataset ds, OutputStream out) throws IOException {
         new STriGWriter().write(out, ds.asDatasetGraph(), EditConfig.prefix.getPrefixMap(), null, Helpers.createWriterContext());
         out.close();

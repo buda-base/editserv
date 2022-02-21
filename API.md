@@ -79,3 +79,17 @@ Gets the highest ID using the prefix `{prefix}`.
 ##### PUT `/ID/{prefix}`
 
 Reserves an ID starting with `{prefix}` in the system and returns is in a simple text format.
+
+# Scan requests
+
+##### GET `/{qname}/scanrequest`
+
+Returns a zip file with the BDRC scan request. It can only work with Image Instance (Scan) qnames (ex: `bdr:W22084`). It responds to a query parameter `?onlynonsynced=true` which makes it select only non-synced volumes. It returns a 404 if there are no volumes to put in the scan request.
+
+Only admins can use this endpoint.
+
+# Sync notification
+
+##### POST `/{qname}/notifysync?pagestotal={pagestotal}`
+
+This works only for `qname`s of image groups (starting with `bdr:I`). It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer.

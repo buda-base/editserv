@@ -139,7 +139,9 @@ public class BudaUser {
     }
 
     public static Model getUserModelFromGit(final Resource user) throws IOException, ModuleException {
-        final GitInfo gi = CommonsGit.gitInfoForResource(user);
+        // (wrt second argument) we're not in creation mode but we don't want to look on
+        // Fuseki for guidance on where we should store the user profile
+        final GitInfo gi = CommonsGit.gitInfoForResource(user, true);
         if (gi.ds == null)
             return null;
         final Model m = ModelUtils.getMainModel(gi.ds);

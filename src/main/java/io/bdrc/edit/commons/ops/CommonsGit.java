@@ -132,7 +132,7 @@ public class CommonsGit {
     
     // since it uses only the local name, it works for bdr: and bdg: resources
     // (and bdu:, etc.)
-    public static GitInfo gitInfoForResource(final Resource r) throws IOException, ModuleException {
+    public static GitInfo gitInfoForResource(final Resource r, final boolean creationMode) throws IOException, ModuleException {
         final String rLname = r.getLocalName();
         // first we guess and check if the file exists
         final GitInfo guessedGitInfo = new GitInfo();
@@ -154,8 +154,10 @@ public class CommonsGit {
         } else {
             log.info("didn't find git file {} for resource {}", guessedPath, r);
         }
-        // if not, we try to take the part before the first underscore
         final int underscore_idx = rLname.indexOf('_');
+        if (creationMode && underscore_idx == -1)
+            return guessedGitInfo;
+        // if not, we try to take the part before the first underscore
         if (underscore_idx > 0) {
             final String rLname_guess2 = rLname.substring(0, underscore_idx);
             guessedGitInfo.pathInRepo = Models.getMd5(rLname_guess2)+"/"+rLname_guess2+".trig";
@@ -168,6 +170,10 @@ public class CommonsGit {
                 return guessedGitInfo;
             }
         }
+        
+        if (creationMode)
+            return guessedGitInfo;
+        
         // if not we fall back to fuseki and look at the adminData
         
         final GitInfo fromFuseki = gitInfoFromFuseki(r);
@@ -309,7 +315,7 @@ public class CommonsGit {
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, String changeMessage)
             throws IOException, VersionConflictException, GitAPIException, ModuleException {
-        final GitInfo gi = gitInfoForResource(r);
+        final GitInfo gi = gitInfoForResource(r, previousRevision == null);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
@@ -341,7 +347,7 @@ public class CommonsGit {
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo forceSaveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision)
             throws IOException, VersionConflictException, GitAPIException, ModuleException {
-        final GitInfo gi = gitInfoForResource(r);
+        final GitInfo gi = gitInfoForResource(r, false);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {

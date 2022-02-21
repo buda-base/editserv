@@ -204,10 +204,10 @@ public class CommonsGit {
         // create graph
         // add adm:graphId in admin data
         final String graphUri = Models.BDG+r.getLocalName();
-        Dataset ds = DatasetFactory.create();
+        final Dataset ds = DatasetFactory.create();
         m.add(m.createResource(Models.BDA+r.getLocalName()), m.createProperty(Models.ADM, "graphId"), m.createResource(graphUri));
         ds.addNamedModel(graphUri, m);
-        return null;
+        return ds;
     }
     
     public static Map<String,Repository> lNameToRepoList = new HashMap<>();

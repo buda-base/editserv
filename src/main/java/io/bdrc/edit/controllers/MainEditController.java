@@ -149,7 +149,7 @@ public class MainEditController {
         }
     }
     
-    @PutMapping(value = "{qname}/focusgraph")
+    @PutMapping(value = "/{qname}/focusgraph")
     public static ResponseEntity<String> putFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
@@ -186,7 +186,7 @@ public class MainEditController {
         return ResponseEntity.created(null).body("");
     }
 
-    @PostMapping(value = "{qname}/focusgraph")
+    @PostMapping(value = "/{qname}/focusgraph")
     public static ResponseEntity<String> postFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model, @RequestHeader("Content-Type") String ct, 
             @RequestHeader(value = "If-Match", required = true) String ifMatch,
@@ -237,7 +237,7 @@ public class MainEditController {
 
     
     // TODO: finish this
-    @PutMapping(value = "{qname}")
+    @PutMapping(value = "/{qname}")
     public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
             HttpServletResponse response, @RequestBody String model) throws Exception {
         final boolean userMode = qname.startsWith("bdu:");

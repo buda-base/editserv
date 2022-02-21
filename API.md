@@ -42,7 +42,7 @@ Returns the same results as above but for the revision specified by `{revId}`.
 
 Creates a new resource designated by `qname`, with a focus graph as its content. The format of the body of the request must be given in the HTTP `Content-Type` header (currently only `text/turtle`). The content of the request is validated against the shapes and an HTTP `400` code is returned in case the content does not validate.
 
-The response has an empty body, it has an `Etag` header with the new revision. The HTTP status is `202` in case of success and `422` if the resource already exists.
+The response has an empty body, it has an `Etag` header with the new revision. The HTTP status is `201` in case of success and `422` if the resource already exists.
 
 ##### POST `/{qname}/focusgraph`
 
@@ -53,6 +53,8 @@ This always requires authentification. Any user can modify their user profile, b
 This is the preferred method for modifying the data, since it validates everything. When more users are allowed to use the editor, only this endpoint will be open to a broader audience.
 
 The request must contain a `If-Match` HTTP header with the revision id of the resource (as represented in the `Etag` header of the GET endpoints).
+
+The request can optionally contain a `X-Change-Message` HTTP header with a message that will be associated with the revision.
 
 The responsee has an empty body, it has an `Etag` header with the new revision. The HTTP status is:
 - `412` if the resource id of the request does not match the current one
@@ -65,7 +67,7 @@ Overwrites the graph for the resource designated by `qname`, in a format given b
 This always requires admin privileges. This is **not** the preferred method for modifying the data, and should be used for debugging only or for edge cases.
 
 The result of a successful PUT is the same as the result of GET `/{qname}` above, except for the HTTP status that is:
-- `202` if the resource has been created
+- `201` if the resource has been created
 - `200` if the resource has been updated
 
 # Reserving resource IDs

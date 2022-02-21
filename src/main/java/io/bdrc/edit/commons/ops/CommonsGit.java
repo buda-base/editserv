@@ -307,7 +307,7 @@ public class CommonsGit {
     }
     
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision)
+    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, String changeMessage)
             throws IOException, VersionConflictException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r);
         Dataset result = null;
@@ -332,6 +332,7 @@ public class CommonsGit {
             // next lines changes the result variable directly
             ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
         }
+        // TODO: add proper change log and a proper commit message
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
         commitAndPush(gi, getCommitMessage(newModel, r));
         return gi;

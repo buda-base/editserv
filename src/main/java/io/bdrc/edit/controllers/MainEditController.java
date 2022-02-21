@@ -170,7 +170,7 @@ public class MainEditController {
             log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
         } else {
             log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
         final Model inModel = ModelFactory.createDefaultModel();
@@ -180,15 +180,17 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final GitInfo gi = saveResource(inModel, res, null);
+        final GitInfo gi = saveResource(inModel, res, null, null);
         response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.ok().body("");
+        return ResponseEntity.created(null).body("");
     }
 
     @PostMapping(value = "{qname}/focusgraph")
     public static ResponseEntity<String> postFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
-            HttpServletResponse response, @RequestBody String model, @RequestHeader("Content-Type") String ct, @RequestHeader(value = "If-Match", required = true) String ifMatch) throws Exception {
+            HttpServletResponse response, @RequestBody String model, @RequestHeader("Content-Type") String ct, 
+            @RequestHeader(value = "If-Match", required = true) String ifMatch,
+            @RequestHeader("X-Change-Message") String changeMessage) throws Exception {
         final boolean userMode = qname.startsWith("bdu:");
         final Resource res;
         if (userMode) {
@@ -217,7 +219,7 @@ public class MainEditController {
             log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
         } else {
             log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
         final Model inModel = ModelFactory.createDefaultModel();
@@ -227,7 +229,7 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final GitInfo gi = saveResource(inModel, res, ifMatch);
+        final GitInfo gi = saveResource(inModel, res, ifMatch, changeMessage);
         response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("");
@@ -268,7 +270,7 @@ public class MainEditController {
             log.info("MediaType {} and extension {} and jenaLang {}", med, med.getSubtype(), jenaLang);
         } else {
             log.error("Invalid or missing Content-Type header {}", req.getHeader("Content-Type"));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("Cannot parse Content-Type header " + req.getHeader("Content-Type"));
         }
         final Model inModel = ModelFactory.createDefaultModel();
@@ -287,10 +289,10 @@ public class MainEditController {
     
     // previousRev is the previous revision that the resource must have
     // when null, the resource must not exist already
-    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev) throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String changeMessage) throws ModuleException, IOException, VersionConflictException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
-        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev);
+        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage);
         FusekiWriteHelpers.putDataset(gi);
         return gi;
     }

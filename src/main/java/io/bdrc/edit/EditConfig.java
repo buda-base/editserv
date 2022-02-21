@@ -16,6 +16,7 @@ import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.user.UsersCache;
 import io.bdrc.libraries.Prefix;
@@ -69,6 +70,7 @@ public class EditConfig {
         UsersCache.init();
         OntologyData.init();
         Shapes.init();
+        RIDController.initPrefixIndexes();
         if (prop.getProperty("prefixesFilePath") != null) {
             prefix = new Prefix(prop.getProperty("prefixesFilePath"));
         } else {

@@ -119,12 +119,14 @@ public class ScanRequestController {
         }
         final boolean onlynonsyncedB = "true".equals(onlynonsynced);
         final List<VolInfo> volInfos = getVolumes(res, onlynonsyncedB);
-        if (volInfos.isEmpty())
+        if (volInfos.isEmpty()) {
+            log.error("couldn't find volumes for {}", res.getLocalName());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(null);
+        }
         return ResponseEntity
                 .ok()
-                .header("Content-Disposition", "attachment; filename=\""+res.getLocalName()+".zip\"")
+                .header("Content-Disposition", "attachment; filename=\"scan-dirs-"+res.getLocalName()+".zip\"")
                 .body(out -> {
                     final ZipOutputStream zipOutputStream = new ZipOutputStream(out);
                     sendScanRequest(zipOutputStream, volInfos, res.getLocalName());

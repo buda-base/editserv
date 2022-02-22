@@ -104,7 +104,7 @@ public class CommonsGit {
         prefixToGitLname.put("L", "GR0004");
         prefixToGitLname.put("C", "GR0001");
         prefixToGitLname.put("T", "GR0007");
-        if (!EditConfig.dryrunmode)
+        if (!EditConfig.dryrunmodegit && null != EditConfig.getProperty("gitUser") && null != EditConfig.getProperty("gitPass"))
             gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
     }
     
@@ -268,7 +268,7 @@ public class CommonsGit {
     // commits and pushes, and returns the revision name
     public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
         log.info("commit and push ", gi, commitMessage);
-        if (EditConfig.dryrunmode && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
+        if (EditConfig.dryrunmodegit && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
             gi.revId = "drymoderev";
             return;
         }
@@ -302,7 +302,7 @@ public class CommonsGit {
         // push if necessary
         final String remoteUrl = gitLnameToRemoteUrl.get(gi.repoLname);
         // no remote for some repositories, such as users
-        if (remoteUrl != null && pushRelevant(gi.repoLname)) {
+        if (remoteUrl != null && gitCredentialProvider != null && pushRelevant(gi.repoLname)) {
             try {
                 git.push().setCredentialsProvider(gitCredentialProvider).setRemote(remoteUrl).call();
             } catch (GitAPIException e) {

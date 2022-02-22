@@ -169,11 +169,9 @@ public class CommonsRead {
     
     public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape) {
         final ShaclProps sp = getShaclPropsFor(shape);
-        log.info("shacl props {}", sp);
+        log.debug("shacl props {}", sp);
         if (sp == null) 
             return;
-        //if (log.isDebugEnabled())
-        //    log.debug(sp.toString());
         for (Entry<String,Resource> e : sp.properties.entrySet()) {
             final String path = e.getKey();
             final Resource subShape = e.getValue();

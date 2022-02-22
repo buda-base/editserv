@@ -267,20 +267,21 @@ public class CommonsGit {
     
     // commits and pushes, and returns the revision name
     public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
-        log.info("commit and push ", gi, commitMessage);
         if (EditConfig.dryrunmodegit && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
             gi.revId = "drymoderev";
+            log.info("dry run: don't commit to git");
             return;
         }
+        log.info("commit and push {}, message {}", gi, commitMessage);
         // write the file
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
         final String filePath = repoPath+"/"+gi.pathInRepo;
         final FileOutputStream fos = new FileOutputStream(filePath);
-        log.info("write ", filePath);
+        log.info("write {}", filePath);
         datasetToOutputStream(gi.ds, fos);
         // add and commit the file
-        Repository r = getRepository(gi.repoLname);
-        Git git = new Git(r);
+        final Repository r = getRepository(gi.repoLname);
+        final Git git = new Git(r);
         RevCommit revR = null;
         try {
             final Status status = git.status().addPath(gi.pathInRepo).call();
@@ -295,7 +296,7 @@ public class CommonsGit {
             revR = git.commit().setMessage(commitMessage).call();
             gi.revId = revR.getName();
         } catch (GitAPIException e) {
-            log.error("could not commit ", gi.pathInRepo, e);
+            log.error("could not commit {}", gi.pathInRepo, e);
             git.close();
             throw e;
         }

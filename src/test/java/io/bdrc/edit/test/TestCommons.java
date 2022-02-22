@@ -58,7 +58,7 @@ public class TestCommons {
         String graphUri2 = "http://purl.bdrc.io/resource/P1583XZ";
 
         try {
-            GitInfo gi = CommonsGit.gitInfoForResource(ResourceFactory.createResource(graphUri));
+            GitInfo gi = CommonsGit.gitInfoForResource(ResourceFactory.createResource(graphUri), true);
             Model m = ModelUtils.getMainModel(gi.ds);
             assert (m.size() > 0);
             m.write(System.out, "TURTLE");

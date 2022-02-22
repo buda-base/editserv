@@ -108,6 +108,7 @@ public class ScanRequestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(null);
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
+        log.info("generate scan request zip file for {}", res);
         if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             try {
@@ -124,6 +125,7 @@ public class ScanRequestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(null);
         }
+        // TODO: add scan request change log to the resource
         return ResponseEntity
                 .ok()
                 .header("Content-Disposition", "attachment; filename=\"scan-dirs-"+res.getLocalName()+".zip\"")

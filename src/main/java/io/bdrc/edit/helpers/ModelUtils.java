@@ -202,9 +202,9 @@ public class ModelUtils {
         if (log.isDebugEnabled())
             log.debug("focused original model is {}", modelToTtl(focusedOriginal));
         // don't validate commit for users
-        if (!isUser && !CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
-            throw new ModuleException(500, "Version conflict while trying to save " + r.getURI());
-        }
+        //if (!isUser && !CommonsValidate.validateCommit(newFocusModel, focusedOriginal, r)) {
+        //    throw new ModuleException(500, "Version conflict while trying to save " + r.getURI());
+        //}
         final Model outOfFocusOriginal = original.difference(focusedOriginal);
         if (log.isDebugEnabled())
             log.debug("out of focused original model is {}", modelToTtl(outOfFocusOriginal));

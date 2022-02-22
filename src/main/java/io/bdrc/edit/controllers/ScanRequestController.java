@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
@@ -79,9 +80,12 @@ public class ScanRequestController {
         return res;
     }
     
-    public static void sendScanRequest(final ZipOutputStream zout, final List<VolInfo> vis, final String wlname) {
+    public static void sendScanRequest(final ZipOutputStream zout, final List<VolInfo> vis, final String wlname) throws IOException {
+        zout.putNextEntry(new ZipEntry(wlname+"/"));
+        zout.putNextEntry(new ZipEntry(wlname+"/images/"));
         for (final VolInfo vi : vis) {
-            
+            final String dirname = wlname+"/images/"+wlname+"-"+vi.lname+"/";
+            zout.putNextEntry(new ZipEntry(dirname));
         }
     }
     

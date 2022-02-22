@@ -86,11 +86,23 @@ public class ScanRequestController {
         for (final VolInfo vi : vis) {
             final String dirname = wlname+"/images/"+wlname+"-"+vi.lname+"/";
             zout.putNextEntry(new ZipEntry(dirname));
+            if (vi.volumePagesTbrcIntro == 0)
+                continue;
+            ZipEntry entry = new ZipEntry(dirname+vi.lname+"0001.tif");
+            entry.setSize(firstImage.length);
+            zout.putNextEntry(entry);
+            zout.write(firstImage);
+            zout.closeEntry();
+            entry = new ZipEntry(dirname+vi.lname+"0002.tif");
+            entry.setSize(secondImage.length);
+            zout.putNextEntry(entry);
+            zout.write(secondImage);
+            zout.closeEntry();
         }
     }
     
     @GetMapping(value = "/{qname}/scanrequest", produces="application/zip")
-    public ResponseEntity<StreamingResponseBody> getLatestID(@RequestParam("onlynonsynced") String onlynonsynced, 
+    public ResponseEntity<StreamingResponseBody> getLatestID(@RequestParam(value = "onlynonsynced", required = false) String onlynonsynced, 
             @PathVariable("qname") String qname, HttpServletRequest req, HttpServletResponse response) {
         if (!qname.startsWith("bdr:W"))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

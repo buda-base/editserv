@@ -128,7 +128,7 @@ public class FusekiWriteHelpers {
     }
     
     static Model getModel(String graphName, final int distantDB) {
-        logger.info("getModel:" + graphName);
+        logger.info("getModel {}", graphName);
         openConnection(distantDB);
         RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
         try {
@@ -194,7 +194,7 @@ public class FusekiWriteHelpers {
     }
     
     public static void putDataset(final GitInfo gi) {
-        logger.debug("putDataset", gi);
+        logger.debug("putDataset {}", gi);
         // two path: the simple case
         if (!gi.repoLname.equals("GR0100")) {
             logger.debug("simple path");
@@ -234,7 +234,7 @@ public class FusekiWriteHelpers {
             }
         } else {
             authSyncModelInitialized = true;
-            logger.info("initSyncModel: " + SYSTEM_GRAPH);
+            logger.info("initSyncModel: {}", SYSTEM_GRAPH);
             Model distantSyncModel = getModel(SYSTEM_GRAPH, distantDB);
             if (distantSyncModel != null) {
                 authSyncModel.add(distantSyncModel);

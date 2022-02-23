@@ -11,7 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Resource;
@@ -30,7 +33,9 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
-import io.bdrc.edit.commons.data.QueryProcessor;
+import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
+import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 
 @Controller
@@ -60,12 +65,15 @@ public class ScanRequestController {
         int volumePagesTotal = 0;
     }
     
-    public static List<VolInfo> getVolumes(final Resource imageInstance, boolean onlynonsyncedB) {
+    // reading this from git is less efficient but also more authoritative
+    // since efficiency is not an issue, we use this
+    public static List<VolInfo> getVolumesFromGit(final Resource imageInstance, boolean onlynonsyncedB) throws IOException, ModuleException {
+        GitInfo gi = CommonsGit.gitInfoForResource(imageInstance, true);
         List<VolInfo> res = new ArrayList<>();
-        String query = "select distinct ?i ?nbt ?nbi where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumePagesTotal> ?nbt ; <"+EditConstants.BDO+"volumePagesTbrcIntro> ?nbi . }";
-        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiData") + "query");
-        QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiData") + "query");
-        ResultSet rs = qe.execSelect();
+        String queryStr = "select distinct ?i ?nbt ?nbi where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumePagesTotal> ?nbt ; <"+EditConstants.BDO+"volumePagesTbrcIntro> ?nbi . }";
+        Query query = QueryFactory.create(queryStr);
+        QueryExecution qexec = QueryExecutionFactory.create(query, ModelUtils.getMainModel(gi.ds));
+        ResultSet rs = qexec.execSelect();
         while (rs.hasNext()) {
             QuerySolution qs = rs.next();
             final int imagesTotal = qs.getLiteral("nbt").getInt();
@@ -103,7 +111,7 @@ public class ScanRequestController {
     
     @GetMapping(value = "/{qname}/scanrequest", produces="application/zip")
     public ResponseEntity<StreamingResponseBody> getLatestID(@RequestParam(value = "onlynonsynced", required = false) String onlynonsynced, 
-            @PathVariable("qname") String qname, HttpServletRequest req, HttpServletResponse response) {
+            @PathVariable("qname") String qname, HttpServletRequest req, HttpServletResponse response) throws IOException, ModuleException {
         if (!qname.startsWith("bdr:W"))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(null);
@@ -119,7 +127,7 @@ public class ScanRequestController {
             }
         }
         final boolean onlynonsyncedB = "true".equals(onlynonsynced);
-        final List<VolInfo> volInfos = getVolumes(res, onlynonsyncedB);
+        final List<VolInfo> volInfos = getVolumesFromGit(res, onlynonsyncedB);
         if (volInfos.isEmpty()) {
             log.error("couldn't find volumes for {}", res.getLocalName());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

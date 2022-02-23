@@ -133,7 +133,7 @@ public class CommonsGit {
     
     // since it uses only the local name, it works for bdr: and bdg: resources
     // (and bdu:, etc.)
-    public static GitInfo gitInfoForResource(final Resource r, final boolean creationMode) throws IOException, ModuleException {
+    public static GitInfo gitInfoForResource(final Resource r, final boolean gitOnly) throws IOException, ModuleException {
         final String rLname = r.getLocalName();
         // first we guess and check if the file exists
         final GitInfo guessedGitInfo = new GitInfo();
@@ -156,7 +156,7 @@ public class CommonsGit {
             log.info("didn't find git file {} for resource {}", guessedPath, r);
         }
         final int underscore_idx = rLname.indexOf('_');
-        if (creationMode && underscore_idx == -1)
+        if (gitOnly && underscore_idx == -1)
             return guessedGitInfo;
         // if not, we try to take the part before the first underscore
         if (underscore_idx > 0) {
@@ -172,7 +172,7 @@ public class CommonsGit {
             }
         }
         
-        if (creationMode)
+        if (gitOnly)
             return guessedGitInfo;
         
         // if not we fall back to fuseki and look at the adminData

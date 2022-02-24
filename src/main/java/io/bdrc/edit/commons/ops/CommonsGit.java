@@ -131,6 +131,19 @@ public class CommonsGit {
         return res;
     }
     
+    public static boolean resourceExists(final String rLname) throws ModuleException {
+        final String pathInRepo = Models.getMd5(rLname)+"/"+rLname+".trig";
+        final String typePrefix = RIDController.getTypePrefix(rLname);
+        if (typePrefix == null)
+            throw new ModuleException("unable to find type for "+rLname);
+        final String repoLname = prefixToGitLname.get(typePrefix);
+        if (repoLname == null)
+            throw new ModuleException("unable to find repo lname for prefix "+typePrefix);
+        log.debug("typeprefix {} gitlname {}", typePrefix, repoLname);
+        String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+pathInRepo;
+        return (new File(guessedPath)).exists();
+    }
+    
     // since it uses only the local name, it works for bdr: and bdg: resources
     // (and bdu:, etc.)
     public static GitInfo gitInfoForResource(final Resource r, final boolean gitOnly) throws IOException, ModuleException {

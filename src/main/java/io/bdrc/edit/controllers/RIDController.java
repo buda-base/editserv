@@ -30,6 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.txn.exceptions.ModuleException;
 
 @Controller
 @RequestMapping("/")
@@ -118,6 +120,14 @@ public class RIDController {
         final String fusekiUrl = EditConfig.getProperty("fusekiData");
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         boolean res = qe.execAsk();
+        // if not on Fuseki, we look on Git, just in case
+        if (!res)
+            try {
+                return CommonsGit.resourceExists(id);
+            } catch (ModuleException e) {
+                log.error("exception in idExists", e);
+                return true;
+            }
         return res;
     }
     

@@ -48,14 +48,15 @@ public class RIDController {
         File f = new File(fileName);
         if (f.isFile()) {
             try {
+                log.info("reading prefix file {}", f.getAbsolutePath());
                 prefixIndexes = mapper.readValue(f, typeRef);
             } catch (IOException e) {
                 prefixIndexes = null;
                 log.error("cannot read prefix indexes file", e);
-                return;
             }
             return;
         }
+        log.info("didn't find prefix file, loading generic one");
         final ClassLoader classLoader = RIDController.class.getClassLoader();
         final InputStream inputStream = classLoader.getResourceAsStream("prefix-idx.json");
         try {
@@ -69,6 +70,7 @@ public class RIDController {
     
     public static void writePrefixIndexes() throws JsonGenerationException, JsonMappingException, IOException {
         File f = new File(fileName);
+        log.info("write prefix values in {}", f.getAbsolutePath());
         mapper.writeValue(f, prefixIndexes);
     }
     
@@ -120,8 +122,10 @@ public class RIDController {
         final String fusekiUrl = EditConfig.getProperty("fusekiData");
         final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
         boolean res = qe.execAsk();
+        log.info("id {} exists on fuseki? {}", id, res);
         // if not on Fuseki, we look on Git, just in case
-        if (!res)
+        // we don't have image group git repository though (they are in the image instances)
+        if (!res && !id.startsWith("I"))
             try {
                 return CommonsGit.resourceExists(id);
             } catch (ModuleException e) {
@@ -133,12 +137,14 @@ public class RIDController {
     
     public static synchronized Integer getNextIndex(final String prefix) {
         Integer guess = prefixIndexes.get(prefix);
-        if (guess == null)
-            return 1;
+        log.info("current index for {} is {}", prefix, guess);
+        if (guess == null) 
+            guess = 0;
         guess = guess+1;
         while (idExists(prefix+String.valueOf(guess))) {
-            guess += 100;
+            guess += 10;
         }
+        log.info("guessed next index for {} to be {}", prefix, guess);
         prefixIndexes.put(prefix, guess);
         try {
             writePrefixIndexes();
@@ -162,11 +168,13 @@ public class RIDController {
     // creates a new ID in a prefix, requires admin rights
     @PutMapping(value = "/ID/{prefix}")
     public ResponseEntity<String> reserveNextID(@PathVariable("prefix") String prefix, HttpServletRequest request) {
-        Access acc = (Access) request.getAttribute("access");
-        if (acc == null || !acc.isUserLoggedIn())
-            return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-        if (!acc.getUserProfile().isAdmin())
-            return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        if (EditConfig.useAuth) {
+            Access acc = (Access) request.getAttribute("access");
+            if (acc == null || !acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
+            if (!acc.getUserProfile().isAdmin())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        }
         if (!prefixIsValid(prefix))
             return ResponseEntity.status(400).body("invalid prefix");
         Integer nextIdx = getNextIndex(prefix);
@@ -174,7 +182,7 @@ public class RIDController {
             return ResponseEntity.status(500).body("can't determine next ID for this prefix");
         }
         final String res = prefix+String.valueOf(nextIdx);
-        log.info("reserving "+res+" for "+acc.getUser().getUserId());
+        log.info("reserving {}", res);
         return ResponseEntity.ok().body(res);
     }
     

@@ -141,7 +141,9 @@ public class CommonsGit {
             throw new ModuleException("unable to find repo lname for prefix "+typePrefix);
         log.debug("typeprefix {} gitlname {}", typePrefix, repoLname);
         String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+pathInRepo;
-        return (new File(guessedPath)).exists();
+        final boolean res = (new File(guessedPath)).exists();
+        log.info("id {} exists in git? {}", rLname, res);
+        return res;
     }
     
     // since it uses only the local name, it works for bdr: and bdg: resources

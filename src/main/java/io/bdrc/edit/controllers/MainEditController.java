@@ -180,7 +180,13 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final GitInfo gi = saveResource(inModel, res, null, null);
+        final GitInfo gi;
+        try {
+            gi = saveResource(inModel, res, null, null);
+        } catch(ModuleException e) {
+            return ResponseEntity.status(e.getHttpStatus())
+                    .body(e.getMessage());
+        }
         response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.created(null).body("");
@@ -229,7 +235,13 @@ public class MainEditController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
-        final GitInfo gi = saveResource(inModel, res, ifMatch, changeMessage);
+        final GitInfo gi;
+        try {
+            gi = saveResource(inModel, res, ifMatch, changeMessage);
+        } catch(ModuleException e) {
+            return ResponseEntity.status(e.getHttpStatus())
+                    .body(e.getMessage());
+        }
         response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("");

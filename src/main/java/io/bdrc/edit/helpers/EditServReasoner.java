@@ -172,8 +172,8 @@ public class EditServReasoner {
     }
     
     public static final Property onYear = ResourceFactory.createProperty(BDO, "onYear");
-    public static final Property notBefore = ResourceFactory.createProperty(BDO, "onYear");
-    public static final Property notAfter = ResourceFactory.createProperty(BDO, "onYear");
+    public static final Property notBefore = ResourceFactory.createProperty(BDO, "notBefore");
+    public static final Property notAfter = ResourceFactory.createProperty(BDO, "notAfter");
     public static final Property eventWhen = ResourceFactory.createProperty(BDO, "eventWhen");
     public static void addinferredEDTFStrings(final Model model) {
         Set<Resource> events = new HashSet<>();

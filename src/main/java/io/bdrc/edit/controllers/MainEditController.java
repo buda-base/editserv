@@ -54,13 +54,13 @@ public class MainEditController {
 
     public final static Logger log = LoggerFactory.getLogger(MainEditController.class.getName());
 
-    @GetMapping(value = "/{qname}/focusGraph", produces = "text/turtle")
+    @GetMapping(value = "/{qname}/focusgraph", produces = "text/turtle")
     public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             HttpServletRequest req, HttpServletResponse response) {
         return getGraph(qname, req, response, true, null);
     }
     
-    @GetMapping(value = "/{qname}/revision/{revId}/focusGraph", produces = "text/turtle")
+    @GetMapping(value = "/{qname}/revision/{revId}/focusgraph", produces = "text/turtle")
     public static ResponseEntity<StreamingResponseBody> getFocusGraph(@PathVariable("qname") String qname,
             @PathVariable("revId") String revId, HttpServletRequest req, HttpServletResponse response) {
         return getGraph(qname, req, response, true, revId);

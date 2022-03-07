@@ -263,6 +263,10 @@ public class CommonsGit {
     }
     
     public static void fillLastRev(final GitInfo gi) throws ModuleException {
+        if (EditConfig.testMode) {
+            gi.revId = "testrev";
+            return;
+        }
         Repository r = getRepository(gi.repoLname);
         Git git = new Git(r);
         Iterator<RevCommit> commits;

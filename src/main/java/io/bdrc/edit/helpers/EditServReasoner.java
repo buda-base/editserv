@@ -35,12 +35,17 @@ import org.apache.jena.reasoner.rulesys.Rule.Parser;
 import org.apache.jena.reasoner.rulesys.Rule.ParserException;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import io.bdrc.edit.controllers.MainEditController;
 import io.bdrc.libraries.Models;
 
 // call BDRReasoner to get a reasoner to apply to an individual graph of BDRC data
 public class EditServReasoner {
 
+    public final static Logger log = LoggerFactory.getLogger(EditServReasoner.class.getName());
+    
     public static final String BDO = Models.BDO;
 
     private static List<Rule> getRulesFromModel(Model m, boolean inferSymetry) {
@@ -135,7 +140,10 @@ public class EditServReasoner {
 
         @Override
         public String unparse(Object value) {
-            return ((EDTFStr)value).str;
+            if (value instanceof EDTFStr)
+                return ((EDTFStr)value).str;
+            return (String)value;
+            
         }
 
         @Override
@@ -167,7 +175,7 @@ public class EditServReasoner {
     public static final Property notBefore = ResourceFactory.createProperty(BDO, "onYear");
     public static final Property notAfter = ResourceFactory.createProperty(BDO, "onYear");
     public static final Property eventWhen = ResourceFactory.createProperty(BDO, "eventWhen");
-    public static void addEDTFString(final Model model) {
+    public static void addinferredEDTFStrings(final Model model) {
         Set<Resource> events = new HashSet<>();
         events.addAll(model.listResourcesWithProperty(onYear).toList());
         events.addAll(model.listResourcesWithProperty(notBefore).toList());
@@ -189,7 +197,7 @@ public class EditServReasoner {
                     notAfterVal = s.getObject().asLiteral().getLexicalForm();
                 }
             }
-            if (notBefore != null || notAfter != null) {
+            if (notBeforeVal != null || notAfterVal != null) {
                 final String edtf = intervalToEDTF(notBeforeVal, notAfterVal);
                 model.add(e, eventWhen, model.createTypedLiteral(edtf, EDTFDT));
             }

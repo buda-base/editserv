@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.controllers.RIDController;
+import io.bdrc.edit.helpers.EditServReasoner;
 import io.bdrc.edit.helpers.Shapes;
 
 public class CommonsRead {
@@ -208,6 +209,9 @@ public class CommonsRead {
         log.debug("build focus graph for {}", subject);
         res.setNsPrefixes(m.getNsPrefixMap());
         addToFocusGraph(m, res, subject, shape);
+        // atonement for past mistakes: there should always be an EDTF eventWhen but it's not always
+        // present, we add it here
+        EditServReasoner.addinferredEDTFStrings(res);
         return res;
     }
 

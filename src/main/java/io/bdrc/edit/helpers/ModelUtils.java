@@ -4,32 +4,25 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.commons.collections4.IteratorUtils;
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.graph.Triple;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
-import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.SKOS;
-import org.seaborne.patch.RDFPatch;
 import org.seaborne.patch.RDFPatchOps;
-import org.seaborne.patch.changes.RDFChangesApply;
 import org.seaborne.patch.changes.RDFChangesCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +33,7 @@ import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.txn.exceptions.ModuleException;
 import io.bdrc.jena.sttl.STriGWriter;
+import io.bdrc.libraries.Models;
 
 public class ModelUtils {
     
@@ -55,24 +49,6 @@ public class ModelUtils {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new STriGWriter().write(baos, ds.asDatasetGraph(), EditConfig.prefix.getPrefixMap(), null, Helpers.createWriterContext());
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
-    }
-    
-    public static Set<Statement> ModelToSet(Model m) {
-        StmtIterator st = m.listStatements();
-        List<Statement> stList = IteratorUtils.toList(st);
-        return new HashSet<>(stList);
-    }
-
-    // All the statements that are in Model A that don't exist in Model B
-    public static Set<Statement> ModelComplementAsSet(Model A, Model B) {
-        Model diff = A.difference(B);
-        return diff.listStatements().toSet();
-    }
-
-    public static Set<Statement> mergeModelAsSet(Set<Statement> A, Set<Statement> B) {
-        Set<Statement> unionSet = new HashSet<>(A);
-        unionSet.addAll(B);
-        return unionSet;
     }
 
     public static Resource getMainGraph(final Dataset ds) {
@@ -192,7 +168,7 @@ public class ModelUtils {
     }
     
     // changes completeSet with a new model (later can return plus and minus)
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname) throws ModuleException {
+    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname, final String[] changeMessage, final Resource user) throws ModuleException {
         final boolean isUser = repoLname.equals("GR0100");
         log.info("merging new model for {}", r);
         final Model original = completeSet.getNamedModel(graphUri);
@@ -213,6 +189,8 @@ public class ModelUtils {
             log.debug("result of the merge is {}", modelToTtl(resModel));
             log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
         }
+        // add a simple log entry
+        ModelUtils.addSimpleLogEntry(resModel, r, user, changeMessage, true);
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it
@@ -242,111 +220,43 @@ public class ModelUtils {
         return inFocusGraph;
     }
     
-    // changes completeSet with a patch
-    public static void mergeModel(Dataset completeSet, final String graphUri, RDFPatch patch, final Resource r, final Resource shape, final String repoLname) throws ModuleException {
-        log.info("patching model for {}", r);
-        // patches only apply on datasets, so we get a dataset that contains only
-        // the focus graph of the main graph of the original dataset
-        final Dataset newDataset = DatasetFactory.create();
-        final Model initialModel = completeSet.getNamedModel(graphUri);
-        final Model initialFocusGraph = CommonsRead.getFocusGraph(initialModel, r, shape);
-        newDataset.addNamedModel(graphUri, initialFocusGraph);
-        final RDFChangesApply apply = new RDFChangesApply(newDataset.asDatasetGraph());
-        patch.apply(apply);
-        final Model newModel = newDataset.getNamedModel(graphUri);
-        if (log.isDebugEnabled()) {
-            log.debug("initial model that should be patched {}", modelToTtl(initialFocusGraph));
-            log.debug("focus graph of the initial model {}", modelToTtl(initialFocusGraph));
-            log.debug("patched focus graph {}", modelToTtl(newModel));
+    public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
+    public static final Property logEntry = ResourceFactory.createProperty(Models.ADM, "logEntry");
+    public static final Property logDate = ResourceFactory.createProperty(Models.ADM, "logDate");
+    public static final Property logWho = ResourceFactory.createProperty(Models.ADM, "logWho");
+    public static final Property logMessage = ResourceFactory.createProperty(Models.ADM, "logMessage");
+    public static final Property InitialDataCreation = ResourceFactory.createProperty(Models.ADM, "InitialDataCreation");
+    public static final Property UpdateData = ResourceFactory.createProperty(Models.ADM, "UpdateData");
+    public static void addSimpleLogEntry(final Model m, final Resource r, final Resource user, final String[] changeMessage, final boolean creation) throws ModuleException {
+        final ResIterator admIt = m.listSubjectsWithProperty(admAbout, r);
+        if (!admIt.hasNext())
+            throw new ModuleException(500, "can't find admin data for "+r.getURI());
+        final Resource admData = admIt.next();
+        final List<String> logEntryLocalNames = new ArrayList<String>();
+        final StmtIterator lgIt = admData.listProperties(logEntry);
+        while (lgIt.hasNext()) {
+            logEntryLocalNames.add(lgIt.next().getResource().getLocalName());
         }
-        final Model newFocusGraph = getValidFocusGraph(newModel, r, shape);
-        if (log.isDebugEnabled()) {
-            log.debug("obtained new focus graph {}", modelToTtl(newFocusGraph));
+        if (creation && logEntryLocalNames.size() > 0)
+            throw new ModuleException(500, "log entries already present while adding creation log entry for "+r.getURI());
+        // get a random string that is not already present in the log entries
+        final String lgLnamePrefix = "LG0"+r.getLocalName()+"_";
+        String rand = RandomStringUtils.random(12, true, true).toUpperCase();
+        int i = 0;
+        while (i < 10) {
+            if (!logEntryLocalNames.contains(lgLnamePrefix+rand))
+                break;
+            rand = RandomStringUtils.random(12, true, true).toUpperCase();
+            i += 1;
         }
-        mergeModel(completeSet, graphUri, newFocusGraph, r, shape, repoLname);
-    }
-    
-    public static Model mergeModel(Model complement, Model focusEdited) {
-        Set<Statement> complementModel = ModelToSet(complement);
-        Set<Statement> focusModel = ModelToSet(focusEdited);
-        Model m = ModelFactory.createDefaultModel();
-        return m.add(IteratorUtils.toList(mergeModelAsSet(complementModel, focusModel).iterator()));
-    }
-
-    public static Model getEditedModel(Model full, Model focus, Model focusEdited) {
-        Model complement = full.difference(focus);
-        return mergeModel(complement, focusEdited);
-    }
-
-    // List all objects that are not literals or blank nodes
-    public List<RDFNode> getObjectResourceNodes(Model m) {
-        List<RDFNode> l = new ArrayList<>();
-        NodeIterator nit = m.listObjects();
-        while (nit.hasNext()) {
-            RDFNode n = nit.next();
-            if (n.isURIResource()) {
-                l.add(n);
-            }
-        }
-        return l;
-    }
-
-    public static String checkToFullUri(String resourceUri) {
-        try {
-            int prefixIndex = resourceUri.indexOf(":");
-            if (prefixIndex < 0) {
-                return resourceUri;
-            } else {
-                String prefix = resourceUri.substring(0, prefixIndex);
-                return EditConfig.prefix.getFullIRI(prefix) + resourceUri.substring(prefixIndex + 1);
-            }
-        } catch (Exception ex) {
-            return null;
-        }
-    }
-    
-    /*
-
-    public static Model removeTriples(String graphUri, List<Statement> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
-        m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
-        Dataset ds = DatasetFactory.create();
-        ds.addNamedModel(graphUri, m);
-        DatasetGraph dg = ds.asDatasetGraph();
-        for (Statement st : tps) {
-            dg.delete(NodeFactory.createURI(graphUri), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
-        }
-        m = ModelFactory.createModelForGraph(dg.getGraph(NodeFactory.createURI(graphUri)));
-        // m.write(System.out, "TURTLE");
-        return m;
-    }
-
-    public static Model addTriples(String graphUri, List<Statement> tps) throws UnknownBdrcResourceException, NotModifiableException, IOException {
-        Model m = CommonsGit.getGraphFromGit(EditConstants.BDR + Helpers.getShortName(graphUri));
-        m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
-        Dataset ds = DatasetFactory.create();
-        ds.addNamedModel(graphUri, m);
-        DatasetGraph dg = ds.asDatasetGraph();
-        for (Statement st : tps) {
-            dg.add(NodeFactory.createURI(graphUri), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
-        }
-        m = ModelFactory.createModelForGraph(dg.getGraph(NodeFactory.createURI(graphUri)));
-        // m.write(System.out, "TURTLE");
-        return m;
-    }
-
-    */
-
-    public static Model updateGitRevision(String graphUri, Model m, String gitRev) {
-        Dataset ds = DatasetFactory.create(m);
-        DatasetGraph dsg = ds.asDatasetGraph();
-        Triple t = new Triple(NodeFactory.createURI(EditConstants.BDA + Helpers.getShortName(graphUri)),
-                NodeFactory.createURI(EditConstants.ADM + "gitRevision"), Node.ANY);
-        dsg.deleteAny(NodeFactory.createURI(graphUri), t.getSubject(), t.getPredicate(), t.getObject());
-        t = new Triple(NodeFactory.createURI(EditConstants.BDA + Helpers.getShortName(graphUri)),
-                NodeFactory.createURI(EditConstants.ADM + "gitRevision"), NodeFactory.createLiteral(gitRev));
-        dsg.add(NodeFactory.createURI(graphUri), t.getSubject(), t.getPredicate(), t.getObject());
-        return ModelFactory.createModelForGraph(dsg.getUnionGraph());
+        final Resource lg = m.createResource(Models.BDA+lgLnamePrefix+rand);
+        m.add(admData, logEntry, lg);
+        m.add(lg, RDF.type, creation ? InitialDataCreation : UpdateData);
+        if (user != null)
+            m.add(lg, logWho, user);
+        Date now = new Date();
+        m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+        m.add(lg, logMessage, m.createLiteral(changeMessage[0], changeMessage[1]));
     }
 
 }

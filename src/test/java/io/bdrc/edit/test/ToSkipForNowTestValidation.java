@@ -36,14 +36,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.commons.data.OntologyData;
-import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.MainEditController;
-import io.bdrc.edit.helpers.Shapes;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.ParameterFormatException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { MainEditController.class }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -146,9 +140,9 @@ public class ToSkipForNowTestValidation {
 
     // shapes graph parsing error for now
     // @Test
-    public void editorModelValidationJenaShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+    public void editorModelValidationJenaShacl() throws IOException {
         Model initial = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
+        InputStream in = ToSkipForNowTestValidation.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
         initial.read(in, null, "TTL");
         in.close();
         boolean conforms = CommonsValidate.validateShacl(initial);
@@ -157,9 +151,9 @@ public class ToSkipForNowTestValidation {
 
     // Using pre-processed graph (editor graph) and ontology data
     // @Test
-    public void editorModelValidationTQShacl() throws IOException, UnknownBdrcResourceException, NotModifiableException, ParameterFormatException {
+    public void editorModelValidationTQShacl() throws IOException {
         Model err = ModelFactory.createDefaultModel();
-        InputStream in = TestModelUtils.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
+        InputStream in = ToSkipForNowTestValidation.class.getClassLoader().getResourceAsStream("P707_editor_missingName.ttl");
         err.read(in, null, "TTL");
         in.close();
         boolean r = CommonsValidate.validateShacl(err);

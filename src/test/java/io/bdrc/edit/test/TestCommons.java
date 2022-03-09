@@ -6,7 +6,6 @@ import java.io.InputStream;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RDFParser;
@@ -23,8 +22,6 @@ import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.txn.exceptions.NotModifiableException;
-import io.bdrc.edit.txn.exceptions.UnknownBdrcResourceException;
 import io.bdrc.libraries.Models;
 
 public class TestCommons {

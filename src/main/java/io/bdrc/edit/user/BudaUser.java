@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +36,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.bdrc.auth.Access;
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -62,9 +64,24 @@ public class BudaUser {
     public static String PUB_SCOPE = "public";
     public static String PRIV_SCOPE = "private";
 
-    public static HashMap<String, List<String>> propsPolicies;
+    public static Map<String, List<String>> propsPolicies;
+    
+    private static final Map<String, Resource> auth0IdToRdfProfile = new HashMap<>();
 
+    // get the bdu:UXXX, surprisingly difficult
+    public static Resource getUserFromAccess(final Access acc) throws ModuleException {
+        final String authId = acc.getUser().getAuthId();
+        final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
+        try {
+            return getRdfProfile(auth0Id);
+        } catch (IOException e) {
+            throw new ModuleException(500, "can't find user profile", e);
+        }
+    }
+    
     public static Resource getRdfProfile(String auth0Id) throws IOException {
+        if (auth0IdToRdfProfile.containsKey(auth0Id))
+            return auth0IdToRdfProfile.get(auth0Id);
         Resource r = null;
         String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
                 + auth0Id + "> }";
@@ -76,6 +93,7 @@ public class BudaUser {
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
             log.info("RESOURCE >> {} ", r);
+            auth0IdToRdfProfile.put(auth0Id, r);
             return r;
         }
         qe.close();
@@ -83,6 +101,8 @@ public class BudaUser {
     }
 
     public static Resource getRdfProfile(String auth0Id, Model m) throws IOException {
+        if (auth0IdToRdfProfile.containsKey(auth0Id))
+            return auth0IdToRdfProfile.get(auth0Id);
         Resource r = null;
         String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
                 + auth0Id + "> }";
@@ -94,6 +114,7 @@ public class BudaUser {
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
             log.info("RESOURCE >> {} ", r);
+            auth0IdToRdfProfile.put(auth0Id, r);
             return r;
         }
         qe.close();
@@ -223,7 +244,7 @@ public class BudaUser {
         return gi;
     }
 
-    public static HashMap<String, List<String>> getUserPropsEditPolicies() {
+    public static Map<String, List<String>> getUserPropsEditPolicies() {
         if (propsPolicies == null) {
             propsPolicies = new HashMap<>();
             propsPolicies.put(BudaUser.PUBLIC_PROPS_KEY, Arrays.asList(EditConfig.getProperty(BudaUser.PUBLIC_PROPS_KEY).split(",")));

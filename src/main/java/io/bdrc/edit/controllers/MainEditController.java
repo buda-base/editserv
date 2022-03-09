@@ -7,6 +7,7 @@ import java.io.InputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.rdf.model.Model;
@@ -43,7 +44,6 @@ import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
@@ -149,14 +149,34 @@ public class MainEditController {
         }
     }
     
+    public static String[] parseChangeMessage(String changeMessage, boolean creation) throws ModuleException {
+        if (changeMessage == null) {
+            final String[] res = { (creation ? "create resource" : "update resource"), "en" };
+            return res;
+        }
+        if (changeMessage.length() > 150)
+            throw new ModuleException(400, "change message too long");
+        String messageLang = "en";
+        final int atIdx = changeMessage.lastIndexOf('@');
+        if (atIdx != -1) {
+            messageLang = changeMessage.substring(atIdx+1, changeMessage.length());
+            changeMessage = changeMessage.substring(0, atIdx);
+        }
+        changeMessage = StringUtils.strip(changeMessage, "\" ");
+        final String[] res = { changeMessage, messageLang };
+        return res;
+    }
+    
     @PutMapping(value = "/{qname}/focusgraph")
     public static ResponseEntity<String> putFocusGraph(@PathVariable("qname") String qname, HttpServletRequest req,
-            HttpServletResponse response, @RequestBody String model) throws Exception {
+            HttpServletResponse response, @RequestBody String model, @RequestHeader("X-Change-Message") String changeMessage) throws Exception {
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
+        Resource user = null;
         if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
+                user = BudaUser.getUserFromAccess(acc);
             } catch (ModuleException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
@@ -182,7 +202,7 @@ public class MainEditController {
         }
         final GitInfo gi;
         try {
-            gi = saveResource(inModel, res, null, null);
+            gi = saveResource(inModel, res, null, parseChangeMessage(changeMessage, true), user);
         } catch(ModuleException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
@@ -207,11 +227,12 @@ public class MainEditController {
                     .body("you can only modify entities in the bdr namespace in this endpoit");
             res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         }
-        
+        Resource user = null;
         if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
+                user = BudaUser.getUserFromAccess(acc);
             } catch (ModuleException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
@@ -237,7 +258,7 @@ public class MainEditController {
         }
         final GitInfo gi;
         try {
-            gi = saveResource(inModel, res, ifMatch, changeMessage);
+            gi = saveResource(inModel, res, ifMatch, parseChangeMessage(changeMessage, false), user);
         } catch(ModuleException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
@@ -251,7 +272,10 @@ public class MainEditController {
     // TODO: finish this
     @PutMapping(value = "/{qname}")
     public static ResponseEntity<String> putResource(@PathVariable("qname") String qname, HttpServletRequest req,
-            HttpServletResponse response, @RequestBody String model) throws Exception {
+            HttpServletResponse response, @RequestBody String model, 
+            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader("X-Change-Message") String changeMessage) throws Exception {
+        // TODO: handle If-Match (optional in this case)
         final boolean userMode = qname.startsWith("bdu:");
         final boolean graphMode = qname.startsWith("bdg:");
         final Resource res;
@@ -265,10 +289,12 @@ public class MainEditController {
                     .body("you can only modify entities in the bdr namespace in this endpoit");
             res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         }
+        Resource user = null;
         if (EditConfig.useAuth) {
             Access acc = (Access) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
+                user = BudaUser.getUserFromAccess(acc);
             } catch (ModuleException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
@@ -293,7 +319,7 @@ public class MainEditController {
                     .body("Cannot parse request content in " + req.getHeader("Content-Type"));
         }
         // TODO: this probably doesn't work for bdr: qname values
-        final GitInfo gi = putGraph(inModel, res);
+        final GitInfo gi = putGraph(inModel, res, parseChangeMessage(changeMessage, false), user);
         response.addHeader("Etag", gi.revId);
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("");
@@ -301,24 +327,24 @@ public class MainEditController {
     
     // previousRev is the previous revision that the resource must have
     // when null, the resource must not exist already
-    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String changeMessage) throws ModuleException, IOException, VersionConflictException, GitAPIException {
+    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user) throws ModuleException, IOException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
-        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage);
+        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage, user);
         FusekiWriteHelpers.putDataset(gi);
         return gi;
     }
     
     // bypasses all checks and just write the model in the relevant graph on git and Fuseki
     // this is not the normal API and should be kept for edge cases only
-    public static GitInfo putGraph(final Model inModel, final Resource graph) throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    public static GitInfo putGraph(final Model inModel, final Resource graph, final String[] changeMessage, final Resource user) throws IOException, GitAPIException, ModuleException {
         final GitInfo gi = CommonsGit.gitInfoForResource(graph, false);
         final Dataset result = DatasetFactory.create();
         // TODO: adjust for user graphs
         result.addNamedModel(graph.getURI(), inModel);
         gi.ds = result;
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
-        CommonsGit.commitAndPush(gi, "force full graph replacement");
+        CommonsGit.commitAndPush(gi, CommonsGit.getCommitMessage(graph, changeMessage, user));
         FusekiWriteHelpers.putDataset(gi);
         return gi;
     }

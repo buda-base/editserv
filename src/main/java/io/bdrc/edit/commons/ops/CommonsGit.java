@@ -31,7 +31,6 @@ import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.txn.exceptions.ModuleException;
-import io.bdrc.edit.txn.exceptions.VersionConflictException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
@@ -210,9 +209,11 @@ public class CommonsGit {
         return guessedGitInfo;
     }
     
-    public static String getCommitMessage(final Model newModel, final Resource r) {
-        // TODO: read the log entries, etc.
-        return "updating "+r.getLocalName();
+    public static String getCommitMessage(final Resource r, final String[] changeMessage, final Resource user) {
+        String res = "";
+        if (user != null)
+            res = "["+user.getLocalName()+"]";
+        return res+"["+r.getLocalName()+"] "+changeMessage[0];
     }
     
     public static Dataset createDatasetForNewResource(final Model m, final Resource r) {
@@ -334,8 +335,8 @@ public class CommonsGit {
     }
     
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, String changeMessage)
-            throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user)
+            throws IOException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r, previousRevision == null);
         Dataset result = null;
         String graphUri;
@@ -344,6 +345,7 @@ public class CommonsGit {
                 throw new ModuleException(404, "Resource doesn't exist");
             log.info("resource is new");
             // new resource
+            ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, true);
             gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {
@@ -357,17 +359,16 @@ public class CommonsGit {
             log.debug("main graph is ", graph);
             graphUri = graph.getURI();
             // next lines changes the result variable directly
-            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
+            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname, changeMessage, user);            
         }
-        // TODO: add proper change log and a proper commit message
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
-        commitAndPush(gi, getCommitMessage(newModel, r));
+        commitAndPush(gi, getCommitMessage(r, changeMessage, user));
         return gi;
     }
 
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo forceSaveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision)
-            throws IOException, VersionConflictException, GitAPIException, ModuleException {
+    public static synchronized GitInfo forceSaveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user)
+            throws IOException, GitAPIException, ModuleException {
         final GitInfo gi = gitInfoForResource(r, false);
         Dataset result = null;
         String graphUri;
@@ -387,10 +388,10 @@ public class CommonsGit {
             log.debug("main graph is ", graph);
             graphUri = graph.getURI();
             // next lines changes the result variable directly
-            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname);            
+            ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname, changeMessage, user);            
         }
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant
-        commitAndPush(gi, getCommitMessage(newModel, r));
+        commitAndPush(gi, getCommitMessage(r, changeMessage, user));
         return gi;
     }
     

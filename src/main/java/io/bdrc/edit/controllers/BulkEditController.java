@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
-import io.bdrc.edit.helpers.BulkOps;
 import io.bdrc.libraries.SparqlCommons;
 
 @Controller

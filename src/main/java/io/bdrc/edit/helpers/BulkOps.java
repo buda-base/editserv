@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.OntologyData;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.libraries.BDRCReasoner;
 import io.bdrc.libraries.GitHelpers;
 import io.bdrc.libraries.SparqlCommons;
@@ -68,7 +68,7 @@ public class BulkOps {
         fusConn.close();
     }
 
-    private static RevCommit commitRepo(String repoPath) throws InvalidRemoteException, TransportException, GitAPIException, ModuleException {
+    private static RevCommit commitRepo(String repoPath) throws InvalidRemoteException, TransportException, GitAPIException, EditException {
         String gitUser = EditConfig.getProperty("gitUser");
         String gitPass = EditConfig.getProperty("gitPass");
         final String type = repoPath.substring(repoPath.length()-2);
@@ -78,7 +78,7 @@ public class BulkOps {
             GitHelpers.push(type, EditConfig.getProperty("gitRemoteBase"), gitUser, gitPass,
                     EditConfig.getProperty("gitLocalRoot"));
         } else {
-            ModuleException due = new ModuleException("Commit failed in repo :" + repoPath);
+            EditException due = new EditException("Commit failed in repo :" + repoPath);
             log.error("Commit failed in repo :" + repoPath, due);
             throw due;
         }

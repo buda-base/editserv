@@ -25,7 +25,7 @@ import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
@@ -38,7 +38,7 @@ public class UserEditController {
 
     @GetMapping(value = "/me/focusgraph")
     public static ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
-            throws IOException, GitAPIException, ModuleException {
+            throws IOException, GitAPIException, EditException {
         try {
             log.info("Call meUser()");
             Access acc = (Access) request.getAttribute("access");

@@ -21,7 +21,7 @@ import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.libraries.Models;
 
 public class TestCommons {
@@ -49,7 +49,7 @@ public class TestCommons {
     }
     
     @Test
-    public void getGraphTest() throws ModuleException {
+    public void getGraphTest() throws EditException {
         String graphUri = "http://purl.bdrc.io/resource/P1583";
         String graphUri1 = "http://purl.bdrc.io/graph/P1583";
         String graphUri2 = "http://purl.bdrc.io/resource/P1583XZ";

@@ -4,27 +4,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 
-public class ModuleException extends Exception {
+public class EditException extends Exception {
 
     int status;
 	private static final long serialVersionUID = 7440728387322903030L;
-	private static final Logger logger = LoggerFactory.getLogger(ModuleException.class);
+	private static final Logger logger = LoggerFactory.getLogger(EditException.class);
 
-	public ModuleException() {
+	public EditException() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public ModuleException(String message, Throwable cause, boolean enableSuppression,
+	public EditException(String message, Throwable cause, boolean enableSuppression,
 			boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
 
-	public ModuleException(String message, Throwable cause) {
+	public EditException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-    public ModuleException(int status, String message, Throwable cause) {
+    public EditException(int status, String message, Throwable cause) {
         super(message, cause);
         this.status = status;
         if (status == 500) {
@@ -32,7 +32,7 @@ public class ModuleException extends Exception {
         }
     }
 	
-    public ModuleException(int status, String message) {
+    public EditException(int status, String message) {
         super(message);
         this.status = status;
         if (status == 500) {
@@ -40,11 +40,11 @@ public class ModuleException extends Exception {
         }
     }
     
-	public ModuleException(String message) {
+	public EditException(String message) {
 		super(message);
 	}
 
-	public ModuleException(Throwable cause) {
+	public EditException(Throwable cause) {
 		super(cause);
 	}
 	

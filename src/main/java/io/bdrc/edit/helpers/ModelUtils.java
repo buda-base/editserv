@@ -31,7 +31,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.Models;
 
@@ -168,7 +168,7 @@ public class ModelUtils {
     }
     
     // changes completeSet with a new model (later can return plus and minus)
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname, final String[] changeMessage, final Resource user) throws ModuleException {
+    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname, final String[] changeMessage, final Resource user) throws EditException {
         final boolean isUser = repoLname.equals("GR0100");
         log.info("merging new model for {}", r);
         final Model original = completeSet.getNamedModel(graphUri);
@@ -204,18 +204,18 @@ public class ModelUtils {
     
     // given a model from the user, the main resource and a shape, return a valid focus graph
     // throw ModuleException if model is invalid
-    public static Model getValidFocusGraph(final Model inModel, final Resource r, final Resource shape) throws ModuleException {
+    public static Model getValidFocusGraph(final Model inModel, final Resource r, final Resource shape) throws EditException {
         final Model inFocusGraph = CommonsRead.getFocusGraph(inModel, r, shape);
         if (!CommonsValidate.validateFocusing(inModel, inFocusGraph)) {
             Model diff = inModel.difference(inFocusGraph);
             log.error("Focus graph is not the same size as initial graph, difference is {}", ModelUtils.modelToTtl(diff));
-            throw new ModuleException(400, "Focus graph is not the same size as initial graph");
+            throw new EditException(400, "Focus graph is not the same size as initial graph");
         }
         if (!CommonsValidate.validateShacl(inFocusGraph)) {
-            throw new ModuleException(400, "Shacl did not validate, check logs");
+            throw new EditException(400, "Shacl did not validate, check logs");
         }
         if (!CommonsValidate.validateExtRIDs(inFocusGraph)) {
-            throw new ModuleException(400, "Some external resources do not have a correct RID, check logs");
+            throw new EditException(400, "Some external resources do not have a correct RID, check logs");
         }
         return inFocusGraph;
     }
@@ -227,10 +227,10 @@ public class ModelUtils {
     public static final Property logMessage = ResourceFactory.createProperty(Models.ADM, "logMessage");
     public static final Property InitialDataCreation = ResourceFactory.createProperty(Models.ADM, "InitialDataCreation");
     public static final Property UpdateData = ResourceFactory.createProperty(Models.ADM, "UpdateData");
-    public static void addSimpleLogEntry(final Model m, final Resource r, final Resource user, final String[] changeMessage, final boolean creation) throws ModuleException {
+    public static void addSimpleLogEntry(final Model m, final Resource r, final Resource user, final String[] changeMessage, final boolean creation) throws EditException {
         final ResIterator admIt = m.listSubjectsWithProperty(admAbout, r);
         if (!admIt.hasNext())
-            throw new ModuleException(500, "can't find admin data for "+r.getURI());
+            throw new EditException(500, "can't find admin data for "+r.getURI());
         final Resource admData = admIt.next();
         final List<String> logEntryLocalNames = new ArrayList<String>();
         final StmtIterator lgIt = admData.listProperties(logEntry);
@@ -238,7 +238,7 @@ public class ModelUtils {
             logEntryLocalNames.add(lgIt.next().getResource().getLocalName());
         }
         if (creation && logEntryLocalNames.size() > 0)
-            throw new ModuleException(500, "log entries already present while adding creation log entry for "+r.getURI());
+            throw new EditException(500, "log entries already present while adding creation log entry for "+r.getURI());
         // get a random string that is not already present in the log entries
         final String lgLnamePrefix = "LG0"+r.getLocalName()+"_";
         String rand = RandomStringUtils.random(12, true, true).toUpperCase();

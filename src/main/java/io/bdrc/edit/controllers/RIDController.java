@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 
 @Controller
 @RequestMapping("/")
@@ -128,7 +128,7 @@ public class RIDController {
         if (!res && !id.startsWith("I"))
             try {
                 return CommonsGit.resourceExists(id);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 log.error("exception in idExists", e);
                 return true;
             }

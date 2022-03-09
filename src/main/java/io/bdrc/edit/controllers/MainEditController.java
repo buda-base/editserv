@@ -43,7 +43,7 @@ import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.BudaMediaTypes;
 import io.bdrc.libraries.StreamingHelpers;
@@ -98,7 +98,7 @@ public class MainEditController {
             Access acc = (Access) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(StreamingHelpers.getStream(e.getMessage()));
             }
@@ -124,38 +124,38 @@ public class MainEditController {
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
     
-    public static void ensureAccess(Access acc, Resource res) throws ModuleException {
+    public static void ensureAccess(Access acc, Resource res) throws EditException {
         if (acc == null || !acc.isUserLoggedIn())
-            throw new ModuleException(401, "this requires being logged in");
+            throw new EditException(401, "this requires being logged in");
         // the access control is different for users and general resources
         if (res.getURI().startsWith(EditConstants.BDU)) {
             String authId = acc.getUser().getAuthId();
             if (authId == null) {
                 log.error("couldn't find authId for {}"+acc.toString());
-                throw new ModuleException(500, "couldn't find authId");
+                throw new EditException(500, "couldn't find authId");
             }
             final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
             Resource usr;
             try {
                 usr = BudaUser.getRdfProfile(auth0Id);
             } catch (IOException e) {
-                throw new ModuleException(500, "couldn't get RDF profile", e);
+                throw new EditException(500, "couldn't get RDF profile", e);
             }
             if (!acc.getUserProfile().isAdmin() && !usr.equals(res))
-                throw new ModuleException(403, "only admins can modify other users");
+                throw new EditException(403, "only admins can modify other users");
         } else {
             if (!acc.getUserProfile().isAdmin())
-                throw new ModuleException(403, "this requires being logged in with an admin account");
+                throw new EditException(403, "this requires being logged in with an admin account");
         }
     }
     
-    public static String[] parseChangeMessage(String changeMessage, boolean creation) throws ModuleException {
+    public static String[] parseChangeMessage(String changeMessage, boolean creation) throws EditException {
         if (changeMessage == null) {
             final String[] res = { (creation ? "create resource" : "update resource"), "en" };
             return res;
         }
         if (changeMessage.length() > 150)
-            throw new ModuleException(400, "change message too long");
+            throw new EditException(400, "change message too long");
         String messageLang = "en";
         final int atIdx = changeMessage.lastIndexOf('@');
         if (atIdx != -1) {
@@ -177,7 +177,7 @@ public class MainEditController {
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
             }
@@ -203,7 +203,7 @@ public class MainEditController {
         final GitInfo gi;
         try {
             gi = saveResource(inModel, res, null, parseChangeMessage(changeMessage, true), user);
-        } catch(ModuleException e) {
+        } catch(EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
         }
@@ -233,7 +233,7 @@ public class MainEditController {
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
             }
@@ -259,7 +259,7 @@ public class MainEditController {
         final GitInfo gi;
         try {
             gi = saveResource(inModel, res, ifMatch, parseChangeMessage(changeMessage, false), user);
-        } catch(ModuleException e) {
+        } catch(EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
         }
@@ -295,7 +295,7 @@ public class MainEditController {
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
             }
@@ -327,7 +327,7 @@ public class MainEditController {
     
     // previousRev is the previous revision that the resource must have
     // when null, the resource must not exist already
-    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user) throws ModuleException, IOException, GitAPIException {
+    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user) throws EditException, IOException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
         final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage, user);
@@ -337,7 +337,7 @@ public class MainEditController {
     
     // bypasses all checks and just write the model in the relevant graph on git and Fuseki
     // this is not the normal API and should be kept for edge cases only
-    public static GitInfo putGraph(final Model inModel, final Resource graph, final String[] changeMessage, final Resource user) throws IOException, GitAPIException, ModuleException {
+    public static GitInfo putGraph(final Model inModel, final Resource graph, final String[] changeMessage, final Resource user) throws IOException, GitAPIException, EditException {
         final GitInfo gi = CommonsGit.gitInfoForResource(graph, false);
         final Dataset result = DatasetFactory.create();
         // TODO: adjust for user graphs

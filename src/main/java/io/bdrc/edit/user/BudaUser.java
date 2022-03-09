@@ -45,7 +45,7 @@ import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.libraries.Models;
 
 public class BudaUser {
@@ -69,13 +69,13 @@ public class BudaUser {
     private static final Map<String, Resource> auth0IdToRdfProfile = new HashMap<>();
 
     // get the bdu:UXXX, surprisingly difficult
-    public static Resource getUserFromAccess(final Access acc) throws ModuleException {
+    public static Resource getUserFromAccess(final Access acc) throws EditException {
         final String authId = acc.getUser().getAuthId();
         final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
         try {
             return getRdfProfile(auth0Id);
         } catch (IOException e) {
-            throw new ModuleException(500, "can't find user profile", e);
+            throw new EditException(500, "can't find user profile", e);
         }
     }
     
@@ -159,7 +159,7 @@ public class BudaUser {
         return fetched;
     }
 
-    public static Model getUserModelFromGit(final Resource user) throws IOException, ModuleException {
+    public static Model getUserModelFromGit(final Resource user) throws IOException, EditException {
         // (wrt second argument) we're not in creation mode but we don't want to look on
         // Fuseki for guidance on where we should store the user profile
         final GitInfo gi = CommonsGit.gitInfoForResource(user, true);

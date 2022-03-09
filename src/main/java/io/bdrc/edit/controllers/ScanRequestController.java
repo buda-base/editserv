@@ -36,7 +36,7 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 
 @Controller
 @RequestMapping("/")
@@ -67,7 +67,7 @@ public class ScanRequestController {
     
     // reading this from git is less efficient but also more authoritative
     // since efficiency is not an issue, we use this
-    public static List<VolInfo> getVolumesFromGit(final Resource imageInstance, boolean onlynonsyncedB) throws IOException, ModuleException {
+    public static List<VolInfo> getVolumesFromGit(final Resource imageInstance, boolean onlynonsyncedB) throws IOException, EditException {
         GitInfo gi = CommonsGit.gitInfoForResource(imageInstance, true);
         List<VolInfo> res = new ArrayList<>();
         String queryStr = "select distinct ?i ?nbt ?nbi where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumePagesTotal> ?nbt ; <"+EditConstants.BDO+"volumePagesTbrcIntro> ?nbi . }";
@@ -111,7 +111,7 @@ public class ScanRequestController {
     
     @GetMapping(value = "/{qname}/scanrequest", produces="application/zip")
     public ResponseEntity<StreamingResponseBody> getLatestID(@RequestParam(value = "onlynonsynced", required = false) String onlynonsynced, 
-            @PathVariable("qname") String qname, HttpServletRequest req, HttpServletResponse response) throws IOException, ModuleException {
+            @PathVariable("qname") String qname, HttpServletRequest req, HttpServletResponse response) throws IOException, EditException {
         if (!qname.startsWith("bdr:W"))
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(null);
@@ -121,7 +121,7 @@ public class ScanRequestController {
             Access acc = (Access) req.getAttribute("access");
             try {
                 MainEditController.ensureAccess(acc, res);
-            } catch (ModuleException e) {
+            } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(null);
             }

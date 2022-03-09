@@ -30,7 +30,7 @@ import io.bdrc.edit.commons.data.QueryProcessor;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
-import io.bdrc.edit.txn.exceptions.ModuleException;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GlobalHelpers;
 import io.bdrc.libraries.Models;
@@ -130,14 +130,14 @@ public class CommonsGit {
         return res;
     }
     
-    public static boolean resourceExists(final String rLname) throws ModuleException {
+    public static boolean resourceExists(final String rLname) throws EditException {
         final String pathInRepo = Models.getMd5(rLname)+"/"+rLname+".trig";
         final String typePrefix = RIDController.getTypePrefix(rLname);
         if (typePrefix == null)
-            throw new ModuleException("unable to find type for "+rLname);
+            throw new EditException("unable to find type for "+rLname);
         final String repoLname = prefixToGitLname.get(typePrefix);
         if (repoLname == null)
-            throw new ModuleException("unable to find repo lname for prefix "+typePrefix);
+            throw new EditException("unable to find repo lname for prefix "+typePrefix);
         log.debug("typeprefix {} gitlname {}", typePrefix, repoLname);
         String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+pathInRepo;
         final boolean res = (new File(guessedPath)).exists();
@@ -147,17 +147,17 @@ public class CommonsGit {
     
     // since it uses only the local name, it works for bdr: and bdg: resources
     // (and bdu:, etc.)
-    public static GitInfo gitInfoForResource(final Resource r, final boolean gitOnly) throws IOException, ModuleException {
+    public static GitInfo gitInfoForResource(final Resource r, final boolean gitOnly) throws IOException, EditException {
         final String rLname = r.getLocalName();
         // first we guess and check if the file exists
         final GitInfo guessedGitInfo = new GitInfo();
         guessedGitInfo.pathInRepo = Models.getMd5(rLname)+"/"+rLname+".trig";
         final String typePrefix = RIDController.getTypePrefix(rLname);
         if (typePrefix == null)
-            throw new ModuleException("unable to find type for "+rLname);
+            throw new EditException("unable to find type for "+rLname);
         final String repoLname = prefixToGitLname.get(typePrefix);
         if (repoLname == null)
-            throw new ModuleException("unable to find repo lname for prefix "+typePrefix);
+            throw new EditException("unable to find repo lname for prefix "+typePrefix);
         log.debug("typeprefix {} gitlname {}", typePrefix, repoLname);
         guessedGitInfo.repoLname = repoLname;
         String guessedPath = gitLnameToRepoPath.get(repoLname)+"/"+guessedGitInfo.pathInRepo;
@@ -263,7 +263,7 @@ public class CommonsGit {
         return commits.next().getName();
     }
     
-    public static void fillLastRev(final GitInfo gi) throws ModuleException {
+    public static void fillLastRev(final GitInfo gi) throws EditException {
         if (EditConfig.testMode) {
             gi.revId = "testrev";
             return;
@@ -275,11 +275,11 @@ public class CommonsGit {
             commits = git.log().addPath(gi.pathInRepo).setMaxCount(1).call().iterator();
         } catch (GitAPIException e) {
             git.close();
-            throw new ModuleException(500, "cannot read last git revision of "+gi.pathInRepo, e);
+            throw new EditException(500, "cannot read last git revision of "+gi.pathInRepo, e);
         }
         if (!commits.hasNext()) {
             git.close();
-            throw new ModuleException(500, "cannot read last git revision of "+gi.pathInRepo);
+            throw new EditException(500, "cannot read last git revision of "+gi.pathInRepo);
         }
         gi.revId = commits.next().getName();
         git.close();
@@ -336,13 +336,13 @@ public class CommonsGit {
     
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user)
-            throws IOException, GitAPIException, ModuleException {
+            throws IOException, GitAPIException, EditException {
         final GitInfo gi = gitInfoForResource(r, previousRevision == null);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
             if (previousRevision != null)
-                throw new ModuleException(404, "Resource doesn't exist");
+                throw new EditException(404, "Resource doesn't exist");
             log.info("resource is new");
             // new resource
             ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, true);
@@ -350,9 +350,9 @@ public class CommonsGit {
             graphUri = Models.BDG+r.getLocalName();
         } else {
             if (previousRevision == null)
-                throw new ModuleException(422, "Resource already exists");
+                throw new EditException(422, "Resource already exists");
             if (!previousRevision.equals(gi.revId))
-                throw new ModuleException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
+                throw new EditException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
             log.info("resource already exists in git");
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);
@@ -368,20 +368,20 @@ public class CommonsGit {
 
     // This saves the new model in git and returns a Fuseki-ready dataset
     public static synchronized GitInfo forceSaveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user)
-            throws IOException, GitAPIException, ModuleException {
+            throws IOException, GitAPIException, EditException {
         final GitInfo gi = gitInfoForResource(r, false);
         Dataset result = null;
         String graphUri;
         if (gi.ds == null) {
             if (previousRevision != null)
-                throw new ModuleException(422, "Resource already exists");
+                throw new EditException(422, "Resource already exists");
             log.info("resource is new");
             // new resource
             gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {
             if (previousRevision.equals(gi.revId))
-                throw new ModuleException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
+                throw new EditException(412, "Previous revision is "+gi.revId+", not "+previousRevision);
             log.info("resource already exists in git");
             result = gi.ds;
             final Resource graph = ModelUtils.getMainGraph(result);

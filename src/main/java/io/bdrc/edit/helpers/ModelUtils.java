@@ -193,7 +193,7 @@ public class ModelUtils {
             log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
         }
         // add a simple log entry
-        ModelUtils.addSimpleLogEntry(resModel, r, user, changeMessage, true);
+        ModelUtils.addSimpleLogEntry(resModel, r, user, changeMessage, false);
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it

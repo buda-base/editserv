@@ -2,6 +2,9 @@ package io.bdrc.edit.helpers;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -254,7 +257,7 @@ public class ModelUtils {
         m.add(lg, RDF.type, creation ? InitialDataCreation : UpdateData);
         if (user != null)
             m.add(lg, logWho, user);
-        Date now = new Date();
+        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
         m.add(lg, logMessage, m.createLiteral(changeMessage[0], changeMessage[1]));
     }

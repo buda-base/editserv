@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.txn.exceptions.EditException;
 
@@ -119,8 +120,7 @@ public class RIDController {
     public static boolean idExists(final String id) {
         final String query = "ASK  { { <http://purl.bdrc.io/resource/"+id+"> ?p ?o } union { ?s ?p <http://purl.bdrc.io/resource/"+id+"> } }";
         final Query q = QueryFactory.create(query);
-        final String fusekiUrl = EditConfig.getProperty("fusekiData");
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        final QueryExecution qe = QueryExecutionFactory.sparqlService(FusekiWriteHelpers.FusekiSparqlEndpoint, q);
         boolean res = qe.execAsk();
         log.info("id {} exists on fuseki? {}", id, res);
         // if not on Fuseki, we look on Git, just in case

@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,7 +19,6 @@ import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
@@ -123,8 +121,8 @@ public class BudaUser {
     
     public static RDFNode getAuth0IdFromUser(Resource user) throws IOException {
         String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
-        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
-        QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
+        log.info("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
         ResultSet rs = qe.execSelect();
         if (rs.hasNext()) {
             Resource r = rs.next().getResource("?o");
@@ -136,8 +134,8 @@ public class BudaUser {
 
     public static boolean isActive(Resource user) throws IOException {
         String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/isActive> ?o }";
-        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
-        QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
+        log.info("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
         ResultSet rs = qe.execSelect();
         if (rs.hasNext()) {
             Literal r = rs.next().getLiteral("?o");
@@ -148,7 +146,7 @@ public class BudaUser {
     }
 
     public static Model getUserModelFromFuseki(final Resource user) throws IOException {
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(EditConfig.getProperty("fusekiAuthData"));
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(FusekiWriteHelpers.baseAuthUrl);
         RDFConnectionFuseki fusConn = ((RDFConnectionFuseki) builder.build());
         final String userLname = user.getLocalName();
         Model fetched = fusConn.fetch(EditConstants.BDGUP + user.getLocalName());
@@ -252,18 +250,6 @@ public class BudaUser {
             propsPolicies.put(BudaUser.USER_PROPS_KEY, Arrays.asList(EditConfig.getProperty(BudaUser.USER_PROPS_KEY).split(",")));
         }
         return propsPolicies;
-    }
-
-    private static ArrayList<String> getUserIds() {
-        ArrayList<String> users = new ArrayList<>();
-        String query = "select distinct ?s ?p ?o where  {  ?s a <http://purl.bdrc.io/ontology/ext/user/User> }";
-        ResultSet set = QueryProcessor.getSelectResultSet(query, null);
-        while (set.hasNext()) {
-            QuerySolution qs = set.next();
-            String tmp = qs.get("?s").asNode().getLocalName();
-            users.add(tmp);
-        }
-        return users;
     }
 
     public static void rebuiltFuseki() {

@@ -39,6 +39,9 @@ public class UserEditController {
     @GetMapping(value = "/me/focusgraph")
     public static ResponseEntity<StreamingResponseBody> meUser(@RequestHeader("Accept") String format, HttpServletResponse response, HttpServletRequest request)
             throws IOException, GitAPIException, EditException {
+        if (!EditConfig.useAuth)
+            return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON)
+                    .body(null);
         try {
             log.info("Call meUser()");
             Access acc = (Access) request.getAttribute("access");

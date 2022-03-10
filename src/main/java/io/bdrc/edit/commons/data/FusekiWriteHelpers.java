@@ -33,8 +33,6 @@ import io.bdrc.libraries.Models;
 
 public class FusekiWriteHelpers {
     
-    public static String FusekiUrl = "http://localhost:13180/fuseki/corerw/data";
-    public static String FusekiAuthUrl = "http://localhost:13180/fuseki/authrw/data";
     private static volatile Model syncModel = ModelFactory.createDefaultModel();
     private static volatile boolean syncModelInitialized = false;
     private static volatile Model authSyncModel = ModelFactory.createDefaultModel();
@@ -72,11 +70,9 @@ public class FusekiWriteHelpers {
                 .updateEndpoint(baseAuthUrl+"/update");
     }
     
-    public static void init(String fusekiHost, String fusekiPort, String fusekiEndpoint, String fusekiAuthEndpoint) throws MalformedURLException {
-        baseUrl = "http://" + fusekiHost + ":" +  fusekiPort + "/fuseki/"+fusekiEndpoint;
-        baseAuthUrl = "http://" + fusekiHost + ":" +  fusekiPort + "/fuseki/"+fusekiAuthEndpoint;
-        FusekiUrl = baseUrl+"/data";
-        FusekiAuthUrl = baseAuthUrl+"/data";
+    public static void init() throws MalformedURLException {
+        baseUrl = EditConfig.getProperty("fusekiBaseUrl");
+        baseAuthUrl = EditConfig.getProperty("fusekiAuthBaseUrl");
         FusekiSparqlEndpoint = baseUrl+"/query";
         FusekiAuthSparqlEndpoint = baseAuthUrl+"/query";
         initConnectionBuilder();
@@ -87,27 +83,27 @@ public class FusekiWriteHelpers {
     public static RDFConnection openConnection(final int distantDB) {
         if (distantDB == CORE) {
             if (fuConn != null) {
-                logger.debug("openConnection already connected to fuseki via RDFConnection at "+FusekiUrl);
+                logger.debug("openConnection already connected to fuseki via RDFConnection at "+baseUrl);
                 return fuConn;
             }
             if (testDataset != null) {
                 logger.info("openConnection to fuseki on test dataset");
                 fuConn = RDFConnectionFactory.connect(testDataset);
             } else {
-                logger.info("openConnection to fuseki via RDFConnection at "+FusekiUrl);
+                logger.info("openConnection to fuseki via RDFConnection at "+baseUrl);
                 fuConn = fuConnBuilder.build();
             }
             return fuConn;
         } else {
             if (fuAuthConn != null) {
-                logger.debug("openConnection already connected to fuseki via RDFConnection at "+FusekiAuthUrl);
+                logger.debug("openConnection already connected to fuseki via RDFConnection at "+baseAuthUrl);
                 return fuAuthConn;
             }
             if (testDataset != null) {
                 logger.info("openConnection to fuseki on test dataset");
                 fuAuthConn = RDFConnectionFactory.connect(testDataset);
             } else {
-                logger.info("openConnection to fuseki via RDFConnection at "+FusekiAuthUrl);
+                logger.info("openConnection to fuseki via RDFConnection at "+baseAuthUrl);
                 fuAuthConn = fuAuthConnBuilder.build();
             }
             return fuAuthConn;

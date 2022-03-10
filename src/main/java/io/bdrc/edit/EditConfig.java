@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.bdrc.auth.AuthProps;
 import io.bdrc.auth.rdf.RdfAuthModel;
+import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.data.OntologyData;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.controllers.RIDController;
@@ -28,8 +29,6 @@ public class EditConfig {
     public static final String CORE_RES = "http://purl.bdrc.io/resource/";
 
     static Properties prop = new Properties();
-    public static String FUSEKI_URL = "fusekiUrl";
-    public static String FUSEKI_DATA = "fusekiData";
     public final static String QUERY_TIMEOUT = "timeout";
     public static Prefix prefix;
     public static boolean testMode = false;
@@ -75,6 +74,7 @@ public class EditConfig {
         Shapes.init();
         ScanRequestController.init();
         RIDController.initPrefixIndexes();
+        FusekiWriteHelpers.init();
         if (prop.getProperty("prefixesFilePath") != null) {
             prefix = new Prefix(prop.getProperty("prefixesFilePath"));
         } else {
@@ -96,7 +96,7 @@ public class EditConfig {
             ex.printStackTrace();
         }
         if (fusekiUrl != null) {
-            prop.setProperty(FUSEKI_URL, fusekiUrl);
+            prop.setProperty("fusekiBaseUrl", fusekiUrl);
         }
     }
 

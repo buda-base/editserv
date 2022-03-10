@@ -110,7 +110,7 @@ public class CommonsGit {
     public static GitInfo gitInfoFromFuseki(final Resource r) {
         log.info("search graph for ", r, " in Fuseki");
         final String query = "select distinct ?g ?repo ?path { graph ?g { <"+r.getURI()+"> a ?t } . ?adm adm:graphId ?g ; adm:gitPath ?path ; adm:gitRepo ?repo . }";
-        ResultSet rs = QueryProcessor.getSelectResultSet(query, FusekiWriteHelpers.FusekiUrl);
+        ResultSet rs = QueryProcessor.getSelectResultSet(query, FusekiWriteHelpers.FusekiSparqlEndpoint);
         if (!rs.hasNext()) {
             log.info("did not find graph for ", r, " in Fuseki");
             return null;

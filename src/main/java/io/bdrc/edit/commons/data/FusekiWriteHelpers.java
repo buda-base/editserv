@@ -268,7 +268,7 @@ public class FusekiWriteHelpers {
     }
     
     public static synchronized void updateSyncModel(final String repoLname, final String revId, final int dbType) {
-        if (EditConfig.dryrunmodefuseki) return;
+        if (EditConfig.dryrunmodefuseki || EditConfig.dryrunmodefusekisyncmodels) return;
         logger.info("update sync model");
         final Model model = getSyncModel(dbType);
         Resource res = repoLnameToSyncModelResource.get(repoLname);

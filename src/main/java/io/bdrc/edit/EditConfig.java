@@ -36,6 +36,7 @@ public class EditConfig {
     public static boolean dryrunmodefuseki = false;
     public static boolean dryrunmodegit = false;
     public static boolean dryrunmodeusers = false;
+    public static boolean dryrunmodefusekisyncmodels = false;
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
 
@@ -61,6 +62,7 @@ public class EditConfig {
         dryrunmodefuseki = "true".equals(prop.getProperty("dryrunmode.fuseki"));
         dryrunmodegit = "true".equals(prop.getProperty("dryrunmode.git"));
         dryrunmodeusers = "true".equals(prop.getProperty("dryrunmode.users"));
+        dryrunmodefusekisyncmodels = "true".equals(prop.getProperty("dryrunmode.fuseki.syncModels"));
         testMode = "true".equals(prop.getProperty("testMode"));
         useAuth = !"false".equals(prop.getProperty("useAuth"));
         log.info("dry run: git {}, fuseki {}, users {}", dryrunmodegit,dryrunmodefuseki, dryrunmodeusers);

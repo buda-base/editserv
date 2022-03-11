@@ -62,27 +62,27 @@ public class ScanRequestController {
     public static final class VolInfo {
         String lname;
         int volumePagesTbrcIntro = 0;
-        int volumePagesTotal = 0;
     }
     
     // reading this from git is less efficient but also more authoritative
     // since efficiency is not an issue, we use this
     public static List<VolInfo> getVolumesFromGit(final Resource imageInstance, boolean onlynonsyncedB) throws IOException, EditException {
-        GitInfo gi = CommonsGit.gitInfoForResource(imageInstance, true);
-        List<VolInfo> res = new ArrayList<>();
-        String queryStr = "select distinct ?i ?nbt ?nbi where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumePagesTotal> ?nbt ; <"+EditConstants.BDO+"volumePagesTbrcIntro> ?nbi . }";
-        Query query = QueryFactory.create(queryStr);
-        QueryExecution qexec = QueryExecutionFactory.create(query, ModelUtils.getMainModel(gi.ds));
-        ResultSet rs = qexec.execSelect();
+        final GitInfo gi = CommonsGit.gitInfoForResource(imageInstance, true);
+        final List<VolInfo> res = new ArrayList<>();
+        final String queryStr = "select distinct ?i ?nbt ?nbi where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumePagesTbrcIntro> ?nbi . OPTIONAL { ?i <"+EditConstants.BDO+"volumePagesTotal> ?nbt } }";
+        final Query query = QueryFactory.create(queryStr);
+        final QueryExecution qexec = QueryExecutionFactory.create(query, ModelUtils.getMainModel(gi.ds));
+        final ResultSet rs = qexec.execSelect();
         while (rs.hasNext()) {
-            QuerySolution qs = rs.next();
-            final int imagesTotal = qs.getLiteral("nbt").getInt();
-            if (onlynonsyncedB && imagesTotal > 2)
-                continue;
-            VolInfo vi = new VolInfo();
+            final QuerySolution qs = rs.next();
+            if (qs.contains("nbt")) {
+                final int imagesTotal = qs.getLiteral("nbt").getInt();
+                if (onlynonsyncedB && imagesTotal > 2)
+                    continue;
+            }
+            final VolInfo vi = new VolInfo();
             vi.lname = qs.getResource("i").getLocalName();
             vi.volumePagesTbrcIntro = qs.getLiteral("nbi").getInt();
-            vi.volumePagesTotal = imagesTotal;
             res.add(vi);
         }
         return res;

@@ -220,7 +220,7 @@ public class CommonsGit {
         // create graph
         // add adm:graphId in admin data
         final String graphUri = Models.BDG+r.getLocalName();
-        final Dataset ds = DatasetFactory.create();
+        final Dataset ds = DatasetFactory.create(); // createGeneral() ?
         m.add(m.createResource(Models.BDA+r.getLocalName()), m.createProperty(Models.ADM, "graphId"), m.createResource(graphUri));
         ds.addNamedModel(graphUri, m);
         return ds;
@@ -345,7 +345,8 @@ public class CommonsGit {
                 throw new EditException(404, "Resource doesn't exist");
             log.info("resource is new");
             // new resource
-            ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, true);
+            if (!ModelUtils.isUser(r))
+                ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, false);
             gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {

@@ -170,8 +170,12 @@ public class ModelUtils {
         return RDFPatchOps.str(cc.getRDFPatch());
     }
     
+    public static boolean isUser(final Resource r) {
+        return r.getURI().startsWith(Models.BDU);
+    }
+    
     // changes completeSet with a new model (later can return plus and minus)
-    public static void mergeModel(Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname, final String[] changeMessage, final Resource user) throws EditException {
+    public static void mergeModel(final Dataset completeSet, final String graphUri, Model newFocusModel, final Resource r, final Resource shape, final String repoLname, final String[] changeMessage, final Resource user) throws EditException {
         final boolean isUser = repoLname.equals("GR0100");
         log.info("merging new model for {}", r);
         final Model original = completeSet.getNamedModel(graphUri);
@@ -192,8 +196,9 @@ public class ModelUtils {
             log.debug("result of the merge is {}", modelToTtl(resModel));
             log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
         }
-        // add a simple log entry
-        ModelUtils.addSimpleLogEntry(resModel, r, user, changeMessage, false);
+        // add a simple log entry, except in the case of users
+        if (!isUser(r))
+            ModelUtils.addSimpleLogEntry(resModel, r, user, changeMessage, false);
         completeSet.replaceNamedModel(graphUri, resModel);
         if (isUser) {
             // derive the public model and replace it

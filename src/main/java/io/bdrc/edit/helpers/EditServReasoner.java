@@ -168,6 +168,10 @@ public class EditServReasoner {
                 return notBefore.substring(0, 2)+"XX";
             }
         }
+        if (notBefore.charAt(2) == '0' && notAfter.charAt(2) == '9' && notBefore.charAt(3) == '0' && notAfter.charAt(3) == '9') {
+            // case of 13XX/14XX
+            return notBefore.substring(0,2)+"XX/"+notAfter.substring(0,2)+"XX";
+        }
         return notBefore+"/"+notAfter;
     }
     

@@ -14,9 +14,10 @@ public class EDTFTest {
     @Test
     public void edtfFromInterval() {
         assert(EditServReasoner.intervalToEDTF("1700", "1799").equals("17XX"));
-        assert(EditServReasoner.intervalToEDTF("1600", "1799").equals("1600/1799"));
+        assert(EditServReasoner.intervalToEDTF("1600", "1799").equals("16XX/17XX"));
         assert(EditServReasoner.intervalToEDTF("1600", "1609").equals("160X"));
         assert(EditServReasoner.intervalToEDTF("1717", "1718").equals("1717/1718"));
+        assert(EditServReasoner.intervalToEDTF("1300", "1499").equals("13XX/14XX"));
     }
     
     //@Test

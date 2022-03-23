@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -50,7 +51,7 @@ public class RIDController {
         if (f.isFile()) {
             try {
                 log.info("reading prefix file {}", f.getAbsolutePath());
-                prefixIndexes = mapper.readValue(f, typeRef);
+                prefixIndexes = new ConcurrentHashMap<>(mapper.readValue(f, typeRef));
             } catch (IOException e) {
                 prefixIndexes = null;
                 log.error("cannot read prefix indexes file", e);
@@ -61,7 +62,7 @@ public class RIDController {
         final ClassLoader classLoader = RIDController.class.getClassLoader();
         final InputStream inputStream = classLoader.getResourceAsStream("prefix-idx.json");
         try {
-            prefixIndexes = mapper.readValue(inputStream, typeRef);
+            prefixIndexes = new ConcurrentHashMap<>(mapper.readValue(inputStream, typeRef));
         } catch (IOException e) {
             prefixIndexes = null;
             log.error("cannot read prefix indexes file", e);
@@ -69,7 +70,7 @@ public class RIDController {
         }
     }
     
-    public static void writePrefixIndexes() throws JsonGenerationException, JsonMappingException, IOException {
+    public static synchronized void writePrefixIndexes() throws JsonGenerationException, JsonMappingException, IOException {
         File f = new File(fileName);
         log.info("write prefix values in {}", f.getAbsolutePath());
         mapper.writeValue(f, prefixIndexes);
@@ -134,7 +135,7 @@ public class RIDController {
             }
         return res;
     }
-    
+
     public static synchronized Integer getNextIndex(final String prefix) {
         Integer guess = prefixIndexes.get(prefix);
         log.info("current index for {} is {}", prefix, guess);
@@ -184,6 +185,40 @@ public class RIDController {
         final String res = prefix+String.valueOf(nextIdx);
         log.info("reserving {}", res);
         return ResponseEntity.ok().body(res);
+    }
+    
+    // creates a new ID in a prefix, requires admin rights
+    @PutMapping(value = "/ID/{prefix}/{ID}")
+    public ResponseEntity<String> reserveID(@PathVariable("prefix") String prefix, @PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
+        if (EditConfig.useAuth) {
+            Access acc = (Access) request.getAttribute("access");
+            if (acc == null || !acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
+            if (!acc.getUserProfile().isAdmin())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        }
+        if (!prefixIsValid(prefix))
+            return ResponseEntity.status(400).body("invalid prefix");
+        if (!id.startsWith(prefix))
+            return ResponseEntity.status(400).body("ID must start with prefix");
+        final Integer idInt;
+        try {
+            idInt = Integer.parseInt(id.substring(prefix.length()));
+        } catch (NumberFormatException ex){
+            return ResponseEntity.status(400).body("invalid ID");
+        }
+        if (idExists(prefix+String.valueOf(id))) {
+            return ResponseEntity.status(422).body("a resource with this ID already exists");
+        }
+        Integer last = prefixIndexes.get(prefix);
+        if (last == null)
+            last = 0;
+        if (last < idInt) {
+            prefixIndexes.put(prefix, idInt);
+            writePrefixIndexes();
+        }
+        log.info("reserving {}", id);
+        return ResponseEntity.ok().body(id);
     }
     
 }

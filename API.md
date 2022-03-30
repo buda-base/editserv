@@ -76,9 +76,9 @@ The result of a successful PUT is the same as the result of GET `/{qname}` above
 
 Gets the highest ID using the prefix `{prefix}`.
 
-##### PUT `/ID/{prefix}`
+##### PUT `/ID/{prefix}?n={n}`
 
-Reserves an ID starting with `{prefix}` in the system and returns is in a simple text format.
+Reserves `{n}` ID(s) starting with `{prefix}` in the system and returns them in a simple text format, one per line. `{n}` is optional and defaults to `1`.
 
 ##### PUT `/ID/{prefix}/{ID}`
 

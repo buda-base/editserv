@@ -3,6 +3,7 @@ package io.bdrc.edit.controllers;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -136,7 +139,7 @@ public class RIDController {
         return res;
     }
 
-    public static synchronized Integer getNextIndex(final String prefix) {
+    public static synchronized List<String> getNextIDs(final String prefix, final int n) {
         Integer guess = prefixIndexes.get(prefix);
         log.info("current index for {} is {}", prefix, guess);
         if (guess == null) 
@@ -146,14 +149,19 @@ public class RIDController {
             guess += 10;
         }
         log.info("guessed next index for {} to be {}", prefix, guess);
-        prefixIndexes.put(prefix, guess);
+        // here we take a bit of a leap of faith and consider that the n next IDs are free
+        prefixIndexes.put(prefix, guess+n-1);
         try {
             writePrefixIndexes();
         } catch (Exception e) {
             log.error("can't write index file", e);
             return null;
         }
-        return guess;
+        final List<String> res = new ArrayList<>();
+        for (int i = guess; i < guess+n; i++) {
+            res.add(prefix+String.valueOf(i));
+        }
+        return res;
     }
     
     // gets the largest ID
@@ -168,7 +176,7 @@ public class RIDController {
     
     // creates a new ID in a prefix, requires admin rights
     @PutMapping(value = "/ID/{prefix}")
-    public ResponseEntity<String> reserveNextID(@PathVariable("prefix") String prefix, HttpServletRequest request) {
+    public ResponseEntity<String> reserveNextID(@PathVariable("prefix") String prefix, @RequestParam(value = "n", defaultValue = "1") Integer n, HttpServletRequest request) {
         if (EditConfig.useAuth) {
             Access acc = (Access) request.getAttribute("access");
             if (acc == null || !acc.isUserLoggedIn())
@@ -178,12 +186,12 @@ public class RIDController {
         }
         if (!prefixIsValid(prefix))
             return ResponseEntity.status(400).body("invalid prefix");
-        Integer nextIdx = getNextIndex(prefix);
+        final List<String> nextIdx = getNextIDs(prefix, n);
         if (nextIdx == null) {
             return ResponseEntity.status(500).body("can't determine next ID for this prefix");
         }
-        final String res = prefix+String.valueOf(nextIdx);
-        log.info("reserving {}", res);
+        final String res = StringUtils.join(nextIdx, "\n");
+        log.info("reserving {}" , res);
         return ResponseEntity.ok().body(res);
     }
     

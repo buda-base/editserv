@@ -176,7 +176,7 @@ public class CommonsRead {
         for (Entry<String,Resource> e : sp.properties.entrySet()) {
             final String path = e.getKey();
             final Resource subShape = e.getValue();
-            log.error("add triples to focus graph for {} (subShape {})", path, subShape.getLocalName());
+            log.error("add triples to focus graph for {} (subShape {})", path, subShape == null ? "null" : subShape.getLocalName());
             if (path.startsWith("^")) {
                 StmtIterator si = m.listStatements(null, m.createProperty(path.substring(1)), subject);
                 while (si.hasNext()) {

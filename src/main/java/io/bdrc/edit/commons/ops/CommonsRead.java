@@ -103,11 +103,13 @@ public class CommonsRead {
         return res;
     }
     
-    public static ShaclProps getShaclPropsFor(Resource shape) {
+    public static ShaclProps getShaclPropsFor(final Resource shape, final Model shapesModel) {
+        // the following line assumes that a node shape will always be the same in all models
+        // this might not be true in all cases, but currently is
         if (nodeShapesToProps.containsKey(shape)) {
             return nodeShapesToProps.get(shape);
         }
-        StmtIterator it = Shapes.fullMod.listStatements(shape, EditConstants.SH_PROPERTY, (RDFNode) null);
+        StmtIterator it = shapesModel.listStatements(shape, EditConstants.SH_PROPERTY, (RDFNode) null);
         ShaclProps res = new ShaclProps();
         while (it.hasNext()) {
             final Resource shProp = it.next().getResource();
@@ -119,7 +121,6 @@ public class CommonsRead {
             final Resource node = shProp.getPropertyResourceValue(EditConstants.SH_NODE);
             if (node != null && node.getURI().endsWith("ListShape"))
                 listMode = true;
-            
             if (path != null) {
                 pathInverse = path.getPropertyResourceValue(EditConstants.SH_INVERSE_PATH);
                 if (pathInverse != null) {
@@ -139,12 +140,12 @@ public class CommonsRead {
             if (EditConstants.FACET_SHAPE.equals(shapeType)) {
                 // find shape that shapes the object of the property:
                 if (!pathIsInverse) {
-                    StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETOBJECTSOF, path);
+                    StmtIterator shapeForObjectIt = shapesModel.listStatements(null, EditConstants.SH_TARGETOBJECTSOF, path);
                     if (shapeForObjectIt.hasNext()) {
                         subShape = shapeForObjectIt.next().getSubject();
                     }
                 } else {
-                    StmtIterator shapeForObjectIt = Shapes.fullMod.listStatements(null, EditConstants.SH_TARGETSUBJECTSOF, pathInverse);
+                    StmtIterator shapeForObjectIt = shapesModel.listStatements(null, EditConstants.SH_TARGETSUBJECTSOF, pathInverse);
                     if (shapeForObjectIt.hasNext()) {
                         subShape = shapeForObjectIt.next().getSubject();
                     }
@@ -168,9 +169,9 @@ public class CommonsRead {
         }
     }
     
-    public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape) {
-        final ShaclProps sp = getShaclPropsFor(shape);
-        log.debug("shacl props {}", sp);
+    public static void addToFocusGraph(final Model m, final Model fg, final Resource subject, final Resource shape, final Model shapesModel) {
+        final ShaclProps sp = getShaclPropsFor(shape, shapesModel);
+        log.error("shacl props {}", sp);
         if (sp == null) 
             return;
         for (Entry<String,Resource> e : sp.properties.entrySet()) {
@@ -183,7 +184,7 @@ public class CommonsRead {
                     final Statement s = si.next();
                     fg.add(s);
                     if (subShape != null)
-                        addToFocusGraph(m, fg, s.getSubject(), subShape);
+                        addToFocusGraph(m, fg, s.getSubject(), subShape, shapesModel);
                 }
             } else {
                 final Boolean listMode = path.endsWith("[]");
@@ -199,7 +200,7 @@ public class CommonsRead {
                         addListToFocus(m, fg, s.getResource());
                     }
                     if (subShape != null)
-                        addToFocusGraph(m, fg, s.getResource(), subShape);
+                        addToFocusGraph(m, fg, s.getResource(), subShape, shapesModel);
                 }
             }
         }
@@ -209,7 +210,8 @@ public class CommonsRead {
         final Model res = ModelFactory.createDefaultModel();
         log.debug("build focus graph for {}", subject);
         res.setNsPrefixes(m.getNsPrefixMap());
-        addToFocusGraph(m, res, subject, shape);
+        final Model shapesModel = Shapes.getShapesModelFor(shape);
+        addToFocusGraph(m, res, subject, shape, shapesModel);
         // atonement for past mistakes: there should always be an EDTF eventWhen but it's not always
         // present, we add it here
         EditServReasoner.addinferredEDTFStrings(res);

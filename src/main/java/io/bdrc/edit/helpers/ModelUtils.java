@@ -219,7 +219,7 @@ public class ModelUtils {
             log.error("Focus graph is not the same size as initial graph, difference is {}", ModelUtils.modelToTtl(diff));
             throw new EditException(400, "Focus graph is not the same size as initial graph");
         }
-        if (!CommonsValidate.validateShacl(inFocusGraph)) {
+        if (!CommonsValidate.validateShacl(inFocusGraph, shape)) {
             throw new EditException(400, "Shacl did not validate, check logs");
         }
         if (!CommonsValidate.validateExtRIDs(inFocusGraph)) {

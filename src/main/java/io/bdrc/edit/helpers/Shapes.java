@@ -4,13 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jena.ontology.OntDocumentManager;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.shacl.parser.ShaclParseException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -22,9 +24,9 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.topbraid.shacl.engine.ShapesGraph;
 import org.topbraid.shacl.validation.ValidationEngineConfiguration;
 
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsRead;
 
 public class Shapes implements Runnable {
@@ -32,10 +34,8 @@ public class Shapes implements Runnable {
     static String GIT_SHAPES_REMOTE_URL = "https://github.com/buda-base/editor-templates.git";
     private static int delayInSeconds = 2;
     static Repository localRepo;
-    public static Model fullMod = null;
-    public static org.apache.jena.shacl.Shapes fullShapes = null;
+    public static final String baseShapeDocUri = "http://purl.bdrc.io/shapes/core/";
     public static final ValidationEngineConfiguration configuration = new ValidationEngineConfiguration().setValidateShapes(true);
-    public static ShapesGraph shapesGraph = null;
     public static HashMap<String, Model> modelsBase = new HashMap<>();
     
     final static Logger log = LoggerFactory.getLogger(Shapes.class);
@@ -54,12 +54,11 @@ public class Shapes implements Runnable {
             modelsBase = new HashMap<>();
             OntModelSpec oms = new OntModelSpec(OntModelSpec.OWL_MEM);
             OntDocumentManager odm = new OntDocumentManager(System.getProperty("user.dir") + "/editor-templates/ont-policy.rdf");
-            odm.setProcessImports(false);
+            odm.setProcessImports(true);
             odm.setCacheModels(false);
             odm.getFileManager().resetCache();
             oms.setDocumentManager(odm);
-            Iterator<String> it = odm.listDocuments();
-            fullMod = ModelFactory.createDefaultModel();
+            final Iterator<String> it = odm.listDocuments();
             while (it.hasNext()) {
                 String uri = it.next();
                 // don't import UI shapes
@@ -67,22 +66,14 @@ public class Shapes implements Runnable {
                     continue;
                 log.info("OntManagerDoc : {}", uri);
                 OntModel om = odm.getOntology(uri, oms);
-                fullMod.add(om);
+                modelsBase.put(uri, om);
             }
-            //fullMod.write(System.out, "TTL");
-            fullShapes = org.apache.jena.shacl.Shapes.parse(fullMod);
             CommonsRead.nodeShapesToProps = new HashMap<>();
             //shapesGraph = ShapesGraphFactory.get().createShapesGraph(shapesModel);
             log.info("Done with OntShapesData initialization ! Uri set is {}", modelsBase.keySet());
         } catch (Exception ex) {
             log.error("Error updating OntShapesData Model", ex);
         }
-    }
-    
-    // for tests
-    public static void initFromModel(Model m) {
-        fullMod = m;
-        fullShapes = org.apache.jena.shacl.Shapes.parse(fullMod);
     }
     
     public static String commonUpdateRepo(String localPath, String remoteUrl)
@@ -146,6 +137,56 @@ public class Shapes implements Runnable {
             log.error("couldn't update repo", e);
         }
         updateFromRepo();
+    }
+
+    public static final Map<String, String> shapeUriToDocumentUri = new HashMap<>();
+    static {
+        shapeUriToDocumentUri.put(EditConstants.BDS+"PersonShape", baseShapeDocUri+"PersonShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"CorporationShape", baseShapeDocUri+"CorporationShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"TopicShape", baseShapeDocUri+"TopicShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"PlaceShape", baseShapeDocUri+"PlaceShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"WorkShape", baseShapeDocUri+"WorkShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"SerialWorkShape", baseShapeDocUri+"SerialWorkShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"InstanceShape", baseShapeDocUri+"InstanceShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"ImageInstanceShape", baseShapeDocUri+"ImageInstanceShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"RoleShape", baseShapeDocUri+"RoleUIShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"CollectionShape", baseShapeDocUri+"CollectionShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"ImagegroupShape", baseShapeDocUri+"ImagegroupShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"UserProfileShape", "http://purl.bdrc.io/shapes/profile/UserProfileShapes/");
+    }
+    
+    public static Model getShapesModelFor(Resource shape) {
+        final String docUri = shapeUriToDocumentUri.get(shape.getURI());
+        log.error(docUri);
+        log.error(EditConstants.BDS+"PersonShape");
+        if (docUri == null)
+            return null;
+        //if (log.isDebugEnabled()) {
+            log.error(ModelUtils.modelToTtl(modelsBase.get(docUri)));
+        //}
+        return modelsBase.get(docUri);
+    }
+    
+    public static final Map<String, org.apache.jena.shacl.Shapes> shapeUriToShapes = new HashMap<>();
+    
+    public static org.apache.jena.shacl.Shapes getShapesFor(Resource shape) {
+        org.apache.jena.shacl.Shapes res = shapeUriToShapes.get(shape.getURI());
+        if (res != null)
+            return res;
+        final String docUri = shapeUriToDocumentUri.get(shape.getURI());
+        if (docUri == null)
+            return null;
+        final Model m = modelsBase.get(docUri);
+        if (m == null)
+            return null;
+        try {
+            res = org.apache.jena.shacl.Shapes.parse(m);
+        } catch (ShaclParseException e) {
+            log.error("shacl parse exception", e);
+            log.error(ModelUtils.modelToTtl(m));
+        }
+        shapeUriToShapes.put(shape.getURI(), res);
+        return res;
     }
     
 }

@@ -44,7 +44,7 @@ public class TestCommons {
             .source(TESTDIR+"PersonShapes.ttl")
             .lang(RDFLanguages.TTL)
             .parse(StreamRDFLib.graph(g));
-        Shapes.initFromModel(m);
+        //Shapes.initFromModel(m);
         //Shapes.init();
     }
     
@@ -86,11 +86,11 @@ public class TestCommons {
         assert (!CommonsValidate.isWithdrawn(m, "http://purl.bdrc.io/resource/P705", false));
     }
 
-    @Test
-    public void testFocusGraph() throws IOException {
-        System.out.println("toto");
-        Model fg = CommonsRead.getFocusGraph(personData, ResourceFactory.createResource(Models.BDR+"P1583"), ResourceFactory.createResource(EditConstants.BDS+"PersonShape"));
-        fg.write(System.out, "TTL");
-    }
+//    @Test
+//    public void testFocusGraph() throws IOException {
+//        System.out.println("toto");
+//        Model fg = CommonsRead.getFocusGraph(personData, ResourceFactory.createResource(Models.BDR+"P1583"), ResourceFactory.createResource(EditConstants.BDS+"PersonShape"));
+//        fg.write(System.out, "TTL");
+//    }
     
 }

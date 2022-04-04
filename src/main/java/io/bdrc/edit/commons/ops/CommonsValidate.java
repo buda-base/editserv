@@ -128,8 +128,8 @@ public class CommonsValidate {
         return false;
     }
 
-    public static boolean validateShacl(final Model m) {
-        ValidationReport report = ShaclValidator.get().validate(Shapes.fullShapes, m.getGraph());
+    public static boolean validateShacl(final Model m, final Resource shape) {
+        ValidationReport report = ShaclValidator.get().validate(Shapes.getShapesFor(shape), m.getGraph());
         if (report.conforms())
             return true;
         StringBuilder reportStrb = new StringBuilder();

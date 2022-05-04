@@ -67,7 +67,7 @@ public class UserEditController {
             } else {
                 gi = CommonsGit.gitInfoForResource(usr, true);
                 if (gi.ds == null) {
-                    log.error("couldn't find user model for authId "+authId);
+                    log.error("couldn't find user model for authId {}, usr {}", authId, usr.getLocalName());
                     return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON)
                             .body(null);
                 }

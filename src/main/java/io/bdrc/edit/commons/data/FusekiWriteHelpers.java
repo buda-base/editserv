@@ -183,9 +183,21 @@ public class FusekiWriteHelpers {
         return inferredM;
     }
     
-    static Model prepareForUpload(Model m, Resource graph, GitInfo gi) {
+    static boolean isReleased(final Model m, final Resource graph) {
+        final ResIterator admIt = m.listSubjectsWithProperty(EditConstants.ADMIN_GRAPH_ID, graph);
+        if (!admIt.hasNext()) {
+            return false;
+        }
+        return m.contains(admIt.next(), EditConstants.ADMIN_STATUS, EditConstants.ADMIN_STATUS_RELEASED);
+    }
+    
+    static Model prepareForUpload(final Model m, final Resource graph, final GitInfo gi) {
         // adds directly in m
         addGitInfo(m, graph, gi);
+        if (!isReleased(m, graph)) {
+            logger.error("not running reasoner on non-released entity");
+            return m;
+        }
         return getInferredModel(m);
     }
     

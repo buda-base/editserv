@@ -35,6 +35,7 @@ public class EditConstants {
     public static final Property GIT_REVISION = ResourceFactory.createProperty(EditConstants.ADM + "gitRevision");
     public static final Property ADMIN_ABOUT = ResourceFactory.createProperty(EditConstants.ADM + "adminAbout");
     public static final Property ADMIN_STATUS = ResourceFactory.createProperty(EditConstants.ADM + "status");
+    public static final Resource ADMIN_STATUS_RELEASED = ResourceFactory.createResource(EditConstants.BDA + "StatusReleased");
     public static final Property ADMIN_GRAPH_ID = ResourceFactory.createProperty(EditConstants.ADM + "graphId");
     public static final Property SH_PROPERTY = ResourceFactory.createProperty(EditConstants.SH + "property");
     public static final Property SH_PATH = ResourceFactory.createProperty(EditConstants.SH + "path");

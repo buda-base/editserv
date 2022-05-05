@@ -3,6 +3,8 @@ package io.bdrc.edit.controllers;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -153,6 +155,11 @@ public class MainEditController {
         if (changeMessage == null) {
             final String[] res = { (creation ? "create resource" : "update resource"), "en" };
             return res;
+        }
+        try {
+            changeMessage = java.net.URLDecoder.decode(changeMessage, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            // not going to happen - value came from JDK's own StandardCharsets
         }
         if (changeMessage.length() > 150)
             throw new EditException(400, "change message too long");

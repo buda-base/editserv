@@ -26,6 +26,7 @@ import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RiotException;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.util.Context;
 import org.apache.jena.sparql.util.Symbol;
@@ -84,7 +85,11 @@ public class Helpers {
 
     public static Dataset datasetFromTrig(final String data) {
         Dataset ds = DatasetFactory.create();
-        RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
+        try {
+            RDFDataMgr.read(ds, new StringReader(data), "", Lang.TRIG);
+        } catch(RiotException e) {
+            log.error("can't read RDF model\n"+data);
+        }
         return ds;
     }
     

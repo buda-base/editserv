@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
@@ -228,6 +229,8 @@ public class ModelUtils {
         return inFocusGraph;
     }
     
+    public static final Pattern simpleLangPattern = Pattern.compile("^[a-z\\-]+$");
+    
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
     public static final Property logEntry = ResourceFactory.createProperty(Models.ADM, "logEntry");
     public static final Property logDate = ResourceFactory.createProperty(Models.ADM, "logDate");
@@ -264,6 +267,8 @@ public class ModelUtils {
             m.add(lg, logWho, user);
         final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+        if (!simpleLangPattern.matcher(changeMessage[1]).matches())
+            throw new EditException(422, "invalid commit message lang tag "+changeMessage[1]);
         m.add(lg, logMessage, m.createLiteral(changeMessage[0], changeMessage[1]));
     }
 

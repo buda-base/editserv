@@ -215,7 +215,7 @@ public class RIDController {
         } catch (NumberFormatException ex){
             return ResponseEntity.status(400).body("invalid ID");
         }
-        if (idExists(prefix+String.valueOf(id))) {
+        if (idExists(id)) {
             return ResponseEntity.status(422).body("a resource with this ID already exists");
         }
         Integer last = prefixIndexes.get(prefix);

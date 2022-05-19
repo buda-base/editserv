@@ -80,9 +80,9 @@ Gets the highest ID using the prefix `{prefix}`.
 
 Reserves `{n}` ID(s) starting with `{prefix}` in the system and returns them in a simple text format, one per line. `{n}` is optional and defaults to `1`.
 
-##### PUT `/ID/{prefix}/{ID}`
+##### PUT `/ID/full/{ID}`
 
-Reserves `{ID}` (starting with `{prefix}`) in the system. If the id was already reserved, returns HTTP code `422` if the resource already exists (but not in the case where the ID has been previous reserved but no resource exists).
+Reserves the full id `{ID}`. If the id was already reserved, returns HTTP code `422` if the resource already exists (but not in the case where the ID has been previous reserved but no resource exists).
 
 # Scan requests (admins only)
 

@@ -17,6 +17,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ import io.bdrc.auth.Access;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
+import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.txn.exceptions.EditException;
 
 @Controller
@@ -112,6 +114,10 @@ public class RIDController {
         if (rest.isEmpty())
             return true;
         return rest.matches("[0-9][A-Z][A-Z]");
+    }
+    
+    public static String prefixFromId(final String id) {
+        return id.replaceAll("[0-9]*$", "");
     }
     
     public static String lastId(final String prefix) {
@@ -209,6 +215,39 @@ public class RIDController {
             return ResponseEntity.status(400).body("invalid prefix");
         if (!id.startsWith(prefix))
             return ResponseEntity.status(400).body("ID must start with prefix");
+        final Integer idInt;
+        try {
+            idInt = Integer.parseInt(id.substring(prefix.length()));
+        } catch (NumberFormatException ex){
+            return ResponseEntity.status(400).body("invalid ID");
+        }
+        if (idExists(id)) {
+            return ResponseEntity.status(422).body("a resource with this ID already exists");
+        }
+        Integer last = prefixIndexes.get(prefix);
+        if (last == null)
+            last = 0;
+        if (last < idInt) {
+            prefixIndexes.put(prefix, idInt);
+            writePrefixIndexes();
+        }
+        log.info("reserving {}", id);
+        return ResponseEntity.ok().body(id);
+    }
+    
+    // creates a new ID, requires admin rights
+    @PutMapping(value = "/ID/full/{ID}")
+    public ResponseEntity<String> reserveFullID(@PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
+        if (EditConfig.useAuth) {
+            Access acc = (Access) request.getAttribute("access");
+            if (acc == null || !acc.isUserLoggedIn())
+                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
+            if (!acc.getUserProfile().isAdmin())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+        }
+        final String prefix = prefixFromId(id);
+        if (!prefixIsValid(prefix))
+            return ResponseEntity.status(400).body("invalid prefix "+prefix);
         final Integer idInt;
         try {
             idInt = Integer.parseInt(id.substring(prefix.length()));

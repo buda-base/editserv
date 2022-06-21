@@ -13,6 +13,7 @@ import java.util.Set;
 import org.apache.jena.datatypes.BaseDatatype;
 import org.apache.jena.datatypes.DatatypeFormatException;
 import org.apache.jena.datatypes.RDFDatatype;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.Query;
@@ -23,6 +24,7 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -179,6 +181,7 @@ public class EditServReasoner {
     public static final Property notBefore = ResourceFactory.createProperty(BDO, "notBefore");
     public static final Property notAfter = ResourceFactory.createProperty(BDO, "notAfter");
     public static final Property eventWhen = ResourceFactory.createProperty(BDO, "eventWhen");
+    
     public static void addinferredEDTFStrings(final Model model) {
         Set<Resource> events = new HashSet<>();
         events.addAll(model.listResourcesWithProperty(onYear).toList());
@@ -208,6 +211,52 @@ public class EditServReasoner {
         }
     }
     
+    public static void inferFromEDTF(final Model model) {
+        final StmtIterator it = model.listStatements(null, eventWhen, (RDFNode) null);
+        while (it.hasNext()) {
+            final Statement st = it.next();
+            final String dateStr = st.getObject().asLiteral().getLexicalForm();
+                try {
+                // case of 0123, 0123~, 012X, 012X?
+                if (dateStr.length() < 6 && !dateStr.contains("/")) {
+                    if (dateStr.contains("X")) {
+                        model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                        model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                    } else {
+                        model.add(st.getSubject(), onYear, model.createTypedLiteral(dateStr.substring(0, 4), XSDDatatype.XSDgYear));
+                    }
+                    continue;
+                }
+                // case of "/0123"
+                if (dateStr.startsWith("/")) {
+                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(1, 5).replace('X', '9'), XSDDatatype.XSDgYear));
+                    continue;
+                }
+                // case of "0123/"
+                if (dateStr.endsWith("/")) {
+                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    continue;
+                }
+                // case of "0123/0124"
+                if (dateStr.contains("/")) {
+                    final String[] dates = dateStr.split("/");
+                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[1].substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                    continue;
+                }
+                // case of [1258,158X]
+                if (dateStr.startsWith("{") || dateStr.startsWith("[")) {
+                    final String[] dates = dateStr.substring(1, dateStr.length()-1).split(",");
+                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].strip().substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[dates.length-1].strip().substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                    continue;
+                }
+            } catch (Exception e) {
+                log.error("can't infer for edtf "+dateStr);
+            }
+        }
+    }
+    
     public static Model deReasonToRemove(final Model ontModel, final Model m) {
         Dataset union = DatasetFactory.create();
         union.addNamedModel("http://example.com/ont", ontModel);
@@ -222,5 +271,5 @@ public class EditServReasoner {
         QueryExecution qexec = QueryExecutionFactory.create(query, union);
         return qexec.execConstruct();
     }
-
+    
 }

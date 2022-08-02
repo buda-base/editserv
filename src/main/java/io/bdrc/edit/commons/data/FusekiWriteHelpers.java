@@ -268,7 +268,7 @@ public class FusekiWriteHelpers {
         repoLnameToSyncModelResource.put("GR0004", ResourceFactory.createResource(ADM+"GitSyncInfoLineage"));
         repoLnameToSyncModelResource.put("GR0001", ResourceFactory.createResource(ADM+"GitSyncInfoCorporation"));
         repoLnameToSyncModelResource.put("GR0007", ResourceFactory.createResource(ADM+"GitSyncInfoTopic"));
-        
+        repoLnameToSyncModelResource.put("GR0016", ResourceFactory.createResource(ADM+"GitSyncInfoOutline"));
     }
     
     public static final Property hasLastRevision = ResourceFactory.createProperty(ADM, "hasLastRevision");

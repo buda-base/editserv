@@ -73,6 +73,7 @@ public class CommonsGit {
         gitLnameToRepoPath.put("GR0004", normalPath+"lineages");
         gitLnameToRepoPath.put("GR0001", normalPath+"corporations");
         gitLnameToRepoPath.put("GR0007", normalPath+"topics");
+        gitLnameToRepoPath.put("GR0016", normalPath+"outlines");
         gitLnameToRepoPath.put("GR0100", EditConfig.getProperty("usersGitLocalRoot"));
         final String normalBase = EditConfig.getProperty("gitRemoteBase");
         gitLnameToRemoteUrl.put("GR0008", normalBase+"works");
@@ -88,6 +89,7 @@ public class CommonsGit {
         gitLnameToRemoteUrl.put("GR0004", normalBase+"lineages");
         gitLnameToRemoteUrl.put("GR0001", normalBase+"corporations");
         gitLnameToRemoteUrl.put("GR0007", normalBase+"topics");
+        gitLnameToRemoteUrl.put("GR0016", normalBase+"outlines");
         prefixToGitLname.put("WAS", "GR0008");
         prefixToGitLname.put("ITW", "GR0003");
         prefixToGitLname.put("PRA", "GR0015");
@@ -103,6 +105,7 @@ public class CommonsGit {
         prefixToGitLname.put("L", "GR0004");
         prefixToGitLname.put("C", "GR0001");
         prefixToGitLname.put("T", "GR0007");
+        prefixToGitLname.put("O", "GR0016");
         if (!EditConfig.dryrunmodegit && null != EditConfig.getProperty("gitUser") && null != EditConfig.getProperty("gitPass"))
             gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
     }

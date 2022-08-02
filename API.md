@@ -92,9 +92,9 @@ Returns a zip file with the BDRC scan request. It can only work with Image Insta
 
 # Sync notification (admins only)
 
-##### POST `/{qname}/notifysync?pagestotal={pagestotal}`
+##### POST `/{wqname}/{iqname}/notifysync?pagestotal={pagestotal}`
 
-This works only for `qname`s of image groups (starting with `bdr:I`). It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer. This operation might be asynchronous and call to the next function is advised at the end of a batch of sync notifications.
+Where `{wqname}` is in the form `bdr:W22084` and `{iqname}` in the form `bdr:I0886`. It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer. This operation might be asynchronous and call to the next function is advised at the end of a batch of sync notifications.
 
 ##### POST `/notifysynccommit`
 

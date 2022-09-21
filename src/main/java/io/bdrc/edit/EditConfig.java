@@ -102,8 +102,12 @@ public class EditConfig {
         }
     }
 
-    public static String getProperty(String key) {
+    public static String getProperty(final String key) {
         return prop.getProperty(key);
+    }
+    
+    public static String getProperty(final String key, final String dflt) {
+        return prop.getProperty(key, dflt);
     }
 
     public static Properties getProperties() {

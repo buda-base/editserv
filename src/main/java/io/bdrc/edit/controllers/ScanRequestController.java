@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
@@ -118,7 +118,7 @@ public class ScanRequestController {
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         log.info("generate scan request zip file for {}", res);
         if (EditConfig.useAuth) {
-            Access acc = (Access) req.getAttribute("access");
+        	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 MainEditController.ensureAccess(acc, res);
             } catch (EditException e) {

@@ -7,7 +7,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,12 +21,9 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
-import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.SKOS;
-import org.seaborne.patch.RDFPatchOps;
-import org.seaborne.patch.changes.RDFChangesCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,23 +150,6 @@ public class ModelUtils {
         return res;
     }
     
-    public static String getPatchStr(final Model original, final Model modified, final Resource graph) {
-        final RDFChangesCollector cc = new RDFChangesCollector();
-        final Model minus = original.difference(modified);
-        StmtIterator sti = minus.listStatements();
-        while (sti.hasNext()) {
-            final Statement st = sti.next();
-            cc.delete(graph.asNode(), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
-        }
-        final Model plus = modified.difference(original);
-        sti = plus.listStatements();
-        while (sti.hasNext()) {
-            final Statement st = sti.next();
-            cc.add(graph.asNode(), st.getSubject().asNode(), st.getPredicate().asNode(), st.getObject().asNode());
-        }
-        return RDFPatchOps.str(cc.getRDFPatch());
-    }
-    
     public static boolean isUser(final Resource r) {
         return r.getURI().startsWith(Models.BDU);
     }
@@ -195,7 +174,7 @@ public class ModelUtils {
         final Model resModel = outOfFocusOriginal.add(newFocusModel);
         if (log.isDebugEnabled()) {
             log.debug("result of the merge is {}", modelToTtl(resModel));
-            log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
+            //log.debug("patch: {}", getPatchStr(focusedOriginal, newFocusModel, ResourceFactory.createResource(graphUri)));
         }
         // add a simple log entry, except in the case of users
         if (!isUser(r))

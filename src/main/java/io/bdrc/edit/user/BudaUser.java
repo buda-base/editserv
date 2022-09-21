@@ -34,7 +34,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.model.User;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -67,8 +67,8 @@ public class BudaUser {
     private static final Map<String, Resource> auth0IdToRdfProfile = new HashMap<>();
 
     // get the bdu:UXXX, surprisingly difficult
-    public static Resource getUserFromAccess(final Access acc) throws EditException {
-        final String authId = acc.getUser().getAuthId();
+    public static Resource getUserFromAccess(final AccessInfo acc) throws EditException {
+        final String authId = acc.getId();
         final String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
         try {
             return getRdfProfile(auth0Id);

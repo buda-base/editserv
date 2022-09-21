@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
@@ -97,7 +97,7 @@ public class MainEditController {
             res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         }
         if (EditConfig.useAuth && userMode) {
-            Access acc = (Access) req.getAttribute("access");
+            AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
             } catch (EditException e) {
@@ -126,12 +126,12 @@ public class MainEditController {
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
     
-    public static void ensureAccess(Access acc, Resource res) throws EditException {
-        if (acc == null || !acc.isUserLoggedIn())
+    public static void ensureAccess(AccessInfo acc, Resource res) throws EditException {
+        if (acc == null || !acc.isLogged())
             throw new EditException(401, "this requires being logged in");
         // the access control is different for users and general resources
         if (res.getURI().startsWith(EditConstants.BDU)) {
-            String authId = acc.getUser().getAuthId();
+            String authId = acc.getId();
             if (authId == null) {
                 log.error("couldn't find authId for {}"+acc.toString());
                 throw new EditException(500, "couldn't find authId");
@@ -143,10 +143,10 @@ public class MainEditController {
             } catch (IOException e) {
                 throw new EditException(500, "couldn't get RDF profile", e);
             }
-            if (!acc.getUserProfile().isAdmin() && !usr.equals(res))
+            if (!acc.isAdmin() && !usr.equals(res))
                 throw new EditException(403, "only admins can modify other users");
         } else {
-            if (!acc.getUserProfile().isAdmin())
+            if (!acc.isAdmin())
                 throw new EditException(403, "this requires being logged in with an admin account");
         }
     }
@@ -180,7 +180,7 @@ public class MainEditController {
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         Resource user = null;
         if (EditConfig.useAuth) {
-            Access acc = (Access) req.getAttribute("access");
+        	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
@@ -236,7 +236,7 @@ public class MainEditController {
         }
         Resource user = null;
         if (EditConfig.useAuth) {
-            Access acc = (Access) req.getAttribute("access");
+        	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
@@ -298,7 +298,7 @@ public class MainEditController {
         }
         Resource user = null;
         if (EditConfig.useAuth) {
-            Access acc = (Access) req.getAttribute("access");
+        	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);

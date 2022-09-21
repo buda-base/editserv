@@ -33,7 +33,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
@@ -184,10 +184,10 @@ public class RIDController {
     @PutMapping(value = "/ID/{prefix}")
     public ResponseEntity<String> reserveNextID(@PathVariable("prefix") String prefix, @RequestParam(value = "n", defaultValue = "1") Integer n, HttpServletRequest request) {
         if (EditConfig.useAuth) {
-            Access acc = (Access) request.getAttribute("access");
-            if (acc == null || !acc.isUserLoggedIn())
+        	AccessInfo acc = (AccessInfo) request.getAttribute("access");
+            if (acc == null || !acc.isLogged())
                 return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.getUserProfile().isAdmin())
+            if (!acc.isAdmin())
                 return ResponseEntity.status(403).body("this requires being logged in with an admin account");
         }
         if (!prefixIsValid(prefix))
@@ -205,10 +205,10 @@ public class RIDController {
     @PutMapping(value = "/ID/{prefix}/{ID}")
     public ResponseEntity<String> reserveID(@PathVariable("prefix") String prefix, @PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
         if (EditConfig.useAuth) {
-            Access acc = (Access) request.getAttribute("access");
-            if (acc == null || !acc.isUserLoggedIn())
+        	AccessInfo acc = (AccessInfo) request.getAttribute("access");
+            if (acc == null || !acc.isLogged())
                 return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.getUserProfile().isAdmin())
+            if (!acc.isAdmin())
                 return ResponseEntity.status(403).body("this requires being logged in with an admin account");
         }
         if (!prefixIsValid(prefix))
@@ -239,10 +239,10 @@ public class RIDController {
     @PutMapping(value = "/ID/full/{ID}")
     public ResponseEntity<String> reserveFullID(@PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
         if (EditConfig.useAuth) {
-            Access acc = (Access) request.getAttribute("access");
-            if (acc == null || !acc.isUserLoggedIn())
+        	AccessInfo acc = (AccessInfo) request.getAttribute("access");
+            if (acc == null || !acc.isLogged())
                 return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.getUserProfile().isAdmin())
+            if (!acc.isAdmin())
                 return ResponseEntity.status(403).body("this requires being logged in with an admin account");
         }
         final String prefix = prefixFromId(id);

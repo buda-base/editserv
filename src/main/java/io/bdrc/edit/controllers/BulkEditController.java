@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfo;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.libraries.SparqlCommons;
 
@@ -43,7 +43,7 @@ public class BulkEditController {
      */
     @PostMapping(value = "/bulk/withdraw")
     public ResponseEntity<String> withdrawn(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
-        Access acc = (Access) req.getAttribute("access");
+    	AccessInfo acc = (AccessInfo) req.getAttribute("access");
         if (!acc.hasEndpointAccess()) {
             log.info("An authorized user is required for this operation " + json);
             return new ResponseEntity<>("An authorized user user is required for this operation " + json, HttpStatus.UNAUTHORIZED);
@@ -91,7 +91,7 @@ public class BulkEditController {
      */
     @PostMapping(value = "/bulk/propValue")
     public ResponseEntity<String> addPropVal(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
-        Access acc = (Access) req.getAttribute("access");
+    	AccessInfo acc = (AccessInfo) req.getAttribute("access");
         if (!acc.hasEndpointAccess()) {
             log.info("An authorized user is required for this operation " + json);
             return new ResponseEntity<>("An authorized user user is required for this operation " + json, HttpStatus.UNAUTHORIZED);
@@ -187,7 +187,7 @@ public class BulkEditController {
      */
     @PostMapping(value = "/bulk/renameProp")
     public ResponseEntity<String> renameProp(HttpServletRequest req, HttpServletResponse response, @RequestBody String json) {
-        Access acc = (Access) req.getAttribute("access");
+    	AccessInfo acc = (AccessInfo) req.getAttribute("access");
         if (!acc.hasEndpointAccess()) {
             log.info("An authorized user is required for this operation " + json);
             return new ResponseEntity<>("An authorized user user is required for this operation " + json, HttpStatus.UNAUTHORIZED);

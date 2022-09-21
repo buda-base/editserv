@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import io.bdrc.auth.Access;
+import io.bdrc.auth.AccessInfoAuthImpl;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
@@ -44,11 +44,11 @@ public class UserEditController {
                     .body(null);
         try {
             log.info("Call meUser()");
-            Access acc = (Access) request.getAttribute("access");
-            if (!acc.isUserLoggedIn())
+            AccessInfoAuthImpl acc = (AccessInfoAuthImpl) request.getAttribute("access");
+            if (!acc.isLogged())
                 return ResponseEntity.status(401).body(null);
             log.info("meUser() Access >> {} ", acc);
-            String authId = acc.getUser().getAuthId();
+            String authId = acc.getId();
             if (authId == null || authId.isEmpty()) {
                 log.error("couldn't find authId");
                 return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON)

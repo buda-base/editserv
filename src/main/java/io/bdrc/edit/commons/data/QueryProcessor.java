@@ -3,7 +3,6 @@ package io.bdrc.edit.commons.data;
 import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
@@ -23,7 +22,7 @@ public class QueryProcessor {
         Model m = ModelFactory.createDefaultModel();
         try {
             final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + " describe <" + fullUri.trim() + ">");
-            final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+            final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
             m = qe.execDescribe();
         } catch (Exception ex) {
             log.error("could not get describe", ex);
@@ -50,7 +49,7 @@ public class QueryProcessor {
     public static Model getTriplesWithObject(String fullUri, String fusekiUrl) {
         String query = "construct {?s ?p <" + fullUri + ">} where { { ?s ?p <" + fullUri + "> } }";
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execConstruct();
     }
 
@@ -63,19 +62,19 @@ public class QueryProcessor {
         log.info("Query Processor looking for graph {} ", fullUri);
         log.info("Query Processor graph query {} ", query);
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execConstruct();
     }
 
     public static Model getQueryGraph(String fusekiUrl, String query) {
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execConstruct();
     }
 
     public static ResultSet getSelectResultSet(String query, String fusekiUrl) {
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, q);
+        final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execSelect();
     }
 
@@ -89,8 +88,10 @@ public class QueryProcessor {
     }
 
     public static QueryExecution getResultSet(String query, String fusekiUrl) {
-        QueryExecution qe = QueryExecutionFactory.sparqlService(fusekiUrl, QueryFactory.create(query));
-        qe.setTimeout(Long.parseLong(EditConfig.getProperty(EditConfig.QUERY_TIMEOUT)));
+        QueryExecution qe = QueryExecution.service(fusekiUrl)
+        		.query(QueryFactory.create(query))
+        		.timeout(Long.parseLong(EditConfig.getProperty(EditConfig.QUERY_TIMEOUT)))
+        		.build();
         return qe;
     }
     

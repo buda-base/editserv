@@ -25,7 +25,6 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
@@ -40,7 +39,6 @@ import org.apache.jena.vocabulary.RDFS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.bdrc.edit.controllers.MainEditController;
 import io.bdrc.libraries.Models;
 
 // call BDRReasoner to get a reasoner to apply to an individual graph of BDRC data
@@ -134,7 +132,7 @@ public class EditServReasoner {
         }
     }
     
-    static final RDFDatatype EDTFDT = new BaseDatatype("http://id.loc.gov/datatypes/edtf") {
+    static final RDFDatatype EDTFDT = new BaseDatatype("http://id.loc.gov/datatypes/edtf/EDTF") {
         @Override
         public Class getJavaClass() {
             return EDTFStr.class;

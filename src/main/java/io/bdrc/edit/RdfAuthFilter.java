@@ -44,7 +44,7 @@ public class RdfAuthFilter implements Filter {
                     end = RdfAuthModel.getEndpoint(path);
                     log.debug("for path {} ENDPOINT IN FILTER id {} ", path, end);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("can't get endpoint for "+path, e);
                     end = null;
                 }
                 UserProfile prof = null;
@@ -65,9 +65,9 @@ public class RdfAuthFilter implements Filter {
                         return;
                     }
                     prof = validation.getUser();
-                    log.error("validation is {}", validation);
-                    log.error("userprof is {}", prof);
-                    log.error("user is {}", prof.getUser());
+                    log.info("validation is {}", validation);
+                    log.info("userprof is {}", prof);
+                    log.info("user is {}", prof.getUser());
                 }
                 if (isSecuredEndpoint) {
                     if (validation  == null) {

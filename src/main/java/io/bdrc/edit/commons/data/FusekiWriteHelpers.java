@@ -18,7 +18,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdfconnection.RDFConnection;
-import org.apache.jena.rdfconnection.RDFConnectionFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.slf4j.Logger;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
+import io.bdrc.edit.helpers.EditServReasoner;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.libraries.Models;
 
@@ -88,7 +88,7 @@ public class FusekiWriteHelpers {
             }
             if (testDataset != null) {
                 logger.info("openConnection to fuseki on test dataset");
-                fuConn = RDFConnectionFactory.connect(testDataset);
+                fuConn = RDFConnection.connect(testDataset);
             } else {
                 logger.info("openConnection to fuseki via RDFConnection at "+baseUrl);
                 fuConn = fuConnBuilder.build();
@@ -101,7 +101,7 @@ public class FusekiWriteHelpers {
             }
             if (testDataset != null) {
                 logger.info("openConnection to fuseki on test dataset");
-                fuAuthConn = RDFConnectionFactory.connect(testDataset);
+                fuAuthConn = RDFConnection.connect(testDataset);
             } else {
                 logger.info("openConnection to fuseki via RDFConnection at "+baseAuthUrl);
                 fuAuthConn = fuAuthConnBuilder.build();
@@ -177,6 +177,7 @@ public class FusekiWriteHelpers {
             return m;
         }
         final Model inferredM = ModelFactory.createInfModel(OntologyData.Reasoner, m);
+        EditServReasoner.inferFromEDTF(inferredM);
         if (logger.isDebugEnabled()) {
             logger.debug(ModelUtils.modelToTtl(inferredM));
         }

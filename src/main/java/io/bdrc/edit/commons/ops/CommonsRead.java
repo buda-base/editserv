@@ -214,7 +214,7 @@ public class CommonsRead {
         addToFocusGraph(m, res, subject, shape, shapesModel);
         // atonement for past mistakes: there should always be an EDTF eventWhen but it's not always
         // present, we add it here
-        EditServReasoner.addinferredEDTFStrings(res);
+        //EditServReasoner.addinferredEDTFStrings(res);
         return res;
     }
 

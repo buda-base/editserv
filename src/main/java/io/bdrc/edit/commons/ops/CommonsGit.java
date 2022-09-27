@@ -16,11 +16,18 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.SshTransport;
+import org.eclipse.jgit.transport.Transport;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.transport.sshd.JGitKeyCache;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
+import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +61,6 @@ public class CommonsGit {
     public final static Map<String,String> prefixToGitLname = new HashMap<>();
     public final static Map<String,String> gitLnameToRepoPath = new HashMap<>();
     public final static Map<String,String> gitLnameToRemoteUrl = new HashMap<>();
-    public static UsernamePasswordCredentialsProvider gitCredentialProvider = null;
     
     public static void init() {
         gitLnameToRepoPath.put("GR0100", EditConfig.getProperty("usersGitLocalRoot"));
@@ -110,8 +116,6 @@ public class CommonsGit {
         prefixToGitLname.put("T", "GR0007");
         prefixToGitLname.put("O", "GR0016");
         prefixToGitLname.put("U", "GR0100");
-        if (!EditConfig.dryrunmodegit && null != EditConfig.getProperty("gitUser") && null != EditConfig.getProperty("gitPass"))
-            gitCredentialProvider = new UsernamePasswordCredentialsProvider(EditConfig.getProperty("gitUser"), EditConfig.getProperty("gitPass"));
     }
     
     public static GitInfo gitInfoFromFuseki(final Resource r) {
@@ -292,6 +296,28 @@ public class CommonsGit {
         git.close();
     }
     
+    public static final File sshDir = new File(FS.DETECTED.userHome(), "/.ssh");
+    public static final SshdSessionFactory sshSessionFactory = new SshdSessionFactoryBuilder()
+            .setPreferredAuthentications("publickey")
+            .setHomeDirectory(FS.DETECTED.userHome())
+            .setSshDirectory(sshDir)
+            .build(new JGitKeyCache());
+    
+    public static final class SshTransportConfigCallback implements TransportConfigCallback {
+
+        public SshTransportConfigCallback() { }
+
+        @Override
+        public void configure(Transport transport) {
+            if (transport instanceof SshTransport) {
+                SshTransport sshTransport = (SshTransport) transport;
+                sshTransport.setSshSessionFactory(sshSessionFactory);
+            }
+        }
+    }
+    
+    public static final SshTransportConfigCallback sshTransportConfigCallback = new SshTransportConfigCallback();
+    
     // commits and pushes, and returns the revision name
     public static synchronized void commitAndPush(final GitInfo gi, final String commitMessage) throws IOException, GitAPIException {
         if (EditConfig.dryrunmodegit && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
@@ -330,9 +356,9 @@ public class CommonsGit {
         // push if necessary
         final String remoteUrl = gitLnameToRemoteUrl.get(gi.repoLname);
         // no remote for some repositories, such as users
-        if (remoteUrl != null && gitCredentialProvider != null && pushRelevant(gi.repoLname)) {
+        if (remoteUrl != null && pushRelevant(gi.repoLname)) {
             try {
-                git.push().setCredentialsProvider(gitCredentialProvider).setRemote(remoteUrl).call();
+                git.push().setTransportConfigCallback(sshTransportConfigCallback).call();
             } catch (GitAPIException e) {
                 log.error("unable to push ", gi.repoLname, " to ", remoteUrl, e);
                 // not being able to push is bad but shouldn't be blocking everything

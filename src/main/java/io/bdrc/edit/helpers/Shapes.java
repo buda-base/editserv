@@ -157,13 +157,13 @@ public class Shapes implements Runnable {
     
     public static Model getShapesModelFor(Resource shape) {
         final String docUri = shapeUriToDocumentUri.get(shape.getURI());
-        log.error(docUri);
-        log.error(EditConstants.BDS+"PersonShape");
+        log.debug(docUri);
+        log.debug(EditConstants.BDS+"PersonShape");
         if (docUri == null)
             return null;
-        //if (log.isDebugEnabled()) {
-            log.error(ModelUtils.modelToTtl(modelsBase.get(docUri)));
-        //}
+        if (log.isDebugEnabled()) {
+            log.debug(ModelUtils.modelToTtl(modelsBase.get(docUri)));
+        }
         return modelsBase.get(docUri);
     }
     

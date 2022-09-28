@@ -203,7 +203,7 @@ public class FusekiWriteHelpers {
         // adds directly in m
         addGitInfo(m, graph, gi);
         if (!isReleased(m, graph)) {
-            logger.error("not running reasoner on non-released entity");
+            logger.info("not running reasoner on non-released entity");
             return m;
         }
         return getInferredModel(m);

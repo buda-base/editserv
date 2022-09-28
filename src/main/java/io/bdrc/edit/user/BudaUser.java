@@ -29,6 +29,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
+import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
 import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
@@ -123,7 +124,13 @@ public class BudaUser {
         String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
         log.info("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
         QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
-        ResultSet rs = qe.execSelect();
+        ResultSet rs;
+        try {
+        	rs = qe.execSelect();
+        } catch (QueryExceptionHTTP e) {
+        	log.error("can't get auth0 id from user {}, fuseki url {}: {}", user, FusekiWriteHelpers.FusekiAuthSparqlEndpoint, e.getMessage());
+        	return null;
+        }
         if (rs.hasNext()) {
             Resource r = rs.next().getResource("?o");
             log.info("RESOURCE >> {} and rdfId= {} ", r);

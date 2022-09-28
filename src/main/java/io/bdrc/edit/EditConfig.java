@@ -42,11 +42,7 @@ public class EditConfig {
 
     public static void init() throws Exception {
     	log.info("init");
-        InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
-        prop.load(input);
-        input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
-        prop.load(input);
-        input.close();
+        InputStream input;
         if (System.getProperty("editserv.configpath") != null) {
             input = new FileInputStream(System.getProperty("editserv.configpath") + "editserv.properties");
             prop.load(input);

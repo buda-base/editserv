@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Literal;
@@ -72,7 +73,9 @@ public class FusekiWriteHelpers {
     
     public static void init() throws MalformedURLException {
         baseUrl = EditConfig.getProperty("fusekiBaseUrl");
+        logger.info("base url: {}", baseUrl);
         baseAuthUrl = EditConfig.getProperty("fusekiAuthBaseUrl");
+        logger.info("base auth url: {}", baseAuthUrl);
         FusekiSparqlEndpoint = baseUrl+"/query";
         FusekiAuthSparqlEndpoint = baseAuthUrl+"/query";
         initConnectionBuilder();
@@ -141,24 +144,28 @@ public class FusekiWriteHelpers {
         if (logger.isDebugEnabled())
             logger.debug(ModelUtils.modelToTtl(model));
         if (EditConfig.dryrunmodefuseki && (EditConfig.dryrunmodeusers || distantDB == CORE)) {
-            logger.error("drymode: don't put {} to Fuseki", graphName);
+            logger.info("drymode: don't put {} to Fuseki", graphName);
             return;
         }
         logger.info("put {} to Fuseki", graphName);
         openConnection(distantDB);
         RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
-        if (!conn.isInTransaction()) {
-            conn.begin(ReadWrite.WRITE);
+        try {
+	        if (!conn.isInTransaction()) {
+	            conn.begin(ReadWrite.WRITE);
+	        }
+	        conn.put(graphName, model);
+	        conn.commit();
+        } catch (HttpException e) {
+        	logger.error("error when putting graph {} in Fuseki: {}", graphName, e.getMessage()	);
         }
-        conn.put(graphName, model);
-        conn.commit();
     }
     
     static void addGitInfo(Model m, Resource graph, GitInfo gi) {
         logger.info("add gitinfo for {}", graph);
         ResIterator admIt = m.listSubjectsWithProperty(EditConstants.ADMIN_GRAPH_ID, graph);
         if (!admIt.hasNext()) {
-            logger.error("can't find admin data for ", graph.getURI());
+            logger.info("can't find admin data for ", graph.getURI());
             return;
         }
         Resource adm = admIt.next();

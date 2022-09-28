@@ -358,9 +358,9 @@ public class CommonsGit {
         // no remote for some repositories, such as users
         if (remoteUrl != null && pushRelevant(gi.repoLname)) {
             try {
-                git.push().setTransportConfigCallback(sshTransportConfigCallback).call();
+                git.push().setTransportConfigCallback(sshTransportConfigCallback).setTimeout(10).call();
             } catch (GitAPIException e) {
-                log.error("unable to push ", gi.repoLname, " to ", remoteUrl, e);
+                log.error("unable to push {} to {}", gi.repoLname, remoteUrl, e);
                 // not being able to push is bad but shouldn't be blocking everything
             }
         }

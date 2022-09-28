@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Primary;
 public class EditApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) throws Exception {
+    	EditConfig.log.info("starting editserv (main)");
         EditConfig.init();
         SpringApplication.run(EditApplication.class, args);
     }

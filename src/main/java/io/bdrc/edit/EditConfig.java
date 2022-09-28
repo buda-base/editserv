@@ -38,9 +38,10 @@ public class EditConfig {
     public static boolean dryrunmodeusers = false;
     public static boolean dryrunmodefusekisyncmodels = false;
     
-    final static Logger log = LoggerFactory.getLogger(Shapes.class);
+    final static Logger log = LoggerFactory.getLogger(EditConfig.class);
 
     public static void init() throws Exception {
+    	log.info("init");
         InputStream input = EditConfig.class.getClassLoader().getResourceAsStream("userEdit.properties");
         prop.load(input);
         input = EditConfig.class.getClassLoader().getResourceAsStream("editserv.properties");
@@ -57,7 +58,7 @@ public class EditConfig {
             prop.load(is);            
             is.close();
         } else {
-            log.error("cannot read /etc/buda/share/shared-private.properties, editor will not push commits");
+            log.error("cannot read /etc/buda/share/shared-private.properties");
         }
         dryrunmodefuseki = "true".equals(prop.getProperty("dryrunmode.fuseki"));
         dryrunmodegit = "true".equals(prop.getProperty("dryrunmode.git"));

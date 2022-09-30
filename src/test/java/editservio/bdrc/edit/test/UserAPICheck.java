@@ -45,6 +45,7 @@ import io.bdrc.auth.UserProfile;
 import io.bdrc.auth.rdf.RdfAuthModel;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.controllers.UserEditController;
+import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.GlobalHelpers;
 
@@ -234,7 +235,7 @@ public class UserAPICheck {
     }
 
     // @Test
-    public void createBudauserFromToken() throws ClientProtocolException, IOException, NoSuchAlgorithmException {
+    public void createBudauserFromToken() throws ClientProtocolException, IOException, NoSuchAlgorithmException, EditException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet(
                 "http://localhost:" + environment.getProperty("local.server.port") + "/resource-nc/user/me");
@@ -257,7 +258,7 @@ public class UserAPICheck {
     }
 
     // @Test
-    public void disableBudaUser() throws ClientProtocolException, IOException {
+    public void disableBudaUser() throws ClientProtocolException, IOException, EditException {
         // First, make sure we have a user
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet(

@@ -78,75 +78,88 @@ public class BudaUser {
         }
     }
     
-    public static Resource getRdfProfile(String auth0Id) throws IOException {
+    public static Resource getRdfProfile(final String auth0Id) throws IOException, EditException {
         if (auth0IdToRdfProfile.containsKey(auth0Id))
             return auth0IdToRdfProfile.get(auth0Id);
         Resource r = null;
-        String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
+        final String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
                 + auth0Id + "> }";
-        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
-        QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
-        log.info("QUERY EXECUTION >> {}", qe);
-        ResultSet rs = qe.execSelect();
+        log.debug("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
+        final QueryExecution qe = QueryProcessor.getResultSet(query, EditConfig.getProperty("fusekiAuthData") + "query");
+        log.debug("QUERY EXECUTION >> {}", qe);
+        final ResultSet rs = qe.execSelect();
         log.info("RS {} Has next >> {}", rs, rs.hasNext());
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
-            log.info("RESOURCE >> {} ", r);
-            auth0IdToRdfProfile.put(auth0Id, r);
-            return r;
+            log.debug("RESOURCE >> {} ", r);
         }
+        if (rs.hasNext()) {
+        	qe.close();
+        	throw new EditException(500, "auth0id " + auth0Id + " has more than one rdf profile ("+r.getLocalName()+", "+rs.next().getResource("?s").getLocalName()+") in fuseki url " + FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        }
+        if (r != null)
+            auth0IdToRdfProfile.put(auth0Id, r);
         qe.close();
-        return null;
+        return r;
     }
 
-    public static Resource getRdfProfile(String auth0Id, Model m) throws IOException {
+    public static Resource getRdfProfile(String auth0Id, Model m) throws IOException, EditException {
         if (auth0IdToRdfProfile.containsKey(auth0Id))
             return auth0IdToRdfProfile.get(auth0Id);
         Resource r = null;
         String query = "select distinct ?s where  {  ?s <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> <http://purl.bdrc.io/resource-nc/auth/"
                 + auth0Id + "> }";
-        log.info("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
+        log.debug("QUERY >> {} and service: {} ", query, EditConfig.getProperty("fusekiAuthData") + "query");
         QueryExecution qe = QueryExecutionFactory.create(query, m);
-        log.info("QUERY EXECUTION >> {}", qe);
+        log.debug("QUERY EXECUTION >> {}", qe);
         ResultSet rs = qe.execSelect();
-        log.info("RS {} Has next >> {}", rs, rs.hasNext());
+        log.debug("RS {} Has next >> {}", rs, rs.hasNext());
         if (rs.hasNext()) {
             r = rs.next().getResource("?s");
-            log.info("RESOURCE >> {} ", r);
-            auth0IdToRdfProfile.put(auth0Id, r);
-            return r;
+            log.debug("RESOURCE >> {} ", r);
         }
+        if (rs.hasNext()) {
+        	qe.close();
+        	throw new EditException(500, "auth0id " + auth0Id + " has more than one rdf profile in fuseki url " + FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        }
+        if (r != null)
+            auth0IdToRdfProfile.put(auth0Id, r);
         qe.close();
-        return null;
+        return r;
     }
     
-    public static RDFNode getAuth0IdFromUser(Resource user) throws IOException {
-        String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
-        log.info("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
-        QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
-        ResultSet rs;
+    public static RDFNode getAuth0IdFromUser(Resource user) throws IOException, EditException {
+        final String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/hasUserProfile> ?o }";
+        log.debug("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        final QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        final ResultSet rs;
         try {
         	rs = qe.execSelect();
         } catch (QueryExceptionHTTP e) {
         	log.error("can't get auth0 id from user {}, fuseki url {}: {}", user, FusekiWriteHelpers.FusekiAuthSparqlEndpoint, e.getMessage());
         	return null;
         }
+        Resource r = null;
         if (rs.hasNext()) {
-            Resource r = rs.next().getResource("?o");
-            log.info("RESOURCE >> {} and rdfId= {} ", r);
-            return r;
+            r = rs.next().getResource("?o");
+            log.debug("RESOURCE >> {} and rdfId= {} ", r);
         }
-        return null;
+        if (rs.hasNext()) {
+        	qe.close();
+        	throw new EditException(500, "user " + user + " has more than one identifier in fuseki url " + FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        }
+        qe.close();
+        return r;
     }
 
     public static boolean isActive(Resource user) throws IOException {
         String query = "select distinct ?o where  {  <" + user.getURI() + "> <http://purl.bdrc.io/ontology/ext/user/isActive> ?o }";
-        log.info("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
+        log.debug("QUERY >> {} and service: {} ", query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
         QueryExecution qe = QueryProcessor.getResultSet(query, FusekiWriteHelpers.FusekiAuthSparqlEndpoint);
         ResultSet rs = qe.execSelect();
         if (rs.hasNext()) {
             Literal r = rs.next().getLiteral("?o");
-            log.info("RESOURCE >> {} and rdfId= {} ", r);
+            log.debug("RESOURCE >> {} and rdfId= {} ", r);
             return r.getBoolean();
         }
         return false;
@@ -188,7 +201,13 @@ public class BudaUser {
         while (toAdd < 10) {
             final String newId = "U0ES" + Integer.toString(Math.abs(authId.hashCode()+toAdd));
             final Resource user = ResourceFactory.createResource(EditConstants.BDU+newId);
-            if (getAuth0IdFromUser(user) == null)
+            RDFNode auth0Id;
+            try {
+            	auth0Id = getAuth0IdFromUser(user);
+            } catch (EditException e) {
+            	continue;
+            }
+            if (auth0Id == null)
                 return user;
             toAdd += 1;
         }

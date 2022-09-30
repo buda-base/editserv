@@ -11,7 +11,7 @@ usersGitLocalRoot=/etc/buda/editserv/users/
 usersRemoteGit=https://gitlab.com/bdrc-data/users
 
 logRootDir=/etc/buda/editserv/logs/resources/
-usersLogRootDir=/etc/buda/editserv/logs/users/
+clienterror.filename=/etc/buda/editserv/logs/resources/client_errors.log
 owlSchemaBase=../owl-schema/
 
 useAuth=false

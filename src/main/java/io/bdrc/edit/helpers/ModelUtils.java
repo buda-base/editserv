@@ -211,12 +211,18 @@ public class ModelUtils {
     public static final Pattern simpleLangPattern = Pattern.compile("^[a-z\\-]+$");
     
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
+    public static final Property volumePagesTotal = ResourceFactory.createProperty(Models.BDO, "volumePagesTotal");
     public static final Property logEntry = ResourceFactory.createProperty(Models.ADM, "logEntry");
     public static final Property logDate = ResourceFactory.createProperty(Models.ADM, "logDate");
+    public static final Property logMethod = ResourceFactory.createProperty(Models.ADM, "logMethod");
     public static final Property logWho = ResourceFactory.createProperty(Models.ADM, "logWho");
     public static final Property logMessage = ResourceFactory.createProperty(Models.ADM, "logMessage");
-    public static final Property InitialDataCreation = ResourceFactory.createProperty(Models.ADM, "InitialDataCreation");
-    public static final Property UpdateData = ResourceFactory.createProperty(Models.ADM, "UpdateData");
+    public static final Resource InitialDataCreation = ResourceFactory.createResource(Models.ADM + "InitialDataCreation");
+    public static final Resource UpdateData = ResourceFactory.createResource(Models.ADM + "UpdateData");
+    public static final Resource AdminData = ResourceFactory.createResource(Models.ADM + "AdminData");
+    public static final Resource ImagesUpdated = ResourceFactory.createResource(Models.ADM + "ImagesUpdated");
+    public static final Resource Synced = ResourceFactory.createResource(Models.ADM + "Synced");
+    public static final Resource BatchMethod = ResourceFactory.createResource(Models.BDA + "BatchMethod");
     public static void addSimpleLogEntry(final Model m, final Resource r, final Resource user, final String[] changeMessage, final boolean creation) throws EditException {
         final ResIterator admIt = m.listSubjectsWithProperty(admAbout, r);
         if (!admIt.hasNext())
@@ -251,4 +257,44 @@ public class ModelUtils {
         m.add(lg, logMessage, m.createLiteral(changeMessage[0], changeMessage[1]));
     }
 
+    public static void addSyncNotification(final Model m, final Resource ig, final int nbPagesTotal, final Resource user) throws EditException {
+        final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ig);
+        final Resource admData;
+        if (!admIt.hasNext()) {
+        	log.info("create admin data for {}", ig);
+        	admData = m.createResource(Models.BDA+ig.getLocalName());
+        	m.add(admData, RDF.type, AdminData);
+        	m.add(admData, admAbout, ig);
+        } else {
+        	admData = admIt.next();
+        }
+        final List<String> logEntryLocalNames = new ArrayList<String>();
+        final StmtIterator lgIt = admData.listProperties(logEntry);
+        while (lgIt.hasNext()) {
+            logEntryLocalNames.add(lgIt.next().getResource().getLocalName());
+        }
+        // get a random string that is not already present in the log entries
+        final String lgLnamePrefix = "LG0"+ig.getLocalName()+"_";
+        String rand = RandomStringUtils.random(12, true, true).toUpperCase();
+        int i = 0;
+        while (i < 10) {
+            if (!logEntryLocalNames.contains(lgLnamePrefix+rand))
+                break;
+            rand = RandomStringUtils.random(12, true, true).toUpperCase();
+            i += 1;
+        }
+        final Resource lg = m.createResource(Models.BDA+lgLnamePrefix+rand);
+        m.add(admData, logEntry, lg);
+        final Resource lgtype = (logEntryLocalNames.size() > 0) ? ImagesUpdated : Synced ; 
+        m.add(lg, RDF.type, lgtype);
+        if (user != null)
+            m.add(lg, logWho, user);
+        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+        m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+        m.add(lg, logMessage, m.createLiteral("Updated total pages", "en"));
+        m.add(lg, logMethod, BatchMethod);
+        m.removeAll(ig, volumePagesTotal, null);
+        m.add(ig, volumePagesTotal, m.createTypedLiteral(nbPagesTotal, XSDDatatype.XSDinteger));
+    }
+    
 }

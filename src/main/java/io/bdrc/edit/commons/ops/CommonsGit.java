@@ -323,6 +323,8 @@ public class CommonsGit {
         if (EditConfig.dryrunmodegit && (EditConfig.dryrunmodeusers || !gi.repoLname.equals("GR0100"))) {
             gi.revId = "drymoderev";
             log.info("dry run: don't commit to git");
+            if (log.isDebugEnabled())
+            	log.debug(ModelUtils.datasetToTrig(gi.ds));
             return;
         }
         log.info("commit and push {}, message {}", gi, commitMessage);

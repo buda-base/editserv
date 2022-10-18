@@ -23,6 +23,7 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
@@ -179,38 +180,10 @@ public class EditServReasoner {
     public static final Property notBefore = ResourceFactory.createProperty(BDO, "notBefore");
     public static final Property notAfter = ResourceFactory.createProperty(BDO, "notAfter");
     public static final Property eventWhen = ResourceFactory.createProperty(BDO, "eventWhen");
-    
-    public static void addinferredEDTFStrings(final Model model) {
-        Set<Resource> events = new HashSet<>();
-        events.addAll(model.listResourcesWithProperty(onYear).toList());
-        events.addAll(model.listResourcesWithProperty(notBefore).toList());
-        events.addAll(model.listResourcesWithProperty(notAfter).toList());
-        events.removeAll(model.listResourcesWithProperty(eventWhen).toList());
-        for (final Resource e : events) {
-            String notBeforeVal = null;
-            String notAfterVal = null;
-            final StmtIterator pIt = e.listProperties();
-            while (pIt.hasNext()) {
-                final Statement s = pIt.next();
-                if (s.getPredicate().equals(onYear)) {
-                    model.add(e, eventWhen, model.createTypedLiteral(s.getObject().asLiteral().getLexicalForm(), EDTFDT));
-                    break;
-                }
-                if (s.getPredicate().equals(notBefore)) {
-                    notBeforeVal = s.getObject().asLiteral().getLexicalForm();
-                } else if (s.getPredicate().equals(notAfter)) {
-                    notAfterVal = s.getObject().asLiteral().getLexicalForm();
-                }
-            }
-            if (notBeforeVal != null || notAfterVal != null) {
-                final String edtf = intervalToEDTF(notBeforeVal, notAfterVal);
-                model.add(e, eventWhen, model.createTypedLiteral(edtf, EDTFDT));
-            }
-        }
-    }
-    
+        
     public static void inferFromEDTF(final Model model) {
         final StmtIterator it = model.listStatements(null, eventWhen, (RDFNode) null);
+        final Model infMod = ModelFactory.createDefaultModel();
         while (it.hasNext()) {
             final Statement st = it.next();
             final String dateStr = st.getObject().asLiteral().getLexicalForm();
@@ -218,47 +191,48 @@ public class EditServReasoner {
                 // case of 0123, 0123~, 012X, 012X?
                 if (dateStr.length() < 6 && !dateStr.contains("/")) {
                 	if (dateStr.length() == 2) {
-                	    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"00", XSDDatatype.XSDgYear));
-                        model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"99", XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"00", XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"99", XSDDatatype.XSDgYear));
                 	} else if (dateStr.length() == 3) {
-                	    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"0", XSDDatatype.XSDgYear));
-                		model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"9", XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"0", XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"9", XSDDatatype.XSDgYear));
                 	} else if (dateStr.contains("X")) {
-                        model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
-                        model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                	    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
                     } else {
-                        model.add(st.getSubject(), onYear, model.createTypedLiteral(dateStr.substring(0, 4), XSDDatatype.XSDgYear));
+                        infMod.add(st.getSubject(), onYear, model.createTypedLiteral(dateStr.substring(0, 4), XSDDatatype.XSDgYear));
                     }
                     continue;
                 }
                 // case of "/0123"
                 if (dateStr.startsWith("/")) {
-                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(1, 5).replace('X', '9'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(1, 5).replace('X', '9'), XSDDatatype.XSDgYear));
                     continue;
                 }
                 // case of "0123/"
                 if (dateStr.endsWith("/")) {
-                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
                     continue;
                 }
                 // case of "0123/0124"
                 if (dateStr.contains("/")) {
                     final String[] dates = dateStr.split("/");
-                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
-                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[1].substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[1].substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
                     continue;
                 }
                 // case of [1258,158X]
                 if (dateStr.startsWith("{") || dateStr.startsWith("[")) {
                     final String[] dates = dateStr.substring(1, dateStr.length()-1).split(",");
-                    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].trim().substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
-                    model.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[dates.length-1].trim().substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notBefore, model.createTypedLiteral(dates[0].trim().substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
+                    infMod.add(st.getSubject(), notAfter, model.createTypedLiteral(dates[dates.length-1].trim().substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
                     continue;
                 }
             } catch (Exception e) {
                 log.error("can't infer for edtf "+dateStr);
             }
         }
+        model.add(infMod);
     }
     
     public static Model deReasonToRemove(final Model ontModel, final Model m) {

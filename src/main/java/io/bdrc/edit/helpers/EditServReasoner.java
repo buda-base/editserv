@@ -217,7 +217,13 @@ public class EditServReasoner {
                 try {
                 // case of 0123, 0123~, 012X, 012X?
                 if (dateStr.length() < 6 && !dateStr.contains("/")) {
-                    if (dateStr.contains("X")) {
+                	if (dateStr.length() == 2) {
+                	    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"00", XSDDatatype.XSDgYear));
+                        model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"99", XSDDatatype.XSDgYear));
+                	} else if (dateStr.length() == 3) {
+                	    model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr+"0", XSDDatatype.XSDgYear));
+                		model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr+"9", XSDDatatype.XSDgYear));
+                	} else if (dateStr.contains("X")) {
                         model.add(st.getSubject(), notBefore, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '0'), XSDDatatype.XSDgYear));
                         model.add(st.getSubject(), notAfter, model.createTypedLiteral(dateStr.substring(0, 4).replace('X', '9'), XSDDatatype.XSDgYear));
                     } else {

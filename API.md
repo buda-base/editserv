@@ -94,7 +94,7 @@ Returns a zip file with the BDRC scan request. It can only work with Image Insta
 
 ##### POST `/notifysync/{wqname}/{iqname}?pagestotal={pagestotal}`
 
-Where `{wqname}` is in the form `bdr:W22084` and `{iqname}` in the form `bdr:I0886`. It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer. This operation might be asynchronous and call to the next function is advised at the end of a batch of sync notifications.
+Where `{wqname}` is in the form `bdr:W22084` and `{iqname}` in the form `bdr:I0886`. It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer.
 
 ##### POST `/notifysync`
 

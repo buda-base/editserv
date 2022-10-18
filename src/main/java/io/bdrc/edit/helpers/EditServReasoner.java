@@ -152,30 +152,7 @@ public class EditServReasoner {
             return new EDTFStr(lexicalForm);
         }
     };
-    
-    // arguments should be in the form of 4 digits or null
-    public static String intervalToEDTF(final String notBefore, final String notAfter) {
-        if (notBefore == null && notAfter == null)
-            return null;
-        if (notBefore == null)
-            return "/"+notAfter;
-        if (notAfter == null)
-            return notBefore+"/";
-        if (notBefore.charAt(0) == notAfter.charAt(0) && notBefore.charAt(1) == notAfter.charAt(1)) {
-            if (notBefore.charAt(2) == notAfter.charAt(2)) {
-                if (notBefore.charAt(3) == '0' && notAfter.charAt(3) == '9')
-                    return notBefore.substring(0,3)+"X";
-            } else if (notBefore.charAt(2) == '0' && notAfter.charAt(2) == '9' && notBefore.charAt(3) == '0' && notAfter.charAt(3) == '9') {
-                return notBefore.substring(0, 2)+"XX";
-            }
-        }
-        if (notBefore.charAt(2) == '0' && notAfter.charAt(2) == '9' && notBefore.charAt(3) == '0' && notAfter.charAt(3) == '9') {
-            // case of 13XX/14XX
-            return notBefore.substring(0,2)+"XX/"+notAfter.substring(0,2)+"XX";
-        }
-        return notBefore+"/"+notAfter;
-    }
-    
+ 
     public static final Property onYear = ResourceFactory.createProperty(BDO, "onYear");
     public static final Property notBefore = ResourceFactory.createProperty(BDO, "notBefore");
     public static final Property notAfter = ResourceFactory.createProperty(BDO, "notAfter");

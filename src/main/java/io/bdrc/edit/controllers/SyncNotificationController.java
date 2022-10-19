@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -46,32 +45,39 @@ public class SyncNotificationController {
 	// temporary
 	static final Resource syncUser = ResourceFactory.createResource(Models.BDU+"U00016");
 	
-    @PostMapping(value = "/notifysync/{wqname}/{iqname}")
-    public synchronized ResponseEntity<String> syncImageGroup(@RequestParam("pagestotal") Integer pagestotal, 
+    public static final class ImageGroupSyncInfo {
+        @JsonProperty("pages_total")
+        public Integer pages_total;
+    }
+	
+    @PostMapping(value = "/notifysync/{wqname}/{iqname}", consumes = { MediaType.APPLICATION_JSON_VALUE })
+    public synchronized ResponseEntity<String> syncImageGroup(@RequestBody() String requestbody, 
             @PathVariable("wqname") String wqname, @PathVariable("iqname") String iqname, HttpServletRequest req, HttpServletResponse response) throws IOException, EditException, GitAPIException {
-    	if (wqname == null || iqname == null || pagestotal == null || !wqname.startsWith("bdr:") || !iqname.startsWith("bdr:"))
-    		throw new EditException("can't understand notifysync arguments "+ wqname + ", " + iqname + " , " + pagestotal);
+    	if (wqname == null || iqname == null || requestbody == null || !wqname.startsWith("bdr:") || !iqname.startsWith("bdr:"))
+    		throw new EditException("can't understand notifysync arguments "+ wqname + ", " + iqname + " , " + requestbody);
     	final Resource w = ResourceFactory.createResource(Models.BDR + wqname.substring(4));
     	final Resource i = ResourceFactory.createResource(Models.BDR + iqname.substring(4));
     	final GitInfo gi = CommonsGit.gitInfoForResource(w, true);
+    	final ImageGroupSyncInfo igsyncinfo; 
+    	try {
+    	    igsyncinfo = mapper.readValue(requestbody, ImageGroupSyncInfo.class);
+        } catch (IOException e) {
+            log.error("can't parse request body "+requestbody, e);
+            throw new EditException("can't parse request body "+requestbody);
+        }
     	if (gi.ds == null || gi.ds.isEmpty()) {
     		log.error("no graph could be found for {}", wqname);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON)
                     .body("{\"err\":\"No graph could be found for " + wqname + "\"}");
     	}
     	final Model m = ModelUtils.getMainModel(gi.ds);
-    	ModelUtils.addSyncNotification(m, i, pagestotal, syncUser);
+    	ModelUtils.addSyncNotification(m, i, igsyncinfo.pages_total, syncUser);
     	CommonsGit.commitAndPush(gi, "sync notification");
     	if (!EditConfig.dryrunmodefuseki)
     		FusekiWriteHelpers.putDataset(gi);
-    	log.info("handled sync notification for {}, {}, {}", wqname, iqname, pagestotal);
+    	log.info("handled sync notification for {}, {}, {}", wqname, iqname, igsyncinfo.pages_total);
     	return ResponseEntity.status(HttpStatus.OK)
                 .body("{}"); 
-    }
-    
-    public class ImageGroupSyncInfo {
-        @JsonProperty("pages_total")
-        public int pages_total;
     }
     
     public static final TypeReference<HashMap<String, HashMap<String,ImageGroupSyncInfo>>> SyncInfo = new TypeReference<HashMap<String, HashMap<String,ImageGroupSyncInfo>>>() {};
@@ -85,7 +91,8 @@ public class SyncNotificationController {
         try {
             syncInfo = mapper.readValue(syncInfoStr, SyncInfo);
         } catch (IOException e) {
-            throw new EditException("can't parse request body");
+            log.error("can't parse request body "+syncInfoStr);
+            throw new EditException("can't parse request body "+syncInfoStr);
         }
         for (final Entry<String, HashMap<String,ImageGroupSyncInfo>> winfo : syncInfo.entrySet()) {
             final Resource w = ResourceFactory.createResource(Models.BDR + winfo.getKey().substring(4));

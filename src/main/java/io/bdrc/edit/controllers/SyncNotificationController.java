@@ -48,7 +48,7 @@ public class SyncNotificationController {
     	if (gi.ds == null || gi.ds.isEmpty()) {
     		log.error("no graph could be found for {}", wqname);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
-                    .body("No graph could be found for " + wqname);
+                    .body("{\"err\":\"No graph could be found for " + wqname + "\"}");
     	}
     	final Model m = ModelUtils.getMainModel(gi.ds);
     	ModelUtils.addSyncNotification(m, i, pagestotal, syncUser);
@@ -56,7 +56,7 @@ public class SyncNotificationController {
     	if (!EditConfig.dryrunmodefuseki)
     		FusekiWriteHelpers.putDataset(gi);
     	log.info("handled sync notification for {}, {}, {}", wqname, iqname, pagestotal);
-    	return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(null); 
+    	return ResponseEntity.status(HttpStatus.OK)
+                .body("{}"); 
     }
 }

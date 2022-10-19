@@ -92,9 +92,17 @@ Returns a zip file with the BDRC scan request. It can only work with Image Insta
 
 # Sync notification (admins only)
 
-##### POST `/notifysync/{wqname}/{iqname}?pagestotal={pagestotal}`
+##### POST `/notifysync/{wqname}/{iqname}`
 
-Where `{wqname}` is in the form `bdr:W22084` and `{iqname}` in the form `bdr:I0886`. It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer.
+Where `{wqname}` is in the form `bdr:W22084` and `{iqname}` in the form `bdr:I0886`. The body of the request should be a json object in the form:
+
+```json
+{
+	"pages_total": {pagestotal}
+}
+```
+
+It records the date of the request as the sync date in the database, and updates the total number of pages to `{pagestotal}`, which must be an integer.
 
 ##### POST `/notifysync`
 

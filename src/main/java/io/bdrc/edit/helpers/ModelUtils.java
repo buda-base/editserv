@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -31,6 +33,7 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
+import io.bdrc.edit.controllers.SyncNotificationController;
 import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.Models;
@@ -255,6 +258,59 @@ public class ModelUtils {
         if (!simpleLangPattern.matcher(changeMessage[1]).matches())
             throw new EditException(422, "invalid commit message lang tag "+changeMessage[1]);
         m.add(lg, logMessage, m.createLiteral(changeMessage[0], changeMessage[1]));
+    }
+    
+    public static Resource findLogEntry(final Model m, final Resource admData) {
+        final List<String> logEntryLocalNames = new ArrayList<String>();
+        final StmtIterator lgIt = admData.listProperties(logEntry);
+        while (lgIt.hasNext()) {
+            logEntryLocalNames.add(lgIt.next().getResource().getLocalName());
+        }
+        // get a random string that is not already present in the log entries
+        final String lgLnamePrefix = "LG0"+admData.getLocalName()+"_";
+        String rand = RandomStringUtils.random(12, true, true).toUpperCase();
+        int i = 0;
+        while (i < 10) {
+            if (!logEntryLocalNames.contains(lgLnamePrefix+rand))
+                break;
+            rand = RandomStringUtils.random(12, true, true).toUpperCase();
+            i += 1;
+        }
+        return m.createResource(Models.BDA+lgLnamePrefix+rand);
+    }
+    
+    public static void addSyncNotification(final Model m, final Resource w, final Map<String,SyncNotificationController.ImageGroupSyncInfo> iinfos, final Resource user) throws EditException {
+        final ResIterator wadmIt = m.listSubjectsWithProperty(admAbout, w);
+        if (!wadmIt.hasNext())
+            throw new EditException("can't find admin data for "+ w);
+        final Resource wadmData = wadmIt.next();
+        final Resource lg = findLogEntry(m, wadmData);
+        for (final Entry<String,SyncNotificationController.ImageGroupSyncInfo> igSyncInfo : iinfos.entrySet()) {
+            final String igqname = igSyncInfo.getKey();
+            final Resource ig = ResourceFactory.createResource(Models.BDR + igqname.substring(4));
+            final int nbPagesTotal = igSyncInfo.getValue().pages_total;
+            final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ig);
+            final Resource admData;
+            if (!admIt.hasNext()) {
+                log.info("create admin data for {}", ig);
+                admData = m.createResource(Models.BDA+ig.getLocalName());
+                m.add(admData, RDF.type, AdminData);
+                m.add(admData, admAbout, ig);
+            } else {
+                admData = admIt.next();
+            }
+            m.add(admData, logEntry, lg);
+            final Resource lgtype = admData.hasProperty(logEntry) ? ImagesUpdated : Synced ; 
+            m.add(lg, RDF.type, lgtype);
+            if (user != null)
+                m.add(lg, logWho, user);
+            final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+            m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+            m.add(lg, logMessage, m.createLiteral("Updated total pages", "en"));
+            m.add(lg, logMethod, BatchMethod);
+            m.removeAll(ig, volumePagesTotal, null);
+            m.add(ig, volumePagesTotal, m.createTypedLiteral(nbPagesTotal, XSDDatatype.XSDinteger));
+        }
     }
 
     public static void addSyncNotification(final Model m, final Resource ig, final int nbPagesTotal, final Resource user) throws EditException {

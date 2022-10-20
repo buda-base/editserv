@@ -279,7 +279,7 @@ public class ModelUtils {
         return m.createResource(Models.BDA+lgLnamePrefix+rand);
     }
     
-    public static void addSyncNotification(final Model m, final Resource w, final Map<String,SyncNotificationController.ImageGroupSyncInfo> iinfos, final Resource user) throws EditException {
+    public static void addSyncNotification(final Model m, final Resource w, final Map<String,SyncNotificationController.ImageGroupSyncInfo> iinfos, final Resource user, final String logDateStr) throws EditException {
         final ResIterator wadmIt = m.listSubjectsWithProperty(admAbout, w);
         if (!wadmIt.hasNext())
             throw new EditException("can't find admin data for "+ w);
@@ -304,8 +304,7 @@ public class ModelUtils {
             m.add(lg, RDF.type, lgtype);
             if (user != null)
                 m.add(lg, logWho, user);
-            final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
-            m.add(lg, logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+            m.add(lg, logDate, m.createTypedLiteral(logDateStr, XSDDatatype.XSDdateTime));
             m.add(lg, logMessage, m.createLiteral("Updated total pages", "en"));
             m.add(lg, logMethod, BatchMethod);
             m.removeAll(ig, volumePagesTotal, null);

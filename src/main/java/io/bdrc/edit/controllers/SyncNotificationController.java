@@ -1,6 +1,9 @@
 package io.bdrc.edit.controllers;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,7 +87,7 @@ public class SyncNotificationController {
     
     @PostMapping(value = "/notifysync")
     public synchronized ResponseEntity<String> syncBatch(@RequestBody() String syncInfoStr, 
-            @PathVariable("wqname") String wqname, @PathVariable("iqname") String iqname, HttpServletRequest req, HttpServletResponse response) throws IOException, EditException, GitAPIException {
+            HttpServletRequest req, HttpServletResponse response) throws IOException, EditException, GitAPIException {
         if (syncInfoStr == null)
             throw new EditException("can't parse request body");
         final HashMap<String, HashMap<String,ImageGroupSyncInfo>> syncInfo;
@@ -94,21 +97,22 @@ public class SyncNotificationController {
             log.error("can't parse request body "+syncInfoStr);
             throw new EditException("can't parse request body "+syncInfoStr);
         }
+        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         for (final Entry<String, HashMap<String,ImageGroupSyncInfo>> winfo : syncInfo.entrySet()) {
             final Resource w = ResourceFactory.createResource(Models.BDR + winfo.getKey().substring(4));
             final Map<String,ImageGroupSyncInfo> iinfolist = winfo.getValue();
             final GitInfo gi = CommonsGit.gitInfoForResource(w, true);
             if (gi.ds == null || gi.ds.isEmpty()) {
-                log.error("no graph could be found for {}", wqname);
+                log.error("no graph could be found for {}", w);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
-                        .body("{\"err\":\"No graph could be found for " + wqname + "\"}");
+                        .body("{\"err\":\"No graph could be found for " + w + "\"}");
             }
             final Model m = ModelUtils.getMainModel(gi.ds);
-            ModelUtils.addSyncNotification(m, w, iinfolist, syncUser);
+            ModelUtils.addSyncNotification(m, w, iinfolist, syncUser, now);
             CommonsGit.commitAndPush(gi, "sync notification");
             if (!EditConfig.dryrunmodefuseki)
                 FusekiWriteHelpers.putDataset(gi);
-            log.info("handled sync notification for {}", wqname);
+            log.info("handled sync notification for {}", w);
         }
         return ResponseEntity.status(HttpStatus.OK)
                 .body("{}"); 

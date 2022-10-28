@@ -300,7 +300,13 @@ public class ModelUtils {
                 admData = admIt.next();
             }
             m.add(admData, logEntry, lg);
-            final Resource lgtype = admData.hasProperty(logEntry) ? ImagesUpdated : Synced ; 
+            Resource lgtype = Synced;
+            final StmtIterator lgitr = admData.listProperties(logEntry);
+            while (lgitr.hasNext()) {
+                final Resource otherLg = lgitr.next().getResource();
+                if (otherLg.hasProperty(RDF.type, Synced))
+                    lgtype = ImagesUpdated;
+            }
             m.add(lg, RDF.type, lgtype);
             if (user != null)
                 m.add(lg, logWho, user);
@@ -323,10 +329,13 @@ public class ModelUtils {
         } else {
         	admData = admIt.next();
         }
+        boolean firstSync = true;
         final List<String> logEntryLocalNames = new ArrayList<String>();
         final StmtIterator lgIt = admData.listProperties(logEntry);
         while (lgIt.hasNext()) {
-            logEntryLocalNames.add(lgIt.next().getResource().getLocalName());
+            final Resource otherLg = lgIt.next().getResource();
+            logEntryLocalNames.add(otherLg.getLocalName());
+            firstSync = firstSync && !otherLg.hasProperty(RDF.type, Synced);
         }
         // get a random string that is not already present in the log entries
         final String lgLnamePrefix = "LG0"+ig.getLocalName()+"_";
@@ -340,7 +349,7 @@ public class ModelUtils {
         }
         final Resource lg = m.createResource(Models.BDA+lgLnamePrefix+rand);
         m.add(admData, logEntry, lg);
-        final Resource lgtype = (logEntryLocalNames.size() > 0) ? ImagesUpdated : Synced ; 
+        final Resource lgtype = firstSync ? Synced : ImagesUpdated; 
         m.add(lg, RDF.type, lgtype);
         if (user != null)
             m.add(lg, logWho, user);

@@ -108,7 +108,6 @@ public class MainEditController {
         }
         try {
             CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res, false);
-            etag = gi.revId;
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));

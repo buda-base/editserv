@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import io.bdrc.auth.AccessInfoAuthImpl;
 import io.bdrc.edit.EditConfig;
+import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
@@ -73,6 +75,9 @@ public class UserEditController {
                 }
             }
             Model userModel = ModelUtils.getMainModel(gi.ds);
+            // dirty patch:
+            userModel.removeAll(null, RDF.type, userModel.createResource(EditConstants.BDO+"Person"));
+            userModel.removeAll(null, RDF.type, userModel.createResource(EditConstants.FOAF+"Person"));
             final Resource shape = CommonsRead.getShapeForEntity(usr);
             userModel = CommonsRead.getFocusGraph(userModel, usr, shape);
             userModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());

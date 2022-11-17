@@ -226,9 +226,7 @@ public class BudaUser {
         final Resource bUser = ResourceFactory.createResource(EditConstants.BDU + userLname);
         final Model privateModel = ModelFactory.createDefaultModel();
         privateModel.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
-        privateModel.add(bUser, RDF.type, ResourceFactory.createResource(EditConstants.FOAF + "Person"));
         privateModel.add(bUser, RDF.type, ResourceFactory.createResource(EditConstants.BDOU + "User"));
-        privateModel.add(bUser, RDF.type, ResourceFactory.createResource(EditConstants.BDO + "Person"));
         log.info("hasUserProfile in createBudaUserModels = {}", usr.getUserId());
         final String auth0Id = usr.getUserId();
         privateModel.add(bUser, ResourceFactory.createProperty(EditConstants.BDOU + "isActive"), ResourceFactory.createPlainLiteral("true"));

@@ -20,26 +20,21 @@ import org.slf4j.LoggerFactory;
 
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.controllers.RIDController;
-import io.bdrc.edit.helpers.EditServReasoner;
 import io.bdrc.edit.helpers.Shapes;
 
 public class CommonsRead {
 
     public final static Logger log = LoggerFactory.getLogger(CommonsRead.class);
 
-    public static List<Resource> FOCUS_SHAPES;
+    public static final List<Resource> FOCUS_SHAPES;
     public static final String GRAPH_NAME_TYPE = "graph_name_type";
     public static final String GRAPH_URI_TYPE = "graph_uri_type";
     public static final String GRAPH_RESOURCE = "graph_resource";
 
-    public static String SHAPES_SCHEMA = "http://purl.bdrc.io/graph/shapesSchema";
-
-    public static Property NODE_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.BDS + "nodeShapeType");
-    public static Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
-    public static Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
-    public static Resource EXTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "ExternalShape");
-    public static Property TOP_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "topShapeGraph");
-    public static Property UI_SHAPE = ResourceFactory.createProperty(EditConstants.BDS + "uiShapeGraph");
+    public static final Property NODE_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.RDE + "nodeShapeType");
+    public static final Property SHACL_PROP = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#property");
+    public static final Property SHACL_PATH = ResourceFactory.createProperty("http://www.w3.org/ns/shacl#path");
+    public static final Resource EXTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.RDE + "ExternalShape");
     public static HashMap<String, Model> ENTITY_MAP;
     static final String ONT_GRAPH_URL = "/graph/ontologySchema.ttl";
     public static final Resource userProfileShape = ResourceFactory.createResource(EditConstants.BDS+"UserProfileShape");
@@ -70,8 +65,7 @@ public class CommonsRead {
 
     static {
         FOCUS_SHAPES = new ArrayList<>();
-        FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "FacetShape"));
-        FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.BDS + "InternalShape"));
+        FOCUS_SHAPES.add(ResourceFactory.createResource(EditConstants.RDE + "InternalShape"));
         ENTITY_MAP = new HashMap<>();
     }
 
@@ -137,7 +131,7 @@ public class CommonsRead {
             }
             Resource subShape = null;
             final Resource shapeType = shProp.getPropertyResourceValue(EditConstants.PROPERTY_SHAPE_TYPE);
-            if (EditConstants.FACET_SHAPE.equals(shapeType)) {
+            if (EditConstants.INTERNAL_SHAPE.equals(shapeType)) {
                 // find shape that shapes the object of the property:
                 if (!pathIsInverse) {
                     StmtIterator shapeForObjectIt = shapesModel.listStatements(null, EditConstants.SH_TARGETOBJECTSOF, path);

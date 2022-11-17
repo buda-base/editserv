@@ -20,6 +20,7 @@ public class EditConstants {
     public static final String BDA = "http://purl.bdrc.io/admindata/";
     public static final String BDG = "http://purl.bdrc.io/graph/";
     public static final String BDS = "http://purl.bdrc.io/ontology/shapes/core/";
+    public static final String RDE = "https://github.com/buda-base/rdf-document-editor/";
     public static final String OWL = "http://www.w3.org/2002/07/owl#";
     public static final String BDU = "http://purl.bdrc.io/resource-nc/user/";
     public static final String BDOU = "http://purl.bdrc.io/ontology/ext/user/";
@@ -41,8 +42,8 @@ public class EditConstants {
     public static final Property SH_PATH = ResourceFactory.createProperty(EditConstants.SH + "path");
     public static final Property SH_NODE = ResourceFactory.createProperty(EditConstants.SH + "node");
     public static final Property SH_INVERSE_PATH = ResourceFactory.createProperty(EditConstants.SH + "inversePath");
-    public static final Property PROPERTY_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.BDS + "propertyShapeType");
-    public static final Resource FACET_SHAPE = ResourceFactory.createResource(EditConstants.BDS + "FacetShape");
+    public static final Property PROPERTY_SHAPE_TYPE = ResourceFactory.createProperty(EditConstants.RDE + "propertyShapeType");
+    public static final Resource INTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.RDE + "InternalShape");
     public static final Property SH_TARGETOBJECTSOF = ResourceFactory.createProperty(EditConstants.SH + "targetObjectsOf");
     public static final Property SH_TARGETSUBJECTSOF = ResourceFactory.createProperty(EditConstants.SH + "targetSubjectsOf");
 

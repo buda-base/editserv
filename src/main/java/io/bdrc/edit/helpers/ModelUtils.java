@@ -287,6 +287,8 @@ public class ModelUtils {
         final Resource lg = findLogEntry(m, wadmData);
         for (final Entry<String,SyncNotificationController.ImageGroupSyncInfo> igSyncInfo : iinfos.entrySet()) {
             final String igqname = igSyncInfo.getKey();
+            if (!igqname.startsWith("bdr:"))
+                continue;
             final Resource ig = ResourceFactory.createResource(Models.BDR + igqname.substring(4));
             final int nbPagesTotal = igSyncInfo.getValue().pages_total;
             final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ig);

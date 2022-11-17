@@ -18,6 +18,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.vocabulary.RDF;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,15 +106,20 @@ public class MainEditController {
                         .body(StreamingHelpers.getStream(e.getMessage()));
             }
         }
-        // TODO: handle revision
         try {
             CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(res, false);
+            etag = gi.revId;
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
             Resource shape = CommonsRead.getShapeForEntity(res);
             response.addHeader("Etag", gi.revId);
             m = ModelUtils.getMainModel(gi.ds);
+            if (userMode) {
+                // dirty patch
+                m.removeAll(null, RDF.type, m.createResource(EditConstants.BDO+"Person"));
+                m.removeAll(null, RDF.type, m.createResource(EditConstants.FOAF+"Person"));
+            }
             if (focus)
                 m = CommonsRead.getFocusGraph(m, res, shape);
             m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());

@@ -332,7 +332,7 @@ public class CommonsGit {
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
         final String filePath = repoPath+"/"+gi.pathInRepo;
         if (gi.pathInRepo.contains("/")) {
-            final String dirPath = repoPath+gi.pathInRepo.substring(gi.pathInRepo.indexOf('/'));
+            final String dirPath = repoPath+gi.pathInRepo.substring(0, gi.pathInRepo.indexOf('/'));
             File dir = new File(dirPath);
             if (!dir.exists()) dir.mkdirs();
         }

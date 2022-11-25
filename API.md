@@ -86,9 +86,19 @@ Reserves the full id `{ID}`. If the id was already reserved, returns HTTP code `
 
 # Scan requests (admins only)
 
-##### GET `/{qname}/scanrequest`
+##### GET `/{qname}/scanrequest?IDPrefix={IDPrefix}&onlynonsynced={onlynonsynced}&nbvols={nbvols}&scaninfo={scaninfo}&scaninfo_lang={scaninfo_lang}&instance={instance}`
 
-Returns a zip file with the BDRC scan request. It can only work with Image Instance (Scan) qnames (ex: `bdr:W22084`). It responds to a query parameter `?onlynonsynced=true` which makes it select only non-synced volumes. It returns a 404 if there are no volumes to put in the scan request.
+Returns a zip file with the BDRC scan request. It can only work with Image Instance (Scan) qnames (ex: `bdr:W22084`). 
+
+If the optional `{onlynonsynced}` is set to `true` then only non-synced volumes are included in the zip file.
+
+If the optional `{nbvols}` is set to a positive integer, the server will ensure that the image instance has at least `{nbols}` volumes and will create the missing ones if necessary.
+
+If the optional `{scaninfo}` and `{scaninfo_lang}` are set, the server will ensure that the image instance exists and will create it if it doesn't.
+
+`{IDPrefix}` is the ID prefix for the additional volumes that will be created (see above).
+
+`{instance}` is the qname of the instance we are asking a scan request for.
 
 # Sync notification (admins only)
 

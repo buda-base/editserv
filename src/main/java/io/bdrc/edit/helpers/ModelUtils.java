@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -46,6 +48,26 @@ public class ModelUtils {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         m.write(baos, "TTL");
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+    }
+    
+    public final static char[] symbols = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    
+    public static String randomId(final int len) {
+        final Random random = ThreadLocalRandom.current();
+        final char[] buf = new char[len];
+        for (int idx = 0; idx < len; ++idx)
+            buf[idx] = symbols[random.nextInt(symbols.length)];
+        return new String(buf);
+    }
+    
+    public static Resource newSubject(final Model m, final String prefix) throws EditException {
+        int i = 0;
+        while (i < 10) {
+            final Resource candidate = m.createResource(prefix+randomId(12));
+            if (!m.contains(candidate, null))
+                return candidate;
+        }
+        throw new EditException("cannot find free subject id!!");
     }
     
     public static String datasetToTrig(final Dataset ds) {

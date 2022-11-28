@@ -331,7 +331,9 @@ public class CommonsGit {
         // write the file
         final String repoPath = gitLnameToRepoPath.get(gi.repoLname);
         final String filePath = repoPath+"/"+gi.pathInRepo;
-        new File(filePath).getParentFile().mkdirs();
+        final File parent = new File(filePath).getParentFile();
+        log.error("mkdirs {}", parent);
+        parent.mkdirs();
         final FileOutputStream fos = new FileOutputStream(filePath);
         log.info("write {}", filePath);
         datasetToOutputStream(gi.ds, fos);

@@ -86,9 +86,9 @@ Reserves the full id `{ID}`. If the id was already reserved, returns HTTP code `
 
 # Scan requests (admins only)
 
-##### GET `/{qname}/scanrequest?IDPrefix={IDPrefix}&onlynonsynced={onlynonsynced}&nbvols={nbvols}&scaninfo={scaninfo}&scaninfo_lang={scaninfo_lang}&instance={instance}`
+##### GET `/scanrequest?IDPrefix={IDPrefix}&onlynonsynced={onlynonsynced}&nbvols={nbvols}&scaninfo={scaninfo}&scaninfo_lang={scaninfo_lang}&instance={instance}&iinstance={iinstance}&ric={ric}&access={access}`
 
-Returns a zip file with the BDRC scan request. It can only work with Image Instance (Scan) qnames (ex: `bdr:W22084`). 
+Returns a zip file with the BDRC scan request, and creates or updates an image instance as necessary.
 
 If the optional `{onlynonsynced}` is set to `true` then only non-synced volumes are included in the zip file.
 
@@ -98,7 +98,13 @@ If the optional `{scaninfo}` and `{scaninfo_lang}` are set, the server will ensu
 
 `{IDPrefix}` is the ID prefix for the additional volumes that will be created (see above).
 
-`{instance}` is the qname of the instance we are asking a scan request for.
+`{instance}` is the qname of the instance, only useful in the case an image instance will be created.
+
+`{iinstance}` is the qname of the image instance we are asking a scan request for. Optional for cases where a new scan request needs to be created.
+
+`{access}` the the qname of the access status.
+
+`{ric}` is a boolean representing the restriction in China.
 
 # Sync notification (admins only)
 

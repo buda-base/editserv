@@ -17,7 +17,6 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
-import org.apache.jena.rdf.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,6 @@ import io.bdrc.auth.AccessInfo;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
-import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.txn.exceptions.EditException;
 
 @Controller
@@ -130,7 +128,8 @@ public class RIDController {
     public static boolean idExists(final String id) {
         final String query = "ASK  { { <http://purl.bdrc.io/resource/"+id+"> ?p ?o } union { ?s ?p <http://purl.bdrc.io/resource/"+id+"> } }";
         final Query q = QueryFactory.create(query);
-        final QueryExecution qe = QueryExecutionFactory.sparqlService(FusekiWriteHelpers.FusekiSparqlEndpoint, q);
+        log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
+        final QueryExecution qe = QueryExecution.service(FusekiWriteHelpers.FusekiSparqlEndpoint).query(q).build();
         boolean res = qe.execAsk();
         log.info("id {} exists on fuseki? {}", id, res);
         // if not on Fuseki, we look on Git, just in case
@@ -203,7 +202,7 @@ public class RIDController {
     
     // creates a new ID in a prefix, requires admin rights
     @PutMapping(value = "/ID/{prefix}/{ID}")
-    public ResponseEntity<String> reserveID(@PathVariable("prefix") String prefix, @PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
+    public ResponseEntity<String> reserveIDEndpoint(@PathVariable("prefix") String prefix, @PathVariable("ID") String id, HttpServletRequest request) throws JsonGenerationException, JsonMappingException, IOException {
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) request.getAttribute("access");
             if (acc == null || !acc.isLogged())
@@ -266,6 +265,33 @@ public class RIDController {
         }
         log.info("reserving {}", id);
         return ResponseEntity.ok().body(id);
+    }
+    
+    public static void reserveFullIdSimple(final String id) throws EditException {
+        final String prefix = prefixFromId(id);
+        if (!prefixIsValid(prefix))
+            throw new EditException(400, "invalid prefix "+prefix);
+        final Integer idInt;
+        try {
+            idInt = Integer.parseInt(id.substring(prefix.length()));
+        } catch (NumberFormatException ex){
+            throw new EditException(400, "invalid ID");
+        }
+        if (idExists(id)) {
+            throw new EditException(422, "a resource with this ID already exists");
+        }
+        Integer last = prefixIndexes.get(prefix);
+        if (last == null)
+            last = 0;
+        if (last < idInt) {
+            prefixIndexes.put(prefix, idInt);
+            try {
+                writePrefixIndexes();
+            } catch (IOException e) {
+                throw new EditException(500, "cannot write prefixes", e);
+            }
+        }
+        log.info("reserving {}", id);
     }
     
 }

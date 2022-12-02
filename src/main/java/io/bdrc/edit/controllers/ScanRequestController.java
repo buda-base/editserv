@@ -103,7 +103,7 @@ public class ScanRequestController {
     public static final Property instanceHasVolume = ResourceFactory.createProperty(Models.BDO, "instanceHasVolume");
     public static final Property volumeNumber = ResourceFactory.createProperty(Models.BDO, "volumeNumber");
     
-    public static int ensureNVolumes(final Model iim, final Resource imageInstance, final int nbvols, final Resource user, final String idPrefix) throws EditException {
+    public static int ensureNVolumes(final Model iim, final Resource imageInstance, final int nbvols, final Resource user, final String idPrefix, final String now) throws EditException {
         final String queryStr = "select distinct (count(?i) as ?nbvols) (max(?inum) as ?maxvnum) where  {  <" + imageInstance.getURI() + "> <"+EditConstants.BDO+"instanceHasVolume> ?i . ?i <"+EditConstants.BDO+"volumeNumber> ?inum . }";
         final Query query = QueryFactory.create(queryStr);
         final QueryExecution qexec = QueryExecutionFactory.create(query, iim);
@@ -112,17 +112,24 @@ public class ScanRequestController {
         int existing_maxvnum = 0;
         if (rs.hasNext()) {
             final QuerySolution qs = rs.next();
+            log.error(qs.toString());
             existing_nbvols = qs.getLiteral("nbvols").getInt();
-            existing_maxvnum = qs.getLiteral("maxvum").getInt();
+            if (existing_nbvols != 0) {
+                if (qs.contains("maxvnum")) {
+                    existing_maxvnum = qs.getLiteral("maxvnum").getInt();
+                } else {
+                    throw new EditException(500, "cannot determine existing max volume number");
+                }
+            }
         }
         final int nb_vols_to_create = nbvols - existing_nbvols;
+        log.error("need to create {} volumes", nb_vols_to_create);
         if (nb_vols_to_create < 1)
             return 0;
-        final List<String> volumeIds = RIDController.getNextIDs(idPrefix, nb_vols_to_create);
+        final List<String> volumeIds = RIDController.getNextIDs("I"+idPrefix, nb_vols_to_create);
         final Resource lg = ModelUtils.newSubject(iim, EditConstants.BDR+"LG0"+imageInstance.getLocalName()+"_");
         lg.addProperty(RDF.type, ScanRequested);
         lg.addProperty(ModelUtils.logMethod, ModelUtils.BatchMethod);
-        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         lg.addProperty(ModelUtils.logDate, iim.createTypedLiteral(now, XSDDatatype.XSDdateTime));
         lg.addProperty(ModelUtils.logWho, user);
         for (int i = 0 ; i < nb_vols_to_create ; i++ ) {
@@ -161,15 +168,35 @@ public class ScanRequestController {
     }
     
     public static final Property scanInfo = ResourceFactory.createProperty(Models.BDO, "scanInfo");
+    public static final Property instanceHasReproduction = ResourceFactory.createProperty(Models.BDO, "instanceHasReproduction");
     public static final Resource ImageInstance = ResourceFactory.createResource(Models.BDO + "ImageInstance");
     
-    public static void ensureScanInfo(final Model m, final Resource imageInstance, final String scanInfoStr, final String lang) {
-        m.remove(imageInstance, scanInfo, (RDFNode) null);
+    public static void ensureScanInfo(final Model m, final Resource imageInstance, final String scanInfoStr, final String lang, final Resource user, final String now) throws EditException {
+        m.removeAll(imageInstance, scanInfo, (RDFNode) null);
         m.add(imageInstance, scanInfo, m.createLiteral(scanInfoStr, lang));
+        final Resource lg = ModelUtils.newSubject(m, EditConstants.BDR+"LG0"+imageInstance.getLocalName()+"_");
+        lg.addProperty(RDF.type, ModelUtils.UpdateData);
+        lg.addProperty(ModelUtils.logDate, m.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+        lg.addProperty(ModelUtils.logWho, user);
+        lg.addProperty(ModelUtils.logMessage, m.createLiteral("set scanInfo (from scan request)", "en"));
+        final Resource adm = m.createResource(EditConstants.BDA+imageInstance.getLocalName());
+        m.add(adm, ModelUtils.logEntry, lg);
     }
     
     public static void initImageInstance(final Model m, final Resource imageInstance, final String scanInfoStr, final String lang) {
         m.add(imageInstance, RDF.type, ImageInstance);
+    }
+    
+    public static void addReproduction(final Model im, final Resource instance, final Resource imageInstance, final Resource user, final String now) throws EditException {
+        im.add(instance, instanceHasReproduction, imageInstance);
+        final Resource lg = ModelUtils.newSubject(im, EditConstants.BDR+"LG0"+instance.getLocalName()+"_");
+        lg.addProperty(RDF.type, ScanRequested);
+        lg.addProperty(ModelUtils.logMethod, ModelUtils.BatchMethod);
+        lg.addProperty(ModelUtils.logDate, im.createTypedLiteral(now, XSDDatatype.XSDdateTime));
+        lg.addProperty(ModelUtils.logWho, user);
+        lg.addProperty(ModelUtils.logMessage, im.createLiteral("add reproduction "+imageInstance.getLocalName()+" (from scan request)", "en"));
+        final Resource adm = im.createResource(EditConstants.BDA+instance.getLocalName());
+        im.add(adm, ModelUtils.logEntry, lg);
     }
     
     @GetMapping(value = "/{qname}/scanrequest", produces="application/zip")
@@ -205,29 +232,52 @@ public class ScanRequestController {
             } catch (IOException e) {
                 throw new EditException(500, "couldn't get RDF profile", e);
             }
+            if (user == null) {
+                throw new EditException(500, "couldn't get RDF profile");
+            }
+        } else {
+            user = EditConstants.TEST_USER;
         }
         final GitInfo gi = CommonsGit.gitInfoForResource(imageInstance, true);
+        GitInfo gi_mw = null;
+        Resource instance = null;
         final Model iim;
+        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         boolean needsSaving = false;
         if (gi.ds == null) {
-            iim = ModelFactory.createDefaultModel();
-            CommonsGit.createDatasetForNewResource(iim, imageInstance);
+            if (instance_qname == null || !instance_qname.startsWith("bdr:MW"))
+                throw new EditException(404, "valid instance qname required (ex: bdr:MW123) but got "+instance_qname);
+            if (scaninfo == null || scaninfo.isEmpty())
+                throw new EditException(404, "scan info mandatory for the creation of a new scan request");
+            RIDController.reserveFullIdSimple(qname.substring(4));
+            instance = ResourceFactory.createResource(EditConstants.BDR+instance_qname.substring(4));
+            gi_mw = CommonsGit.gitInfoForResource(instance, true);
+            if (gi_mw.ds == null)
+                throw new EditException(404, "cannot find "+instance.getURI());
+            gi.ds = CommonsGit.createDatasetForNewResource(ModelFactory.createDefaultModel(), imageInstance);
+            iim = ModelUtils.getMainModel(gi.ds);
+            addInitialImageInstanceData(iim, ImageInstance, user, now);
+            final Model im = ModelUtils.getMainModel(gi_mw.ds);
+            addReproduction(im, instance, imageInstance, user, now);
             needsSaving = true;
-            
         } else {
             iim = ModelUtils.getMainModel(gi.ds);
         }
         if (scaninfo != null) {
-            ensureScanInfo(iim, imageInstance, scaninfo, scaninfo_lang);
+            log.info("change scan info");
+            ensureScanInfo(iim, imageInstance, scaninfo, scaninfo_lang, user, now);
             needsSaving = true;
         }
         if (nbvols > 0) {
-            int nb_vols_created = ensureNVolumes(iim, imageInstance, nbvols, user, IDPrefix);
+            int nb_vols_created = ensureNVolumes(iim, imageInstance, nbvols, user, IDPrefix, now);
             if (nb_vols_created > 0)
                 needsSaving = true;
         }
         if (needsSaving) {
-            CommonsGit.commitAndPush(gi, "["+user.getLocalName()+"]"+"["+imageInstance.getLocalName()+"] generate scan requests");
+            CommonsGit.commitAndPush(gi, "["+user.getLocalName()+"]"+"["+imageInstance.getLocalName()+"] generate scan request");
+            if (gi_mw != null) {
+                CommonsGit.commitAndPush(gi_mw, "["+user.getLocalName()+"]"+"["+instance.getLocalName()+"] generate scan request");
+            }
         }
         final List<VolInfo> volInfos = getVolumesFromModel(iim, imageInstance, onlynonsynced);
         if (volInfos.isEmpty()) {
@@ -235,8 +285,6 @@ public class ScanRequestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(null);
         }
-        
-        // TODO: add scan request change log to the resource
         return ResponseEntity
                 .ok()
                 .header("Content-Disposition", "attachment; filename=\"scan-dirs-"+imageInstance.getLocalName()+".zip\"")

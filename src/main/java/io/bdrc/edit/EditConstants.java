@@ -46,6 +46,8 @@ public class EditConstants {
     public static final Resource INTERNAL_SHAPE = ResourceFactory.createResource(EditConstants.RDE + "InternalShape");
     public static final Property SH_TARGETOBJECTSOF = ResourceFactory.createProperty(EditConstants.SH + "targetObjectsOf");
     public static final Property SH_TARGETSUBJECTSOF = ResourceFactory.createProperty(EditConstants.SH + "targetSubjectsOf");
+    
+    public static final Resource TEST_USER = ResourceFactory.createProperty(EditConstants.BDU + "U0TEST");
 
     public static Property INVERSE_OF = ResourceFactory.createProperty(EditConstants.OWL + "inverseOf");
     public static Resource SymmetricPROP = ResourceFactory.createResource(EditConstants.OWL + "SymmetricProperty");

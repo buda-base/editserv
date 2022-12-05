@@ -218,20 +218,26 @@ public class ScanRequestController {
         iim.add(adm, restrictedInChina, iim.createTypedLiteral(ric));
     }
     
-    private boolean ensureAccess(Model iim, Resource imageInstance, String access_qname) {
-        // TODO Auto-generated method stub
-        return false;
+    // returns true if access has been changed
+    private boolean ensureAccess(final Model iim, final Resource imageInstance, final String access_qname) {
+        final Resource access_value = iim.createResource(EditConstants.BDA + access_qname.substring(4));
+        final Resource adm = iim.createResource(EditConstants.BDA+imageInstance.getLocalName());
+        if (iim.contains(adm, access, access_value))
+            return false;
+        iim.removeAll(adm, access, (RDFNode) null);
+        iim.add(adm, access, access_value);
+        return true;
     }
     
     @GetMapping(value = "/scanrequest", produces="application/zip")
     public ResponseEntity<StreamingResponseBody> getLatestID(
             @RequestParam(value = "onlynonsynced", required = false, defaultValue = "false") Boolean onlynonsynced, 
-            @RequestParam(value = "IDPrefix", required = false) String IDPrefix,
+            @RequestParam(value = "IDPrefix", required = false) final String IDPrefix,
             @RequestParam(value = "nbvols", required = false, defaultValue = "0") Integer nbvols,
-            @RequestParam(value = "scaninfo", required = false) String scaninfo,
-            @RequestParam(value = "scaninfo_lang", required = false) String scaninfo_lang,
+            @RequestParam(value = "scaninfo", required = false) final String scaninfo,
+            @RequestParam(value = "scaninfo_lang", required = false) final String scaninfo_lang,
             @RequestParam(value = "ric", required = false) Boolean ric,
-            @RequestParam(value = "access", required = false) String access_qname,
+            @RequestParam(value = "access", required = false) final String access_qname,
             @RequestParam(value = "instance", required = false) String instance_qname,
             @RequestParam(value = "iinstance", required = false) String iinstance_qname,
             HttpServletRequest req, HttpServletResponse response) throws IOException, EditException, GitAPIException {
@@ -323,7 +329,8 @@ public class ScanRequestController {
                 needsSaving = true;
         }
         if (!creating && access_qname != null) {
-            needsSaving = ensureAccess(iim, imageInstance, access_qname);
+            if (ensureAccess(iim, imageInstance, access_qname))
+                needsSaving = true;
         }
         if (needsSaving) {
             if (!creating)

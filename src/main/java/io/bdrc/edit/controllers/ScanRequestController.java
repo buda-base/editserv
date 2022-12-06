@@ -43,6 +43,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.bdrc.auth.AccessInfo;
 import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.helpers.ModelUtils;
@@ -336,8 +337,10 @@ public class ScanRequestController {
             if (!creating)
                 addLogEntry(iim, imageInstance, user, now, nb_vols_created, lg);
             CommonsGit.commitAndPush(gi, "["+user.getLocalName()+"]"+"["+imageInstance.getLocalName()+"] generate scan request");
+            FusekiWriteHelpers.putDataset(gi);
             if (gi_mw != null) {
                 CommonsGit.commitAndPush(gi_mw, "["+user.getLocalName()+"]"+"["+instance.getLocalName()+"] generate scan request");
+                FusekiWriteHelpers.putDataset(gi_mw);
             }
         }
         final List<VolInfo> volInfos = getVolumesFromModel(iim, imageInstance, onlynonsynced);

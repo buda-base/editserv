@@ -221,10 +221,14 @@ public class CommonsGit {
     }
     
     public static String getCommitMessage(final Resource r, final String[] changeMessage, final Resource user) {
+        return getCommitMessage(r, changeMessage[0], user);
+    }
+    
+    public static String getCommitMessage(final Resource r, final String changeMessage, final Resource user) {
         String res = "";
         if (user != null)
             res = "["+user.getLocalName()+"]";
-        return res+"["+r.getLocalName()+"] "+changeMessage[0];
+        return res+"["+r.getLocalName()+"] "+changeMessage;
     }
     
     public static Dataset createDatasetForNewResource(final Model m, final Resource r) {

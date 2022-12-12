@@ -73,6 +73,7 @@ public class Helpers {
         ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "nsDefaultPriority"), 2);
         ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "complexPredicatesPriorities"), predicatesPrio);
         ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "indentBase"), 4);
+        ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "onlyWriteUsedPrefixes"), true);
         ctx.set(Symbol.create(STTLWriter.SYMBOLS_NS + "predicateBaseWidth"), 18);
         return ctx;
     }

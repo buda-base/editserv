@@ -106,6 +106,14 @@ If the optional `{scaninfo}` and `{scaninfo_lang}` are set, the server will ensu
 
 `{ric}` is a boolean representing the restriction in China.
 
+# Withdrawing tool
+
+##### POST `/withdraw?from={from}&to={to}`
+
+Used when two identifiers point to the same entity. One (`{from}`, a qname) will be withdrawn in favor of the other (`{}`). This will not make any modification in `{to}` but will change `{from}` as well as all the documents that have references to it, replacing them with references to `{to}`.
+
+The output of the query is a JSON array containing the URIs of the graphs that have been updated in the operation.
+
 # Sync notification (admins only)
 
 ##### POST `/notifysync/{wqname}/{iqname}`

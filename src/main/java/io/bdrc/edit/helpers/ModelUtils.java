@@ -236,6 +236,11 @@ public class ModelUtils {
     public static final Pattern simpleLangPattern = Pattern.compile("^[a-z\\-]+$");
     
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
+    public static final Property admReplaceWith = ResourceFactory.createProperty(Models.ADM, "replaceWith");
+    public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM, "graphId");
+    public static final Property admStatus = ResourceFactory.createProperty(Models.ADM, "status");
+    public static final Property StatusReleased = ResourceFactory.createProperty(Models.BDA, "StatusReleased");
+    public static final Property StatusWithdrawn = ResourceFactory.createProperty(Models.BDA, "StatusWithdrawn");
     public static final Property volumePagesTotal = ResourceFactory.createProperty(Models.BDO, "volumePagesTotal");
     public static final Property logEntry = ResourceFactory.createProperty(Models.ADM, "logEntry");
     public static final Property logDate = ResourceFactory.createProperty(Models.ADM, "logDate");
@@ -246,6 +251,7 @@ public class ModelUtils {
     public static final Resource UpdateData = ResourceFactory.createResource(Models.ADM + "UpdateData");
     public static final Resource AdminData = ResourceFactory.createResource(Models.ADM + "AdminData");
     public static final Resource ImagesUpdated = ResourceFactory.createResource(Models.ADM + "ImagesUpdated");
+    public static final Resource WithdrawData = ResourceFactory.createResource(Models.ADM + "WithdrawData");
     public static final Resource Synced = ResourceFactory.createResource(Models.ADM + "Synced");
     public static final Resource BatchMethod = ResourceFactory.createResource(Models.BDA + "BatchMethod");
     public static void addSimpleLogEntry(final Model m, final Resource r, final Resource user, final String[] changeMessage, final boolean creation) throws EditException {

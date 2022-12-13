@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import io.bdrc.auth.AccessInfo;
@@ -41,6 +42,8 @@ import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.Models;
 
+@Controller
+@RequestMapping("/")
 public class WithdrawController {
     
     public final static Logger log = LoggerFactory.getLogger(WithdrawController.class.getName());
@@ -64,17 +67,23 @@ public class WithdrawController {
         
     }
     
-    public Resource mark_withdrawn_for(final Resource from, final Resource to, final Resource user, final String now, final String commitMessage) throws IOException, EditException {
+    public Resource mark_withdrawn_for(final Resource from, final Resource to, final Resource user, final String now, final String commitMessage) throws IOException, EditException, GitAPIException {
         final GitInfo gi = CommonsGit.gitInfoForResource(from, true);
         if (gi.ds == null)
             throw new EditException("can't find graph "+ from.getURI());
         final Model m = ModelUtils.getMainModel(gi.ds);
         final Resource lg = ModelUtils.newSubject(m, EditConstants.BDR+"LG0"+from.getLocalName()+"_");
         final Resource adm = m.createResource(Models.BDA + from.getLocalName());
+        if (m.contains(adm, ModelUtils.admReplaceWith, to) && m.contains(adm, ModelUtils.admStatus, ModelUtils.StatusWithdrawn))
+            return lg;
         m.removeAll(adm, ModelUtils.admStatus, (RDFNode) null);
         m.add(adm, ModelUtils.admStatus, ModelUtils.StatusWithdrawn);
         m.add(adm, ModelUtils.admReplaceWith, to);
-        add_log_entry(m, ModelUtils.getMainGraph(null), lg, user, now, commitMessage);
+        final Resource graph = ModelUtils.getMainGraph(gi.ds); 
+        add_log_entry(m, graph, lg, user, now, commitMessage);
+        CommonsGit.commitAndPush(gi, CommonsGit.getCommitMessage(graph, commitMessage, user));
+        if (!EditConfig.dryrunmodefuseki)
+            FusekiWriteHelpers.putDataset(gi);
         // returns the log entry resource
         return lg;
     }
@@ -84,6 +93,8 @@ public class WithdrawController {
         if (gi.ds == null)
             throw new EditException("can't find graph "+ graph.getURI());
         final Model m = ModelUtils.getMainModel(gi.ds);
+        // get a list so that we can remove triples without disturbing the
+        // iterator
         final List<Statement> sl = m.listStatements(null, null, from).toList();
         for (final Statement s : sl) {
             m.add(s.getSubject(), s.getPredicate(), to);
@@ -99,7 +110,7 @@ public class WithdrawController {
     }
     
     public List<Resource> get_graphs_with_reference_to(final Resource r) {
-        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> bdr:P3CN27002 ; "+ModelUtils.admGraphId.getURI()+" ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> }  FILTER(?g != ?thisg) }";
+        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> bdr:P3CN27002 ; <"+ModelUtils.admGraphId.getURI()+"> ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> }  FILTER(?g != ?thisg) }";
         ResultSet rs = QueryProcessor.getSelectResultSet(sparqlStr, FusekiWriteHelpers.FusekiSparqlEndpoint);
         final List<Resource> res = new ArrayList<>();
         while (rs.hasNext()) {
@@ -109,8 +120,8 @@ public class WithdrawController {
         return res;
     }
     
-    @PostMapping(value = "/withdraw", consumes = { MediaType.APPLICATION_JSON_VALUE })
-    public synchronized ResponseEntity<List<Resource>> syncImageGroup(@RequestBody() String requestbody, 
+    @PostMapping(value = "/withdraw")
+    public synchronized ResponseEntity<List<String>> syncImageGroup(
             @RequestParam(value = "from") String from_qname,
             @RequestParam(value = "to") String to_qname,
             HttpServletRequest req, 
@@ -146,10 +157,16 @@ public class WithdrawController {
         final String commitMessage = "withdraw "+from.getLocalName()+" in favor of "+to.getLocalName();
         final Resource lg = mark_withdrawn_for(from, to, user, now, commitMessage);
         final List<Resource> graphs_to_update = get_graphs_with_reference_to(from);
+        final List<String> res = new ArrayList<>();
         for (final Resource g : graphs_to_update) {
-            update_references(from, to, g, lg, user, now, commitMessage);
+            if (g.getURI().startsWith(Models.BDR+"O")) {
+                res.add("!"+g.getLocalName());
+            } else {
+                update_references(from, to, g, lg, user, now, commitMessage);
+                res.add(g.getLocalName());
+            }
         }
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON)
-                .body(graphs_to_update);
+                .body(res);
     }
 }

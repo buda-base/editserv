@@ -66,13 +66,13 @@ public class QueryProcessor {
         return qe.execConstruct();
     }
 
-    public static Model getQueryGraph(String fusekiUrl, String query) {
+    public static Model getQueryGraph(final String fusekiUrl, final String query) {
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execConstruct();
     }
 
-    public static ResultSet getSelectResultSet(String query, String fusekiUrl) {
+    public static ResultSet getSelectResultSet(final String query, final String fusekiUrl) {
         final Query q = QueryFactory.create(EditConfig.prefix.getPrefixesString() + query);
         final QueryExecution qe = QueryExecution.service(fusekiUrl).query(q).build();
         return qe.execSelect();

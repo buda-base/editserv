@@ -110,7 +110,7 @@ public class WithdrawController {
     }
     
     public List<Resource> get_graphs_with_reference_to(final Resource r) {
-        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> bdr:P3CN27002 ; <"+ModelUtils.admGraphId.getURI()+"> ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> }  FILTER(?g != ?thisg) }";
+        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> <"+r.getURI()+"> ; <"+ModelUtils.admGraphId.getURI()+"> ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> }  FILTER(?g != ?thisg) }";
         ResultSet rs = QueryProcessor.getSelectResultSet(sparqlStr, FusekiWriteHelpers.FusekiSparqlEndpoint);
         final List<Resource> res = new ArrayList<>();
         while (rs.hasNext()) {

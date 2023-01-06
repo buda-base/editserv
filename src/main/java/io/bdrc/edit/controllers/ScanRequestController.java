@@ -209,7 +209,6 @@ public class ScanRequestController {
         iim.add(adm, ModelUtils.logEntry, lg);
         iim.add(adm, ModelUtils.admAbout, imageinstance);
         iim.add(adm, RDF.type, ModelUtils.AdminData);
-        iim.add(imageinstance, ModelUtils.admAbout, imageinstance);
         iim.add(imageinstance, RDF.type, ImageInstance);
         iim.add(adm, status, statusReleased);
         iim.add(adm, access, iim.createResource(EditConstants.BDA+access_qname.substring(4)));

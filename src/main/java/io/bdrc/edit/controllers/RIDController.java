@@ -143,19 +143,29 @@ public class RIDController {
             }
         return res;
     }
+    
+    public static final String foldToMW(final String prefix) {
+        if (prefix.startsWith("WAS"))
+            return prefix;
+        if (prefix.startsWith("WA"))
+            return "MW"+prefix.substring(2);
+        if (prefix.startsWith("W"))
+            return "M"+prefix;
+        return prefix;
+    }
 
-    public static synchronized List<String> getNextIDs(final String prefix, final int n) {
-        Integer guess = prefixIndexes.get(prefix);
-        log.info("current index for {} is {}", prefix, guess);
+    public static synchronized List<String> getNextIDs(final String prefix, final int n, final String foldedPrefix) {
+        Integer guess = prefixIndexes.get(foldedPrefix);
+        log.info("current index for {} (-> {}) is {}", prefix, foldedPrefix, guess);
         if (guess == null) 
             guess = 0;
         guess = guess+1;
-        while (idExists(prefix+String.valueOf(guess))) {
+        while (idExists(foldedPrefix+String.valueOf(guess))) {
             guess += 10;
         }
         log.info("guessed next index for {} to be {}", prefix, guess);
         // here we take a bit of a leap of faith and consider that the n next IDs are free
-        prefixIndexes.put(prefix, guess+n-1);
+        prefixIndexes.put(foldedPrefix, guess+n-1);
         try {
             writePrefixIndexes();
         } catch (Exception e) {
@@ -191,7 +201,8 @@ public class RIDController {
         }
         if (!prefixIsValid(prefix))
             return ResponseEntity.status(400).body("invalid prefix");
-        final List<String> nextIdx = getNextIDs(prefix, n);
+        final String foldedPrefix = foldToMW(prefix);
+        final List<String> nextIdx = getNextIDs(prefix, n, foldedPrefix);
         if (nextIdx == null) {
             return ResponseEntity.status(500).body("can't determine next ID for this prefix");
         }

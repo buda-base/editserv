@@ -126,7 +126,7 @@ public class ScanRequestController {
         log.error("need to create {} volumes", nb_vols_to_create);
         if (nb_vols_to_create < 1)
             return 0;
-        final List<String> volumeIds = RIDController.getNextIDs("I"+idPrefix, nb_vols_to_create);
+        final List<String> volumeIds = RIDController.getNextIDs("I"+idPrefix, nb_vols_to_create, "I"+idPrefix);
         iim.removeAll(imageInstance, numberOfVolumes, (RDFNode) null);
         iim.add(imageInstance, numberOfVolumes, iim.createTypedLiteral(nbvols, XSDDatatype.XSDinteger));
         lg.addProperty(RDF.type, ScanRequested);

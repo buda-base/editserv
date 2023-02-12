@@ -238,6 +238,7 @@ public class ModelUtils {
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
     public static final Property admReplaceWith = ResourceFactory.createProperty(Models.ADM, "replaceWith");
     public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM, "graphId");
+    public static final Property admGitPath = ResourceFactory.createProperty(Models.ADM, "gitPath");
     public static final Property admStatus = ResourceFactory.createProperty(Models.ADM, "status");
     public static final Property StatusReleased = ResourceFactory.createProperty(Models.BDA, "StatusReleased");
     public static final Property StatusWithdrawn = ResourceFactory.createProperty(Models.BDA, "StatusWithdrawn");

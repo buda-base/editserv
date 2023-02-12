@@ -110,7 +110,7 @@ public class WithdrawController {
     }
     
     public List<Resource> get_graphs_with_reference_to(final Resource r) {
-        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> <"+r.getURI()+"> ; <"+ModelUtils.admGraphId.getURI()+"> ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> }  FILTER(?g != ?thisg) }";
+        final String sparqlStr = "select distinct ?g { ?adm <"+ModelUtils.admAbout.getURI()+"> <"+r.getURI()+"> ; <"+ModelUtils.admGraphId.getURI()+"> ?thisg . graph ?g { ?s ?p <"+r.getURI()+"> FILTER(EXISTS{?a <"+ModelUtils.admGitPath.getURI()+"> ?b}) }  FILTER(?g != ?thisg) }";
         ResultSet rs = QueryProcessor.getSelectResultSet(sparqlStr, FusekiWriteHelpers.FusekiSparqlEndpoint);
         final List<Resource> res = new ArrayList<>();
         while (rs.hasNext()) {
@@ -121,7 +121,7 @@ public class WithdrawController {
     }
     
     @PostMapping(value = "/withdraw")
-    public synchronized ResponseEntity<List<String>> syncImageGroup(
+    public synchronized ResponseEntity<List<String>> withdraw(
             @RequestParam(value = "from") String from_qname,
             @RequestParam(value = "to") String to_qname,
             HttpServletRequest req, 

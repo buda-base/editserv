@@ -115,7 +115,11 @@ public class WithdrawController {
         final List<Resource> res = new ArrayList<>();
         while (rs.hasNext()) {
             final QuerySolution qs = rs.next();
-            res.add(qs.getResource("g"));
+            final Resource resr = qs.getResource("g");
+            // TODO: hack to ignore outlines at the moment
+            if (resr.getLocalName().startsWith("O"))
+                continue;
+            res.add(resr);
         }
         return res;
     }

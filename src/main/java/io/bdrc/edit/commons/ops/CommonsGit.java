@@ -23,7 +23,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.Transport;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.sshd.JGitKeyCache;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
@@ -388,7 +387,7 @@ public class CommonsGit {
             log.info("resource is new");
             // new resource
             if (!ModelUtils.isUser(r))
-                ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, false);
+                ModelUtils.addSimpleLogEntry(newModel, r, user, changeMessage, true);
             gi.ds = createDatasetForNewResource(newModel, r);
             graphUri = Models.BDG+r.getLocalName();
         } else {

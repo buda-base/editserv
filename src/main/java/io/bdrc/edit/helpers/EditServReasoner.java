@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.jena.datatypes.BaseDatatype;
 import org.apache.jena.datatypes.DatatypeFormatException;
@@ -26,7 +24,6 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
@@ -120,6 +117,7 @@ public class EditServReasoner {
         List<Rule> rules = new ArrayList<Rule>();
         rules.addAll(getRulesFromModel(ontModel, symmetry));
         addRulesFromSource(rulesPath, rules);
+        rules.add(Rule.parseRule("[sio: (?i <http://purl.bdrc.io/ontology/core/instanceHasReproduction> ?s), (?i <http://purl.bdrc.io/ontology/core/instanceOf> ?w) -> (?s <http://purl.bdrc.io/ontology/core/instanceOf> ?w) , (?w <http://purl.bdrc.io/ontology/core/workHasInstance> ?s)]"));
         Reasoner reasoner = new GenericRuleReasoner(rules);
         // reasoner.setParameter(ReasonerVocabulary.PROPruleMode, "forward");
         return reasoner;

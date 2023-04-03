@@ -236,6 +236,7 @@ public class ModelUtils {
     public static final Pattern simpleLangPattern = Pattern.compile("^[a-z\\-]+$");
     
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
+    public static final Property ImageGroup = ResourceFactory.createProperty(Models.BDO, "ImageGroup");
     public static final Property admReplaceWith = ResourceFactory.createProperty(Models.ADM, "replaceWith");
     public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM, "graphId");
     public static final Property admGitPath = ResourceFactory.createProperty(Models.ADM, "gitPath");
@@ -319,6 +320,8 @@ public class ModelUtils {
             if (!igqname.startsWith("bdr:"))
                 continue;
             final Resource ig = ResourceFactory.createResource(Models.BDR + igqname.substring(4));
+            if (!m.contains(ig, RDF.type, ImageGroup))
+                throw new EditException("Sync error: image group not in model: "+ ig);
             final int nbPagesTotal = igSyncInfo.getValue().pages_total;
             final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ig);
             final Resource admData;
@@ -350,6 +353,8 @@ public class ModelUtils {
     }
 
     public static void addSyncNotification(final Model m, final Resource ig, final int nbPagesTotal, final Resource user) throws EditException {
+        if (!m.contains(ig, RDF.type, ImageGroup))
+            throw new EditException("Sync error: image group not in model: "+ ig);
         final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ig);
         final Resource admData;
         if (!admIt.hasNext()) {

@@ -195,9 +195,9 @@ public class RIDController {
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) request.getAttribute("access");
             if (acc == null || !acc.isLogged())
-                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.isAdmin())
-                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+                return ResponseEntity.status(401).body("this requires being logged in");
+            if (!acc.isAdmin() && !acc.isEditor() && !acc.isContributor())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin, editor or contributor account");
         }
         if (!prefixIsValid(prefix))
             return ResponseEntity.status(400).body("invalid prefix");
@@ -217,9 +217,9 @@ public class RIDController {
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) request.getAttribute("access");
             if (acc == null || !acc.isLogged())
-                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.isAdmin())
-                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+                return ResponseEntity.status(401).body("this requires being logged in");
+            if (!acc.isAdmin() && !acc.isEditor() && !acc.isContributor())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin, editor or contributor account");
         }
         if (!prefixIsValid(prefix))
             return ResponseEntity.status(400).body("invalid prefix");
@@ -251,9 +251,9 @@ public class RIDController {
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) request.getAttribute("access");
             if (acc == null || !acc.isLogged())
-                return ResponseEntity.status(401).body("this requires being logged in with an admin account");
-            if (!acc.isAdmin())
-                return ResponseEntity.status(403).body("this requires being logged in with an admin account");
+                return ResponseEntity.status(401).body("this requires being logged in");
+            if (!acc.isAdmin() && !acc.isEditor() && !acc.isContributor())
+                return ResponseEntity.status(403).body("this requires being logged in with an admin, editor or contributor account");
         }
         final String prefix = prefixFromId(id);
         if (!prefixIsValid(prefix))

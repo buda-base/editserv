@@ -141,8 +141,8 @@ public class WithdrawController {
         Resource user = null;
         if (EditConfig.useAuth) {
             AccessInfo acc = (AccessInfo) req.getAttribute("access");
-            if (!acc.isAdmin())
-                throw new EditException(403, "this requires being logged in with an admin account");
+            if (!acc.isAdmin() && !acc.isEditor() && !acc.isContributor())
+                throw new EditException(403, "this requires being logged in with an admin, editor or contributor account");
             String authId = acc.getId();
             if (authId == null) {
                 log.error("couldn't find authId for {}"+acc.toString());

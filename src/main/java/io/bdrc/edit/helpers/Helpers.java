@@ -67,7 +67,7 @@ public class Helpers {
         if (isHidden(ds))
             return true;
         if (ds.asDatasetGraph().contains(Node.ANY, Node.ANY, access.asNode(), restrictedBy.asNode())) {
-            return newModel.contains(null, access, restrictedBy);
+            return !newModel.contains(null, access, restrictedBy);
         }
         return false;
     }

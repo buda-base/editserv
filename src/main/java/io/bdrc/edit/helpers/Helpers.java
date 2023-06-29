@@ -60,13 +60,13 @@ public class Helpers {
     public static final Property restrictedBy = ResourceFactory.createProperty(Models.BDA+"AccessRestrictedByTbrc");
     
     public static boolean isHidden(final Dataset ds) {
-        return ds.asDatasetGraph().contains(Node.ANY, status.asNode(), statusHidden.asNode(), Node.ANY);
+        return ds.asDatasetGraph().contains(Node.ANY, Node.ANY, status.asNode(), statusHidden.asNode());
     }
 
     public static boolean changeRequiresAdminRights(final Dataset ds, final Model newModel) {
         if (isHidden(ds))
             return true;
-        if (ds.asDatasetGraph().contains(Node.ANY, access.asNode(), restrictedBy.asNode(), Node.ANY)) {
+        if (ds.asDatasetGraph().contains(Node.ANY, Node.ANY, access.asNode(), restrictedBy.asNode())) {
             return newModel.contains(null, access, restrictedBy);
         }
         return false;

@@ -21,6 +21,8 @@ import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.reasoner.Reasoner;
@@ -46,10 +48,29 @@ import io.bdrc.jena.sttl.ComparePredicates;
 import io.bdrc.jena.sttl.STTLWriter;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.GitHelpers;
+import io.bdrc.libraries.Models;
 
 public class Helpers {
 
     public final static Logger log = LoggerFactory.getLogger(Helpers.class.getName());
+    
+    public static final Property status = ResourceFactory.createProperty("http://purl.bdrc.io/ontology/admin/status");
+    public static final Property statusHidden = ResourceFactory.createProperty("http://purl.bdrc.io/admindata/StatusHidden");
+    public static final Property access = ResourceFactory.createProperty(Models.ADM+"access");
+    public static final Property restrictedBy = ResourceFactory.createProperty(Models.BDA+"AccessRestrictedByTbrc");
+    
+    public static boolean isHidden(final Dataset ds) {
+        return ds.asDatasetGraph().contains(Node.ANY, status.asNode(), statusHidden.asNode(), Node.ANY);
+    }
+
+    public static boolean changeRequiresAdminRights(final Dataset ds, final Model newModel) {
+        if (isHidden(ds))
+            return true;
+        if (ds.asDatasetGraph().contains(Node.ANY, access.asNode(), restrictedBy.asNode(), Node.ANY)) {
+            return newModel.contains(null, access, restrictedBy);
+        }
+        return false;
+    }
 
     public static Context createWriterContext() {
         SortedMap<String, Integer> nsPrio = ComparePredicates.getDefaultNSPriorities();

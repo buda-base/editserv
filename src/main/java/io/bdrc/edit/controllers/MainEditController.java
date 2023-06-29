@@ -44,6 +44,7 @@ import io.bdrc.edit.commons.data.FusekiWriteHelpers;
 import io.bdrc.edit.commons.ops.CommonsGit;
 import io.bdrc.edit.commons.ops.CommonsGit.GitInfo;
 import io.bdrc.edit.commons.ops.CommonsRead;
+import io.bdrc.edit.helpers.Helpers;
 import io.bdrc.edit.helpers.ModelUtils;
 import io.bdrc.edit.helpers.Shapes;
 import io.bdrc.edit.txn.exceptions.EditException;
@@ -97,10 +98,12 @@ public class MainEditController {
             // oddly enough, just considering bdg: like bdr: works in pretty much all cases
             res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         }
-        if (EditConfig.useAuth && userMode) {
-            AccessInfo acc = (AccessInfo) req.getAttribute("access");
+        boolean isAdmin = false;
+        if (EditConfig.useAuth) {
+            final AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
+                isAdmin = acc.isAdmin();
             } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(StreamingHelpers.getStream(e.getMessage()));
@@ -111,6 +114,9 @@ public class MainEditController {
             if (gi.ds == null || gi.ds.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No graph could be found for " + qname));
+            if (!isAdmin && Helpers.isHidden(gi.ds))
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.TEXT_PLAIN)
+                        .body(StreamingHelpers.getStream("Graph inaccessible: " + qname));
             Resource shape = CommonsRead.getShapeForEntity(res);
             response.addHeader("Etag", gi.revId);
             m = ModelUtils.getMainModel(gi.ds);
@@ -131,12 +137,12 @@ public class MainEditController {
         return ResponseEntity.ok().body(StreamingHelpers.getModelStream(m, "ttl", null, null, EditConfig.prefix.getPrefixMap()));
     }
     
-    public static void ensureAccess(AccessInfo acc, Resource res) throws EditException {
+    public static void ensureAccess(final AccessInfo acc, final Resource res) throws EditException {
         if (acc == null || !acc.isLogged())
             throw new EditException(401, "this requires being logged in");
         // the access control is different for users and general resources
         if (res.getURI().startsWith(EditConstants.BDU)) {
-            String authId = acc.getId();
+            final String authId = acc.getId();
             if (authId == null) {
                 log.error("couldn't find authId for {}"+acc.toString());
                 throw new EditException(500, "couldn't find authId");
@@ -184,11 +190,13 @@ public class MainEditController {
             HttpServletResponse response, @RequestBody String model, @RequestHeader("X-Change-Message") String changeMessage) throws Exception {
         final Resource res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         Resource user = null;
+        boolean isAdmin = false;
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
                 user = BudaUser.getUserFromAccess(acc);
+                isAdmin = acc.isAdmin();
             } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
                         .body(e.getMessage());
@@ -214,7 +222,7 @@ public class MainEditController {
         }
         final GitInfo gi;
         try {
-            gi = saveResource(inModel, res, null, parseChangeMessage(changeMessage, true), user);
+            gi = saveResource(inModel, res, null, parseChangeMessage(changeMessage, true), user, isAdmin);
         } catch(EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
@@ -240,10 +248,12 @@ public class MainEditController {
             res = ResourceFactory.createResource(EditConstants.BDR+qname.substring(4));
         }
         Resource user = null;
+        boolean isAdmin = false;
         if (EditConfig.useAuth) {
         	AccessInfo acc = (AccessInfo) req.getAttribute("access");
             try {
                 ensureAccess(acc, res);
+                isAdmin = acc.isAdmin();
                 user = BudaUser.getUserFromAccess(acc);
             } catch (EditException e) {
                 return ResponseEntity.status(e.getHttpStatus())
@@ -270,7 +280,7 @@ public class MainEditController {
         }
         final GitInfo gi;
         try {
-            gi = saveResource(inModel, res, ifMatch, parseChangeMessage(changeMessage, false), user);
+            gi = saveResource(inModel, res, ifMatch, parseChangeMessage(changeMessage, false), user, isAdmin);
         } catch(EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
@@ -339,10 +349,10 @@ public class MainEditController {
     
     // previousRev is the previous revision that the resource must have
     // when null, the resource must not exist already
-    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user) throws EditException, IOException, GitAPIException {
+    public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user, final boolean isAdmin) throws EditException, IOException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
-        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage, user);
+        final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage, user, isAdmin);
         FusekiWriteHelpers.putDataset(gi);
         return gi;
     }

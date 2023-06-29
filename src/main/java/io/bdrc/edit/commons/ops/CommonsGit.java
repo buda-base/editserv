@@ -8,12 +8,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.jena.graph.Node;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.TransportConfigCallback;
@@ -374,9 +377,9 @@ public class CommonsGit {
         }
         git.close();       
     }
-    
+
     // This saves the new model in git and returns a Fuseki-ready dataset
-    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user)
+    public static synchronized GitInfo saveInGit(final Model newModel, final Resource r, final Resource shape, final String previousRevision, final String[] changeMessage, final Resource user, final boolean isAdmin)
             throws IOException, GitAPIException, EditException {
         final GitInfo gi = gitInfoForResource(r, previousRevision == null);
         Dataset result = null;
@@ -400,7 +403,10 @@ public class CommonsGit {
             final Resource graph = ModelUtils.getMainGraph(result);
             log.debug("main graph is ", graph);
             graphUri = graph.getURI();
-            // next lines changes the result variable directly
+            // don't allow some access change to non-admins:
+            if (!isAdmin && Helpers.changeRequiresAdminRights(gi.ds, newModel))
+                throw new EditException(403, "Change requires admin rights");
+            // next lines changes gi.ds directly
             ModelUtils.mergeModel(gi.ds, graphUri, newModel, r, shape, gi.repoLname, changeMessage, user);            
         }
         // this writes gi.ds in the relevant file, creates a commit, updates gi.revId and pushes if relevant

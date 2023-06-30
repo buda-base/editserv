@@ -264,8 +264,11 @@ public class MainEditController {
                         .body(e.getMessage());
             }
         }
-        if (ifMatch != null)
+        if (ifMatch != null) {
             ifMatch = ifMatch.replace("\"", "");
+            if (ifMatch.startsWith("W/"))
+                ifMatch = ifMatch.substring(2);
+        }
         final InputStream in = new ByteArrayInputStream(model.getBytes());
         final MediaType med = MediaType.parseMediaType(ct);
         Lang jenaLang = null;

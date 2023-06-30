@@ -264,6 +264,8 @@ public class MainEditController {
                         .body(e.getMessage());
             }
         }
+        if (ifMatch != null)
+            ifMatch = ifMatch.replace("\"", "");
         final InputStream in = new ByteArrayInputStream(model.getBytes());
         final MediaType med = MediaType.parseMediaType(ct);
         Lang jenaLang = null;
@@ -289,7 +291,7 @@ public class MainEditController {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
         }
-        response.addHeader("Etag", gi.revId);
+        response.addHeader("Etag", '"'+gi.revId+'"');
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("");
     }

@@ -122,7 +122,7 @@ public class MainEditController {
                 return ResponseEntity.status(HttpStatus.valueOf(500)).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("Could not find revision id of " + qname));
             }
-            response.addHeader("Etag", gi.revId);
+            response.addHeader("Etag", '"'+gi.revId+'"');
             m = ModelUtils.getMainModel(gi.ds);
             if (userMode) {
                 // dirty patch
@@ -346,7 +346,7 @@ public class MainEditController {
         }
         // TODO: this probably doesn't work for bdr: qname values
         final GitInfo gi = putGraph(inModel, res, parseChangeMessage(changeMessage, false), user);
-        response.addHeader("Etag", gi.revId);
+        response.addHeader("Etag", '"'+gi.revId+'"');
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.ok().body("");
     }

@@ -162,7 +162,7 @@ public class MainEditController {
                 throw new EditException(403, "only admins can modify other users");
         } else {
             if (!acc.isEditor())
-                throw new EditException(403, "this requires being logged in with an admin account");
+                throw new EditException(403, "this requires being logged in with an editor account");
         }
     }
     

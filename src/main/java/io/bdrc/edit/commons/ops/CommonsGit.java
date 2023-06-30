@@ -285,9 +285,9 @@ public class CommonsGit {
             gi.revId = "testrev";
             return;
         }
-        Repository r = getRepository(gi.repoLname);
-        Git git = new Git(r);
-        Iterator<RevCommit> commits;
+        final Repository r = getRepository(gi.repoLname);
+        final Git git = new Git(r);
+        final Iterator<RevCommit> commits;
         try {
             commits = git.log().addPath(gi.pathInRepo).setMaxCount(1).call().iterator();
         } catch (GitAPIException e) {

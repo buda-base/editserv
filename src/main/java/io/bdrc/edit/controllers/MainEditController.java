@@ -118,6 +118,10 @@ public class MainEditController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("Graph inaccessible: " + qname));
             Resource shape = CommonsRead.getShapeForEntity(res);
+            if (gi.revId == null || gi.revId.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.valueOf(500)).contentType(MediaType.TEXT_PLAIN)
+                        .body(StreamingHelpers.getStream("Could not find revision id of " + qname));
+            }
             response.addHeader("Etag", gi.revId);
             m = ModelUtils.getMainModel(gi.ds);
             if (userMode) {

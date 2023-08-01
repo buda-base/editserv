@@ -152,6 +152,8 @@ public class Shapes implements Runnable {
         shapeUriToDocumentUri.put(EditConstants.BDS+"RoleShape", baseShapeDocUri+"RoleUIShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"CollectionShape", baseShapeDocUri+"CollectionShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"ImagegroupShape", baseShapeDocUri+"ImagegroupShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"EtextVolumeShape", baseShapeDocUri+"EtextVolumeShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"EtextInstanceShape", baseShapeDocUri+"EtextInstanceShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"UserProfileShape", "http://purl.bdrc.io/shapes/profile/UserProfileShapes/");
     }
     

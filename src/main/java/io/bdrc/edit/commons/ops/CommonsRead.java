@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.edit.helpers.Shapes;
+import io.bdrc.edit.txn.exceptions.EditException;
 
 public class CommonsRead {
 
@@ -200,11 +201,14 @@ public class CommonsRead {
         }
     }
     
-    public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) {
+    public static Model getFocusGraph(final Model m, final Resource subject, final Resource shape) throws EditException {
         final Model res = ModelFactory.createDefaultModel();
         log.debug("build focus graph for {}", subject);
         res.setNsPrefixes(m.getNsPrefixMap());
         final Model shapesModel = Shapes.getShapesModelFor(shape);
+        if (shapesModel == null) {
+            throw new EditException(500, "cannot find shape for "+shape.getURI());
+        }
         addToFocusGraph(m, res, subject, shape, shapesModel);
         // atonement for past mistakes: there should always be an EDTF eventWhen but it's not always
         // present, we add it here

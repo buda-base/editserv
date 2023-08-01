@@ -299,7 +299,7 @@ public class EtextRequestController {
         }
         return ResponseEntity
                 .ok()
-                .header("Content-Disposition", "attachment; filename=\"scan-dirs-"+etextInstance.getLocalName()+".zip\"")
+                .header("Content-Disposition", "attachment; filename=\"etext-dirs-"+etextInstance.getLocalName()+".zip\"")
                 .body(out -> {
                     final ZipOutputStream zipOutputStream = new ZipOutputStream(out);
                     sendScanRequest(zipOutputStream, volInfos, etextInstance.getLocalName());

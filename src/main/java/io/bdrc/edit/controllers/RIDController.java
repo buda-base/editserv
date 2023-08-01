@@ -134,7 +134,7 @@ public class RIDController {
         log.info("id {} exists on fuseki? {}", id, res);
         // if not on Fuseki, we look on Git, just in case
         // we don't have image group git repository though (they are in the image instances)
-        if (!res && !id.startsWith("I"))
+        if (!res && !id.startsWith("I") && !id.startsWith("V"))
             try {
                 return CommonsGit.resourceExists(id);
             } catch (EditException e) {

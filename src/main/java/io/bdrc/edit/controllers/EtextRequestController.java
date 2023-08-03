@@ -94,7 +94,7 @@ public class EtextRequestController {
         log.error("need to create {} volumes", nb_vols_to_create);
         if (nb_vols_to_create < 1)
             return 0;
-        final List<String> volumeIds = RIDController.getNextIDs("I"+idPrefix, nb_vols_to_create, "I"+idPrefix);
+        final List<String> volumeIds = RIDController.getNextIDs("VE"+idPrefix, nb_vols_to_create, "VE"+idPrefix);
         iim.removeAll(etextInstance, ScanRequestController.numberOfVolumes, (RDFNode) null);
         iim.add(etextInstance, ScanRequestController.numberOfVolumes, iim.createTypedLiteral(nbvols, XSDDatatype.XSDinteger));
         lg.addProperty(RDF.type, EtextRequested);

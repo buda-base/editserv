@@ -86,7 +86,7 @@ public class UserEditController {
             String ext = BudaMediaTypes.getExtFromMime(mediaType);
             return ResponseEntity.status(200).contentType(mediaType)
                     .header("Link", "<"+EditConfig.getProperty("canonicalprefix")+"/bdu:" + usr.getLocalName()+"/focusgraph>; rel=\"canonical\"")
-                    .header("Etag", gi.revId)
+                    .header("Etag", '"'+gi.revId+'"')
                     .body(StreamingHelpers.getModelStream(userModel, ext,
                             usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
         } catch (IOException | GitAPIException e) {

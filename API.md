@@ -143,3 +143,30 @@ with an object in the form:
 ```
 
 does the same as previous function but allows one call per sync batch instead of one per image group.
+
+# Outlines CSV endpoint
+
+##### GET `/outline/{wqname}`
+
+Returns a csv file with the current state of the outline.
+
+- the endpoint must be used with a digital instance (`W`) and not an instance (`MW`)
+- ETag is set to the git revision of the outline
+- the endpoint returns a csv file and proposes a file name
+- the endpoint doesn't require authentication
+- in the rare case where there are multiple outlines, the endpoint returns the most likely one
+- the endpoint returns a 401 / 403 if the instance or outline is not in public access (which is rare)
+- if no outline exists, the endpoint returns a csv with just the headers
+
+
+##### PUT `/outline/{wqname}`
+
+Takes a csv file in the body.
+
+The request can optionally contain an `If-Match` HTTP header with the revision id of the resource (as represented in the `Etag` header of the GET endpoints).
+
+The request can optionally contain a `X-Change-Message` HTTP header with a message that will be associated with the revision.
+
+The request can optionally contain a `X-Outline-Attribution` HTTP header with the attribution message that will be associated with the revision.
+
+The responsee has an empty body, it has an `Etag` header with the new revision.

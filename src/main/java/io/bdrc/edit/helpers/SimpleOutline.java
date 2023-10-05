@@ -24,10 +24,11 @@ import io.bdrc.ewtsconverter.EwtsConverter;
 public class SimpleOutline {
 
     public final static int MIN_TREE_COLUMNS = 4;
-    public final static int NB_NON_TREE_COLUMNS = 10;
+    public final static int NB_NON_TREE_COLUMNS = 11;
     
     public Resource outline;
     public Resource root;
+    public Resource digitalInstance;
     public List<SimpleOutlineNode> rootChildren;
     public int nbTreeColumns;
     
@@ -44,6 +45,7 @@ public class SimpleOutline {
     public static final Property hasTitle = ResourceFactory.createProperty(EditConstants.BDO + "hasTitle");
     public static final Property note = ResourceFactory.createProperty(EditConstants.BDO + "note");
     public static final Property noteText = ResourceFactory.createProperty(EditConstants.BDO + "noteText");
+    public static final Property contentLocationInstance = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationInstance");
     
     public static final EwtsConverter ewtsConverter = new EwtsConverter();
     
@@ -131,7 +133,7 @@ public class SimpleOutline {
     public static final class SimpleOutlineNode {
         public Resource res;
         public List<SimpleOutlineNode> children;
-        public String work = null;
+        public String work = "";
         public List<String> labels;
         public List<String> titles;
         public List<String> notes;
@@ -156,10 +158,12 @@ public class SimpleOutline {
             return previousValue;
         }
         
-        public void getSimpleLocation() {
+        public void getSimpleLocation(final Resource w) {
             final StmtIterator locations = this.res.listProperties(contentLocation);
             while (locations.hasNext()) {
                 final Resource location = locations.next().getResource();
+                if (!location.hasProperty(contentLocationInstance, w))
+                    continue;
                 this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
                 this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
                 // TODO: this is actually wrong in the case of multiple locations... but we can live with it (for now)
@@ -191,6 +195,7 @@ public class SimpleOutline {
         }
         
         public void getTitles() {
+            this.titles = new ArrayList<>();
             final StmtIterator titles = this.res.listProperties(hasTitle);
             while (titles.hasNext()) {
                 final Resource title = titles.next().getResource();
@@ -202,6 +207,7 @@ public class SimpleOutline {
         }
         
         public void getNotes() {
+            this.notes = new ArrayList<>();
             final StmtIterator notes = this.res.listProperties(note);
             while (notes.hasNext()) {
                 final Resource note = notes.next().getResource();
@@ -212,13 +218,13 @@ public class SimpleOutline {
             }
         }
         
-        public SimpleOutlineNode(final Resource res, final int parentDepth, final Depth maxDepthPointer) {
+        public SimpleOutlineNode(final Resource res, final int parentDepth, final Depth maxDepthPointer, final Resource w) {
             this.res = res;
             this.children = new ArrayList<>();
             if (parentDepth+1 > maxDepthPointer.value)
                 maxDepthPointer.value = parentDepth+1;
             for (Resource child : getOrderedParts(res)) {
-                this.children.add(new SimpleOutlineNode(child, parentDepth+1, maxDepthPointer));
+                this.children.add(new SimpleOutlineNode(child, parentDepth+1, maxDepthPointer, w));
             }
             this.partType = partTypeAsString(res);
             final Resource work = res.getPropertyResourceValue(instanceOf);
@@ -226,7 +232,7 @@ public class SimpleOutline {
                 this.work = toQname(work);
             this.colophon = listSimpleProperty(res, colophonP);
             this.labels = listSimpleProperty(res, SKOS.prefLabel);
-            getSimpleLocation();
+            getSimpleLocation(w);
             getTitles();
             getNotes();
         }
@@ -242,8 +248,8 @@ public class SimpleOutline {
         public String[] getRow(final int nb_position_columns, final int depth) {
             final String[] res = new String[nb_position_columns+NB_NON_TREE_COLUMNS];
             res[0] = toQname(this.res);
-            for (int dci = 0 ; dci < nb_position_columns ; dci++) {
-                res[dci] =  (dci+1 == depth) ? "X" : "";
+            for (int dci = 1 ; dci <= nb_position_columns ; dci++) {
+                res[dci] =  (dci == depth) ? "X" : "";
             }
             res[nb_position_columns+1] = this.partType;
             res[nb_position_columns+2] = listToCsvCell(this.labels);
@@ -270,12 +276,13 @@ public class SimpleOutline {
         
     }
     
-    public SimpleOutline(final Resource root) {
+    public SimpleOutline(final Resource root, final Resource w) {
         this.root = root;
+        this.digitalInstance = w;
         this.rootChildren = new ArrayList<>();
         final Depth maxDepthPointer = new Depth();
         for (Resource child : getOrderedParts(root)) {
-            this.rootChildren.add(new SimpleOutlineNode(child, 0, maxDepthPointer));
+            this.rootChildren.add(new SimpleOutlineNode(child, 0, maxDepthPointer, w));
         }
         this.nbTreeColumns = Math.max(maxDepthPointer.value, MIN_TREE_COLUMNS);
     }

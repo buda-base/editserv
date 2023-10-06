@@ -80,7 +80,7 @@ public class SimpleOutline {
         case "PartTypeSection":
             return "S";
         case "PartTypeText":
-            return "S";
+            return "T";
         case "PartTypeVolume":
             return "V";
         case "PartTypeEditorial":
@@ -273,7 +273,6 @@ public class SimpleOutline {
     }
     
     public SimpleOutline(final List<String[]> csvData) {
-        
     }
     
     public SimpleOutline(final Resource root, final Resource w) {
@@ -291,25 +290,34 @@ public class SimpleOutline {
         
     }
     
+    public static String[] getHeaders(final int nbPositionColumns) {
+        final String[] headers = new String[nbPositionColumns+NB_NON_TREE_COLUMNS];
+        headers[0] = "RID";
+        for (int i=1 ; i <= nbPositionColumns ; i++) {
+            headers[i] = "Position";
+        }
+        headers[nbPositionColumns+1] = "part type";
+        headers[nbPositionColumns+2] = "label";
+        headers[nbPositionColumns+3] = "titles";
+        headers[nbPositionColumns+4] = "work";
+        headers[nbPositionColumns+5] = "notes";
+        headers[nbPositionColumns+6] = "colophon";
+        headers[nbPositionColumns+7] = "img start";
+        headers[nbPositionColumns+8] = "img end";
+        headers[nbPositionColumns+9] = "volume start";
+        headers[nbPositionColumns+10] = "volume end";
+        return headers;
+    }
+    
+    public static List<String[]> getTemplate() {
+        final List<String[]> res = new ArrayList<>();
+        res.add(getHeaders(MIN_TREE_COLUMNS));
+        return res;
+    }
+    
     public List<String[]> asCsv() {
         final List<String[]> res = new ArrayList<>();
-        final int nbColumns = this.nbTreeColumns + NB_NON_TREE_COLUMNS;
-        final String[] titles = new String[nbColumns];
-        titles[0] = "RID";
-        for (int i=1 ; i <= this.nbTreeColumns ; i++) {
-            titles[i] = "Position";
-        }
-        titles[this.nbTreeColumns+1] = "part type";
-        titles[this.nbTreeColumns+2] = "label";
-        titles[this.nbTreeColumns+3] = "titles";
-        titles[this.nbTreeColumns+4] = "work";
-        titles[this.nbTreeColumns+5] = "notes";
-        titles[this.nbTreeColumns+6] = "colophon";
-        titles[this.nbTreeColumns+7] = "img start";
-        titles[this.nbTreeColumns+8] = "img end";
-        titles[this.nbTreeColumns+9] = "volume start";
-        titles[this.nbTreeColumns+10] = "volume end";
-        res.add(titles);
+        res.add(getHeaders(this.nbTreeColumns));
         for (final SimpleOutlineNode son : this.rootChildren) {
             son.addToCsv(res, this.nbTreeColumns, 1);
         }

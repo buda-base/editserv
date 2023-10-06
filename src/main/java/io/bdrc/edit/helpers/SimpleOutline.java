@@ -144,8 +144,34 @@ public class SimpleOutline {
         public Integer volumeStart = null;
         public Integer volumeEnd = null;
         
-        public SimpleOutlineNode(final String[] csvRow, final int nb_position_columns, final int previous_volume) {
+        public Integer getWithException(final String cellContent, final int row_i, final int col_i, final List<Warning> warns) {
+            try {
+                if (!cellContent.isEmpty())
+                    return Integer.valueOf(cellContent);
+            } catch (NumberFormatException e) {
+                warns.add(new Warning("field must be a number", row_i, col_i, true));
+            }
+            return null;
+        }
+        
+        public SimpleOutlineNode(final String[] csvRow, final int nb_position_columns, final List<Warning> warns, final int row_i) {
+            this.children = new ArrayList<>();
+            if (csvRow[0].length() > 4) {
+                this.res = ResourceFactory.createResource(EditConstants.BDR+csvRow[0].substring(4));
+            } else {
+                this.res = null;
+            }
             
+            this.partType = csvRow[nb_position_columns+1];
+            headers[nbPositionColumns+2] = "label";
+            headers[nbPositionColumns+3] = "titles";
+            this.work = csvRow[nb_position_columns+4];
+            headers[nbPositionColumns+5] = "notes";
+            headers[nbPositionColumns+6] = "colophon";
+            this.pageStart = getWithException(csvRow[nb_position_columns+7], row_i, nb_position_columns+7, warns);
+            this.pageEnd = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+8, warns);
+            this.volumeStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, warns);
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, warns);
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -272,7 +298,61 @@ public class SimpleOutline {
         }
     }
     
-    public SimpleOutline(final List<String[]> csvData) {
+    public static final class Warning {
+        public final String msg;
+        public final Integer row;
+        public final Integer col;
+        public final boolean blocking;
+        
+        public Warning(final String msg, final Integer row, final Integer col, final boolean blocking) {
+            this.msg = msg;
+            this.row = row;
+            this.col = col;
+            this.blocking = blocking;
+        }
+    }
+    
+    public SimpleOutline(final List<String[]> csvData, final Resource o, final Resource mw, final Resource w, final List<Warning> warns) {
+        this.digitalInstance = w;
+        this.root = mw;
+        this.outline = o;
+        this.rootChildren = new ArrayList<>();
+        if (csvData.size() < 2)
+            return;
+        this.nbTreeColumns = 0;
+        final String[] headers = csvData.get(0);
+        for (int i = 1 ; i < headers.length ; i ++) {
+            if (headers[i].equalsIgnoreCase("Position"))
+                this.nbTreeColumns += 1;
+            else
+                break;
+        }
+        final SimpleOutlineNode[] levelToParent = new SimpleOutlineNode[this.nbTreeColumns+2];
+        levelToParent[0] = null; // kind of nonsensical since levels start at 1 in the csv
+        levelToParent[1] = null; // this would be the root
+        int previousLevel = 0;
+        for (int row_i = 0 ; row_i < csvData.size() ; row_i ++) {
+            final String[] row = csvData.get(row_i);
+            int rowLevel = 0;
+            for (int i = 1 ; i <= this.nbTreeColumns ; i++) {
+                if (!row[i].isEmpty()) {
+                    // important, we don't allow jumps in level
+                    rowLevel = Math.min(i, previousLevel+1);
+                    break;
+                }
+            }
+            if (rowLevel == 0) {
+                warns.add(new Warning("missing position", row_i, null, true));
+                continue;
+            }
+            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns);
+            if (levelToParent[rowLevel] != null) {
+                levelToParent[rowLevel].children.add(son);
+            } else {
+                this.rootChildren.add(son);
+            }
+            levelToParent[rowLevel+1] = son;
+        }
     }
     
     public SimpleOutline(final Resource root, final Resource w) {
@@ -286,7 +366,7 @@ public class SimpleOutline {
         this.nbTreeColumns = Math.max(maxDepthPointer.value, MIN_TREE_COLUMNS);
     }
     
-    public void insertInModel(final Model m) {
+    public void insertInModel(final Model m, final Resource mw, final Resource w) {
         
     }
     

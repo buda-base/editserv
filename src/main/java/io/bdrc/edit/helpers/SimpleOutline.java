@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
@@ -35,6 +36,8 @@ public class SimpleOutline {
     public int nbTreeColumns;
     public List<Warning> warns;
     public Map<String,Boolean> reservedLnames;
+    public List<Resource> allResourcesInModel;
+    public List<Resource> allResourcesInCsv;
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
@@ -427,13 +430,23 @@ public class SimpleOutline {
         if (prefix.equals("MW")) {
             final String lname = newLname(this.root.getLocalName()+"_"+this.outline.getLocalName()+"_" , 6);
             return m.createResource(EditConstants.BDR+lname);
+        } else if (prefix.equals("TT") || prefix.equals("NT")) {
+            final String lname = prefix+newLname(this.outline.getLocalName().substring(1)+"_O_" , 6);
+            return m.createResource(EditConstants.BDR+lname);
+        } else {
+            // CL
+            final String lname = prefix+newLname(this.outline.getLocalName().substring(1)+"_O_"+this.digitalInstance.getLocalName() , 6);
+            return m.createResource(EditConstants.BDR+lname);
         }
-        return null;
     }
     
-    public void warnIfInvalid(final String submwlname) {
+    private Pattern submwpattern = null;
+    public void warnIfInvalid(final String submwlname, final int row_i) {
         // adds warnings if an mw from the csv (column 0) has a suspicious name
-        // TODO
+        if (this.submwpattern == null)
+            this.submwpattern = Pattern.compile("^("+this.root.getLocalName()+"_[A-Z0-9]|"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_[A-Z0-9])$");
+        if (!this.submwpattern.matcher(submwlname).find())
+            this.warns.add(new Warning("invalid id, should be in the form bdr:"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_XXX, leave the column blank to generate one automatically", row_i, 0, true));
     }
     
     public void insertInModel(final Model m, final Resource mw, final Resource w) {
@@ -445,7 +458,9 @@ public class SimpleOutline {
         allResourcesInCsv.addAll(allResourcesInModel);
         for (final Resource r : allResourcesInCsv)
             this.reservedLnames.put(r.getLocalName(), true);
-        
+        for (final SimpleOutlineNode son : this.rootChildren) {
+            
+        }
     }
     
     public static Model getModelTemplate(final Resource o, final Resource mw) {

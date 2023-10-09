@@ -173,6 +173,22 @@ The request can optionally contain a `X-Outline-Attribution` HTTP header with th
 
 The request can optionally contain a `X-Status` HTTP header with the URL of the new status that will be associated with the outline.
 
-The responsee has an empty body, it has an `Etag` header with the new revision.
-
 The `{oqname}` parameter is optional.
+
+The response hashas an `Etag` header with the new revision.
+
+The body of the response is a json list of warnings, in the form:
+
+```json
+[
+	{
+		"msg": "",
+		"row": 1,
+		"col": 1,
+		"blocking": false
+	},
+	...
+]
+```
+
+where row and col are the row and column index where the error happens, starting at `0`.

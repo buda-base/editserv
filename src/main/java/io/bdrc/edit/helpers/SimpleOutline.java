@@ -5,9 +5,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
@@ -31,6 +33,8 @@ public class SimpleOutline {
     public Resource digitalInstance;
     public List<SimpleOutlineNode> rootChildren;
     public int nbTreeColumns;
+    public List<Warning> warns;
+    public Map<String,Boolean> reservedLnames;
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
@@ -143,8 +147,19 @@ public class SimpleOutline {
         public Integer pageEnd = null;
         public Integer volumeStart = null;
         public Integer volumeEnd = null;
+        public Integer row_i = null;
         
-        public Integer getWithException(final String cellContent, final int row_i, final int col_i, final List<Warning> warns) {
+        public void listAllDescendentResources(final List<Resource> list, final List<Warning> warns) {
+            // adds self and descendent resources in res, adds a warn if a resource is already present
+            if (list.contains(this.res))
+                warns.add(new Warning("Resource "+this.res.getLocalName()+" present twice! invalid csv", this.row_i, 0, true));
+            else
+                list.add(this.res);
+            for (final SimpleOutlineNode son : this.children)
+                son.listAllDescendentResources(list, warns);
+        }
+        
+        public static Integer getWithException(final String cellContent, final int row_i, final int col_i, final List<Warning> warns) {
             try {
                 if (!cellContent.isEmpty())
                     return Integer.valueOf(cellContent);
@@ -154,8 +169,20 @@ public class SimpleOutline {
             return null;
         }
         
+        public static List<String> getStrings(final String csvString) {
+            final List<String> res = new ArrayList<>();
+            final String[] sp = csvString.split(";;");
+            for (int i = 0 ; i < sp.length ; i++) {
+                final String normalized = sp[i].strip();
+                if (!normalized.isEmpty())
+                    res.add(normalized);
+            }
+            return res;
+        }
+        
         public SimpleOutlineNode(final String[] csvRow, final int nb_position_columns, final List<Warning> warns, final int row_i) {
             this.children = new ArrayList<>();
+            this.row_i = row_i;
             if (csvRow[0].length() > 4) {
                 this.res = ResourceFactory.createResource(EditConstants.BDR+csvRow[0].substring(4));
             } else {
@@ -163,11 +190,11 @@ public class SimpleOutline {
             }
             
             this.partType = csvRow[nb_position_columns+1];
-            headers[nbPositionColumns+2] = "label";
-            headers[nbPositionColumns+3] = "titles";
+            this.labels = getStrings(csvRow[nb_position_columns+2]);
+            this.titles = getStrings(csvRow[nb_position_columns+3]);
             this.work = csvRow[nb_position_columns+4];
-            headers[nbPositionColumns+5] = "notes";
-            headers[nbPositionColumns+6] = "colophon";
+            this.notes = getStrings(csvRow[nb_position_columns+5]);
+            this.colophon = getStrings(csvRow[nb_position_columns+6]);
             this.pageStart = getWithException(csvRow[nb_position_columns+7], row_i, nb_position_columns+7, warns);
             this.pageEnd = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+8, warns);
             this.volumeStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, warns);
@@ -312,7 +339,7 @@ public class SimpleOutline {
         }
     }
     
-    public SimpleOutline(final List<String[]> csvData, final Resource o, final Resource mw, final Resource w, final List<Warning> warns) {
+    public SimpleOutline(final List<String[]> csvData, final Resource o, final Resource mw, final Resource w) {
         this.digitalInstance = w;
         this.root = mw;
         this.outline = o;
@@ -345,7 +372,7 @@ public class SimpleOutline {
                 warns.add(new Warning("missing position", row_i, null, true));
                 continue;
             }
-            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns);
+            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns, warns, row_i);
             if (levelToParent[rowLevel] != null) {
                 levelToParent[rowLevel].children.add(son);
             } else {
@@ -366,8 +393,64 @@ public class SimpleOutline {
         this.nbTreeColumns = Math.max(maxDepthPointer.value, MIN_TREE_COLUMNS);
     }
     
+    public List<Resource> listAllNodeResources() {
+        // returns a list of all the instance resources given in the csv
+        final List<Resource> res = new ArrayList<>();
+        for (final SimpleOutlineNode son : this.rootChildren)
+            son.listAllDescendentResources(res, this.warns);
+        return res;
+    }
+    
+    public static final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+    public static String randomString(final int nb_chars) {
+        final char[] res = new char[nb_chars];
+        for (int idx = 0; idx < nb_chars; ++idx)
+            res[idx] = symbols[ThreadLocalRandom.current().nextInt(symbols.length)];
+        return new String(res);
+    }
+    
+    public static final int MAX_ITER = 200;
+    public String newLname(final String prefix, final int nb_chars) {
+        for (int i = 0 ; i < MAX_ITER ; i++) {
+            final String candidate = prefix+randomString(nb_chars);
+            if (!this.reservedLnames.containsKey(candidate)) {
+                this.reservedLnames.put(candidate, true);
+                return candidate;
+            }
+        }
+        this.warns.add(new Warning("error, cannot generate a random ID with prefix "+prefix+" and "+Integer.toString(nb_chars)+" characters after 200 iterations!", 0, 0, true));
+        return "";
+    }
+    
+    public Resource newResource(final Model m, final String prefix, final Resource parent) {
+        // prefix is "MW" for instance, "TT" for title, "NT" for note, "CL" for content location
+        if (prefix.equals("MW")) {
+            final String lname = newLname(this.root.getLocalName()+"_"+this.outline.getLocalName()+"_" , 6);
+            return m.createResource(EditConstants.BDR+lname);
+        }
+        return null;
+    }
+    
+    public void warnIfInvalid(final String submwlname) {
+        // adds warnings if an mw from the csv (column 0) has a suspicious name
+        // TODO
+    }
+    
     public void insertInModel(final Model m, final Resource mw, final Resource w) {
+        // handling RIDs
+        this.reservedLnames = new HashMap<>();
+        final List<Resource> allResourcesInModel = m.listSubjects().toList();
+        final List<Resource> allResourcesInCsv = this.listAllNodeResources();
+        // we merge the two lists
+        allResourcesInCsv.addAll(allResourcesInModel);
+        for (final Resource r : allResourcesInCsv)
+            this.reservedLnames.put(r.getLocalName(), true);
         
+    }
+    
+    public static Model getModelTemplate(final Resource o, final Resource mw) {
+        final Model res = ModelFactory.createDefaultModel();
+        return res;
     }
     
     public static String[] getHeaders(final int nbPositionColumns) {

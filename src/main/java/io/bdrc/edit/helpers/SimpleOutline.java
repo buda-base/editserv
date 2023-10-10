@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -293,7 +294,66 @@ public class SimpleOutline {
             getNotes();
         }
         
-        public void insertInModel(final Model m, final List<Resource> donotremove) {
+        public static void removeRecursiveSafe(final Model m, final Resource r, final SimpleOutline outline) {
+            // needs to be called after reuseExistingIDs
+            StmtIterator sit = m.listStatements(r, null, (RDFNode) null);
+            if (!sit.hasNext()) {
+                // in that case we don't want to remove back references
+                return;
+            }
+            while (sit.hasNext()) {
+                final Statement st = sit.next();
+                if (st.getObject().isResource()) {
+                    final Resource or = st.getResource();
+                    if (!outline.allResourcesInCsv.contains(or) && or != r)
+                        removeRecursiveSafe(m, or, outline);
+                }
+            }
+            m.removeAll(r, null, (RDFNode) null);
+            sit = m.listStatements(null, null, r);
+            while (sit.hasNext()) {
+                final Resource or = sit.next().getSubject();
+                if (!outline.allResourcesInCsv.contains(or) && or != r)
+                    removeRecursiveSafe(m, or, outline);
+            }
+        }
+        
+        public void removefromModel(final Model m, final SimpleOutline outline) {
+            removeRecursiveSafe(m, this.res, outline);
+        }
+        
+        public void reuseExistingIDs(Model m, final SimpleOutline outline) {
+            // function that fills an empty this.res in the children of a node,
+            // recursively on the 
+            final List<Resource> parts = getOrderedParts(this.res);
+            for (int i = 0 ; i < parts.size() ; i++) {
+                if (outline.allResourcesInCsv.contains(parts.get(i)))
+                    parts.set(i, null);
+            }
+            // now we have the parts in the model that are not in the csv
+            // we assign the resources to their equivalent in the new csv when possible
+            for (int i = 0 ; i < this.children.size() ; i++) {
+                final SimpleOutlineNode son = this.children.get(i);
+                if (son.res == null && i < parts.size() && parts.get(i) != null) {
+                    son.res = parts.get(i);
+                    outline.allResourcesInCsv.add(son.res);
+                }
+                son.reuseExistingIDs(m, outline);
+            }
+        }
+        
+        public static Literal valueToLiteral(final String s) {
+            return null;
+        }
+        
+        public static void reinsertSimple(final Model m, final Resource r, final Property p, final List<String> valueList) {
+            
+        }
+        
+        public void insertInModel(final Model m, final SimpleOutline outline) {
+            // we assume that reuseExistingIDs and removefromModel have been called
+            // on the relevant nodes
+            // first, remove and reinsert simple properties:
             
         }
         

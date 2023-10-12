@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -21,9 +22,11 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
+import org.apache.jena.vocabulary.XSD;
 
 import io.bdrc.edit.EditConstants;
 import io.bdrc.ewtsconverter.EwtsConverter;
+import io.bdrc.libraries.LangStrings;
 
 public class SimpleOutline {
 
@@ -42,7 +45,7 @@ public class SimpleOutline {
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
-    public static final Property partType = ResourceFactory.createProperty(EditConstants.BDO + "partType");
+    public static final Property partTypeP = ResourceFactory.createProperty(EditConstants.BDO + "partType");
     public static final Property instanceOf = ResourceFactory.createProperty(EditConstants.BDO + "instanceOf");
     public static final Property colophonP = ResourceFactory.createProperty(EditConstants.BDO + "colophon");
     public static final Property contentLocation = ResourceFactory.createProperty(EditConstants.BDO + "contentLocation");
@@ -75,7 +78,7 @@ public class SimpleOutline {
     }
     
     public static final String partTypeAsString(final Resource res) {
-        final Resource pt = res.getPropertyResourceValue(partType);
+        final Resource pt = res.getPropertyResourceValue(partTypeP);
         if (pt == null)
             return "";
         switch(pt.getLocalName()) {
@@ -95,6 +98,26 @@ public class SimpleOutline {
             return "E";
         }
         return "";
+    }
+    
+    public static final Resource partTypeAsResource(final String s, final Model m) {
+        switch(s) {
+        case "TOC":
+            return m.createResource(EditConstants.BDR+"PartTypeTableOfContent");
+        case "C":
+            return m.createResource(EditConstants.BDR+"PartTypeChapter");
+        case "Fa":
+            return m.createResource(EditConstants.BDR+"PartTypeFascicle");
+        case "S":
+            return m.createResource(EditConstants.BDR+"PartTypeSection");
+        case "T":
+            return m.createResource(EditConstants.BDR+"PartTypeText");
+        case "V":
+            return m.createResource(EditConstants.BDR+"PartTypeVolume");
+        case "E":
+            return m.createResource(EditConstants.BDR+"PartTypeEditorial");
+        }
+        return null;
     }
     
     public static final List<Resource> getOrderedParts(final Resource r) {
@@ -342,19 +365,91 @@ public class SimpleOutline {
             }
         }
         
-        public static Literal valueToLiteral(final String s) {
-            return null;
+        public static Literal valueToLiteral(final Model m, final String s) {
+            String str = s;
+            String lang = null;
+            final int at_idx = s.lastIndexOf('@');
+            if (at_idx > s.length()-10) {
+                str = s.substring(0, at_idx);
+                lang = s.substring(at_idx+1);
+            }
+            if (lang == null)
+                lang = LangStrings.guessLangTag(str);
+            if ("bo".equals(lang)) {
+                str = ewtsConverter.toWylie(str);
+                lang = "bo-x-ewts";
+            }
+            str = str.strip();
+            if (lang == null)
+                return m.createLiteral(str);
+            return m.createLiteral(str, lang);
         }
         
         public static void reinsertSimple(final Model m, final Resource r, final Property p, final List<String> valueList) {
-            
+            m.remove(m.listStatements(r, p, (RDFNode) null));
+            for (final String value : valueList) {
+                final Literal l = valueToLiteral(m, value);
+                m.add(r, p, l);
+            }
         }
         
-        public void insertInModel(final Model m, final SimpleOutline outline) {
+        // returns a contentlocation
+        public static Resource removeContentLocations(final Model m, final Resource r, final Resource locationInstance) {
+            final StmtIterator cli = r.listProperties(contentLocation);
+            final List<Statement> toRemove = new ArrayList<>();
+            Resource res = null;
+            while (cli.hasNext()) {
+                final Statement cls = cli.next();
+                final Resource cl = cls.getResource();
+                if (cl.hasProperty(contentLocationInstance, locationInstance)) {
+                    toRemove.add(cls);
+                    toRemove.addAll(m.listStatements(cl, null, (RDFNode) null).toList());
+                    res = cl;
+                }
+            }
+            m.remove(toRemove);
+            return res;
+        }
+        
+        public void insertInModel(final Model m, final SimpleOutline outline, final int part_index) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
             // first, remove and reinsert simple properties:
-            
+            reinsertSimple(m, this.res, colophonP, this.colophon);
+            reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
+            reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
+            // part_index
+            m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));
+            m.add(this.res, partTypeP, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));
+            final Resource pt = partTypeAsResource(this.partType, m);
+            if (pt == null) {
+                outline.warns.add(new Warning("cannot interpret "+this.partType+" as a part type", this.row_i, outline.nbTreeColumns+1, true));
+            } else {
+                m.remove(m.listStatements(this.res, partTypeP, (RDFNode) null));
+                m.add(this.res, partTypeP, pt);
+            }
+            // content location
+            Resource cl = removeContentLocations(m, this.res, outline.digitalInstance);
+            if (this.pageStart != null || this.pageEnd != null || this.volumeEnd != null || this.volumeStart != null) {
+                if (cl == null)
+                    cl = outline.newResource(m, "CL", this.res);
+                cl.addProperty(RDF.type, m.createResource(EditConstants.BDO+"ContentLocation"));
+                m.add(this.res, contentLocation, cl);
+                cl.addProperty(contentLocationInstance, outline.digitalInstance);
+                if (this.pageStart != null)
+                    cl.addProperty(contentLocationPage, m.createTypedLiteral(this.pageStart, XSDDatatype.XSDinteger));
+                if (this.pageEnd != null)
+                    cl.addProperty(contentLocationEndPage, m.createTypedLiteral(this.pageEnd, XSDDatatype.XSDinteger));
+                if (this.volumeStart != null)
+                    cl.addProperty(contentLocationVolume, m.createTypedLiteral(this.volumeStart, XSDDatatype.XSDinteger));
+                if (this.volumeEnd != null)
+                    cl.addProperty(contentLocationEndVolume, m.createTypedLiteral(this.volumeEnd, XSDDatatype.XSDinteger));
+            }
+            // children
+            for (int i = 0 ; i < this.children.size() ; i++) {
+                final SimpleOutlineNode son = this.children.get(i);
+                son.insertInModel(m, outline, i+1); // part types start at 1
+            }
         }
         
         public static String listToCsvCell(final List<String> valueList) {

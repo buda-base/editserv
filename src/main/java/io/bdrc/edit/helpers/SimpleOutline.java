@@ -468,8 +468,39 @@ public class SimpleOutline {
         }
 
         
-        public void reinsertIntermediate(final Model m, final Property p1, final Property p2, final List<String> values) {
+        public void reinsertNote(final Model m, final List<String> values, final SimpleOutline outline) {
+            final List<Resource> existing_nodes = new ArrayList<>();
+            final List<String> existing_values = new ArrayList<>();
             
+            final StmtIterator sti = m.listStatements(this.res, note, (RDFNode) null);
+            while (sti.hasNext()) {
+                final Resource node = sti.next().getResource();
+                final StmtIterator sti2 = m.listStatements(node, noteText, (RDFNode) null);
+                if (sti2.hasNext()) {
+                    final String value = sti2.next().getString();
+                    existing_nodes.add(node);
+                    existing_values.add(value);
+                }
+            }
+            final List<Integer[]> corrs = matchStrings(existing_values, values);
+            for (final Integer[] corr : corrs) {
+                if (corr[1] == null) {
+                    removeRecursiveSafe(m, existing_nodes.get(corr[0]), outline);
+                    continue;
+                }
+                Resource node = null;
+                final Literal lit = valueToLiteral(m, values.get(corr[1]));
+                if (corr[0] == null) {
+                    // new node
+                    node = outline.newResource(m, "NT", this.res);
+                    m.add(this.res, note, node);
+                    m.add(node, RDF.type, m.createResource(EditConstants.BDO+"Note"));
+                    m.add(node, noteText, lit);
+                } else {
+                    m.removeAll(node, noteText, (RDFNode) null);
+                    m.add(node, noteText, lit);
+                }
+            }
         }
         
         public void insertInModel(final Model m, final SimpleOutline outline, final int part_index) {

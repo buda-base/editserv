@@ -3,11 +3,14 @@ package io.bdrc.edit.helpers;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
@@ -32,6 +35,10 @@ public class SimpleOutline {
 
     public final static int MIN_TREE_COLUMNS = 4;
     public final static int NB_NON_TREE_COLUMNS = 11;
+    
+    public final static int MAX_LVST_DIST = 10; // a bit arbitrary
+    
+    public static final LevenshteinDistance lev = new LevenshteinDistance(MAX_LVST_DIST);
     
     public Resource outline;
     public Resource root;
@@ -411,6 +418,60 @@ public class SimpleOutline {
             return res;
         }
         
+        public static List<Integer[]> matchStrings(final List<String> l1, final List<String> l2) {
+            // returns an ordered list of pairs of indexes of l1 , l2 that minimize the distance
+            // between elements of each pair (to a reasonable extent)
+            
+            final List<Integer[]> res = new ArrayList<>();
+            
+            final Map<Integer,List<Integer[]>> distance_to_idx_pair = new HashMap<>();
+            
+            // Compute Levenshtein distances for all pairs
+            for (int i = 0; i < l1.size(); i++) {
+                for (int j = 0; j < l2.size(); j++) {
+                    int dst_i_j = lev.apply(l1.get(i), l2.get(j));
+                    if (dst_i_j == -1)
+                        dst_i_j = MAX_LVST_DIST+1;
+                    final List<Integer[]> list_pairs = distance_to_idx_pair.getOrDefault(dst_i_j, new ArrayList<>());
+                    list_pairs.add(new Integer[] {i,j});
+                }
+            }
+            final List<Integer> sorted_dst = new ArrayList<>(distance_to_idx_pair.keySet());
+            sorted_dst.sort(null);
+            final Map<Integer,Boolean> seen_l1 = new HashMap<>();
+            final Map<Integer,Boolean> seen_l2 = new HashMap<>();
+            
+            for (final Integer dst : sorted_dst) {
+                for (final Integer[] pair : distance_to_idx_pair.get(dst)) {
+                    if (!seen_l1.containsKey(pair[0]) && !seen_l2.containsKey(pair[1])) {
+                        res.add(pair);
+                        seen_l1.put(pair[0], true);
+                        seen_l2.put(pair[1], true);
+                    }
+                }
+            }
+            
+            // now res contains all existing pairs, we fill it with the remaining singletons
+            if (l1.size() < l2.size()) {
+                for (int i = 0 ; i < l2.size() ; i++) {
+                    if (!seen_l2.containsKey(i))
+                        res.add(new Integer[] {null, i});
+                }
+            }
+            if (l2.size() < l1.size()) {
+                for (int i = 0 ; i < l1.size() ; i++) {
+                    if (!seen_l1.containsKey(i))
+                        res.add(new Integer[] {i, null});
+                }
+            }
+            return res;
+        }
+
+        
+        public void reinsertIntermediate(final Model m, final Property p1, final Property p2, final List<String> values) {
+            
+        }
+        
         public void insertInModel(final Model m, final SimpleOutline outline, final int part_index) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
@@ -613,8 +674,8 @@ public class SimpleOutline {
         allResourcesInCsv.addAll(allResourcesInModel);
         for (final Resource r : allResourcesInCsv)
             this.reservedLnames.put(r.getLocalName(), true);
-        for (final SimpleOutlineNode son : this.rootChildren) {
-            
+        for (int i = 0 ; i < this.rootChildren.size() ; i++) {
+            this.rootChildren.get(i).insertInModel(m, this, i);
         }
     }
     

@@ -3,10 +3,8 @@ package io.bdrc.edit.helpers;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
@@ -25,7 +23,6 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
-import org.apache.jena.vocabulary.XSD;
 
 import io.bdrc.edit.EditConstants;
 import io.bdrc.ewtsconverter.EwtsConverter;
@@ -261,7 +258,7 @@ public class SimpleOutline {
                 this.volumeEnd = this.volumeStart;
         }
         
-        public String getTitlePrefix(final Resource title) {
+        public static String getTitlePrefix(final Resource title) {
             final Resource titleTypeR = title.getPropertyResourceValue(RDF.type);
             if (titleTypeR == null)
                 return "";
@@ -278,6 +275,23 @@ public class SimpleOutline {
                 return "(M) ";
             default:
                     return "";
+            }
+        }
+        
+        public static Resource getTitleResource(final String prefix) {
+            switch(prefix) {
+            case "TP":
+                return ResourceFactory.createResource(EditConstants.BDO+"TitlePageTitle");
+            case "C":
+                return ResourceFactory.createResource(EditConstants.BDO+"ColophonTitle");
+            case "I":
+                return ResourceFactory.createResource(EditConstants.BDO+"IncipitTitle");
+            case "*":
+                return ResourceFactory.createResource(EditConstants.BDO+"ReconstructedTitle");
+            case "M":
+                return ResourceFactory.createResource(EditConstants.BDO+"RunningTitle");
+            default:
+                return null;
             }
         }
         
@@ -468,7 +482,7 @@ public class SimpleOutline {
         }
 
         
-        public void reinsertNote(final Model m, final List<String> values, final SimpleOutline outline) {
+        public void reinsertNotes(final Model m, final SimpleOutline outline) {
             final List<Resource> existing_nodes = new ArrayList<>();
             final List<String> existing_values = new ArrayList<>();
             
@@ -482,14 +496,14 @@ public class SimpleOutline {
                     existing_values.add(value);
                 }
             }
-            final List<Integer[]> corrs = matchStrings(existing_values, values);
+            final List<Integer[]> corrs = matchStrings(existing_values, this.notes);
             for (final Integer[] corr : corrs) {
                 if (corr[1] == null) {
                     removeRecursiveSafe(m, existing_nodes.get(corr[0]), outline);
                     continue;
                 }
                 Resource node = null;
-                final Literal lit = valueToLiteral(m, values.get(corr[1]));
+                final Literal lit = valueToLiteral(m, this.notes.get(corr[1]));
                 if (corr[0] == null) {
                     // new node
                     node = outline.newResource(m, "NT", this.res);
@@ -499,6 +513,74 @@ public class SimpleOutline {
                 } else {
                     m.removeAll(node, noteText, (RDFNode) null);
                     m.add(node, noteText, lit);
+                }
+            }
+        }
+        
+        public void getSplitTitleValues(final List<String> str_values, final List<Resource> res_values) {
+            for (final String val : this.titles) {
+                final int close_par_idx = val.indexOf(')');
+                if (val.startsWith("*")) {
+                    str_values.add(val);
+                    res_values.add(getTitleResource("*"));
+                    continue;
+                }
+                if (!val.startsWith("(") || close_par_idx == -1 || close_par_idx > 5) {
+                    str_values.add(val);
+                    res_values.add(null);
+                    continue;
+                }
+                final String type_str = val.substring(1, close_par_idx);
+                final Resource type = getTitleResource(type_str);
+                if (type == null) {
+                    str_values.add(val);
+                    res_values.add(null);
+                    continue;
+                }
+                str_values.add(val.substring(close_par_idx+1));
+                res_values.add(type);
+            }
+        }
+        
+        public void reinsertTitles(final Model m, final SimpleOutline outline) {
+            final List<Resource> existing_nodes = new ArrayList<>();
+            final List<String> existing_values = new ArrayList<>();
+            final List<String> str_values = new ArrayList<>();
+            final List<Resource> new_types = new ArrayList<>();
+            this.getSplitTitleValues(str_values, new_types);
+            
+            final StmtIterator sti = m.listStatements(this.res, hasTitle, (RDFNode) null);
+            while (sti.hasNext()) {
+                final Resource node = sti.next().getResource();
+                final StmtIterator sti2 = m.listStatements(node, RDFS.label, (RDFNode) null);
+                if (sti2.hasNext()) {
+                    final String value = sti2.next().getString();
+                    existing_nodes.add(node);
+                    existing_values.add(value);
+                }
+            }
+            final List<Integer[]> corrs = matchStrings(existing_values, str_values);
+            for (final Integer[] corr : corrs) {
+                if (corr[1] == null) {
+                    removeRecursiveSafe(m, existing_nodes.get(corr[0]), outline);
+                    continue;
+                }
+                Resource node = null;
+                final Literal lit = valueToLiteral(m, str_values.get(corr[1]));
+                final Resource type = new_types.get(corr[1]);
+                if (corr[0] == null) {
+                    // new node
+                    node = outline.newResource(m, "TT", this.res);
+                    m.add(this.res, hasTitle, node);
+                    m.add(node, RDF.type, type != null ? type : m.createResource(EditConstants.BDO+"Title"));
+                    m.add(node, RDFS.label, lit);
+                } else {
+                    m.removeAll(node, RDFS.label, (RDFNode) null);
+                    m.add(node, RDFS.label, lit);
+                    if (type != null) {
+                        m.removeAll(node, RDF.type, (RDFNode) null);
+                        m.add(node, RDF.type, type);
+                    }
                 }
             }
         }
@@ -520,6 +602,8 @@ public class SimpleOutline {
                 m.remove(m.listStatements(this.res, partTypeP, (RDFNode) null));
                 m.add(this.res, partTypeP, pt);
             }
+            this.reinsertNotes(m, outline);
+            this.reinsertTitles(m, outline);
             // content location
             Resource cl = removeContentLocations(m, this.res, outline.digitalInstance);
             if (this.pageStart != null || this.pageEnd != null || this.volumeEnd != null || this.volumeStart != null) {

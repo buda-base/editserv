@@ -1,5 +1,6 @@
 package io.bdrc.edit.helpers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,6 +25,11 @@ import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.bdrc.edit.EditConstants;
 import io.bdrc.ewtsconverter.EwtsConverter;
 import io.bdrc.libraries.LangStrings;
@@ -37,8 +43,11 @@ public class SimpleOutline {
     
     public static final LevenshteinDistance lev = new LevenshteinDistance(MAX_LVST_DIST);
     
+    @JsonSerialize(using = ResourceJSONSerializer.class)
     public Resource outline;
+    @JsonSerialize(using = ResourceJSONSerializer.class)
     public Resource root;
+    @JsonSerialize(using = ResourceJSONSerializer.class)
     public Resource digitalInstance;
     public List<SimpleOutlineNode> rootChildren;
     public int nbTreeColumns;
@@ -63,6 +72,14 @@ public class SimpleOutline {
     public static final Property contentLocationInstance = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationInstance");
     
     public static final EwtsConverter ewtsConverter = new EwtsConverter();
+    
+    public static class ResourceJSONSerializer extends JsonSerializer<Resource> {
+        @Override
+        public void serialize(Resource value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(value.getLocalName());
+        }
+    }
+
     
     public static final String toQname(final Resource res) {
         final String uri = res.getURI();
@@ -166,6 +183,7 @@ public class SimpleOutline {
     }
     
     public static final class SimpleOutlineNode {
+        @JsonSerialize(using = ResourceJSONSerializer.class)
         public Resource res;
         public List<SimpleOutlineNode> children;
         public String work = "";
@@ -182,10 +200,12 @@ public class SimpleOutline {
         
         public void listAllDescendentResources(final List<Resource> list, final List<Warning> warns) {
             // adds self and descendent resources in res, adds a warn if a resource is already present
-            if (list.contains(this.res))
-                warns.add(new Warning("Resource "+this.res.getLocalName()+" present twice! invalid csv", this.row_i, 0, true));
-            else
-                list.add(this.res);
+            if (this.res != null) {
+                if (list.contains(this.res))
+                    warns.add(new Warning("Resource "+this.res.getLocalName()+" present twice! invalid csv", this.row_i, 0, true));
+                else
+                    list.add(this.res);
+            }
             for (final SimpleOutlineNode son : this.children)
                 son.listAllDescendentResources(list, warns);
         }
@@ -390,7 +410,7 @@ public class SimpleOutline {
             String str = s;
             String lang = null;
             final int at_idx = s.lastIndexOf('@');
-            if (at_idx > s.length()-10) {
+            if (at_idx > 1 && at_idx > s.length()-10) {
                 str = s.substring(0, at_idx);
                 lang = s.substring(at_idx+1);
             }
@@ -588,13 +608,18 @@ public class SimpleOutline {
         public void insertInModel(final Model m, final SimpleOutline outline, final int part_index) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
+            // create res if not present:
+            if (this.res == null)
+                this.res = outline.newResource(m, "MW", null);
+            else
+                this.res = m.createResource(this.res.getURI()); // connect to model
             // first, remove and reinsert simple properties:
             reinsertSimple(m, this.res, colophonP, this.colophon);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             // part_index
             m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));
-            m.add(this.res, partTypeP, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));
+            m.add(this.res, partIndex, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));
             final Resource pt = partTypeAsResource(this.partType, m);
             if (pt == null) {
                 outline.warns.add(new Warning("cannot interpret "+this.partType+" as a part type", this.row_i, outline.nbTreeColumns+1, true));
@@ -678,6 +703,7 @@ public class SimpleOutline {
         this.root = mw;
         this.outline = o;
         this.rootChildren = new ArrayList<>();
+        this.warns = new ArrayList<>();
         if (csvData.size() < 2)
             return;
         this.nbTreeColumns = 0;
@@ -692,13 +718,14 @@ public class SimpleOutline {
         levelToParent[0] = null; // kind of nonsensical since levels start at 1 in the csv
         levelToParent[1] = null; // this would be the root
         int previousLevel = 0;
-        for (int row_i = 0 ; row_i < csvData.size() ; row_i ++) {
+        for (int row_i = 1 ; row_i < csvData.size() ; row_i ++) {
             final String[] row = csvData.get(row_i);
             int rowLevel = 0;
             for (int i = 1 ; i <= this.nbTreeColumns ; i++) {
                 if (!row[i].isEmpty()) {
                     // important, we don't allow jumps in level
                     rowLevel = Math.min(i, previousLevel+1);
+                    previousLevel = rowLevel;
                     break;
                 }
             }
@@ -706,7 +733,7 @@ public class SimpleOutline {
                 warns.add(new Warning("missing position", row_i, null, true));
                 continue;
             }
-            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns, warns, row_i);
+            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns, this.warns, row_i);
             if (levelToParent[rowLevel] != null) {
                 levelToParent[rowLevel].children.add(son);
             } else {
@@ -790,7 +817,7 @@ public class SimpleOutline {
         for (final Resource r : allResourcesInCsv)
             this.reservedLnames.put(r.getLocalName(), true);
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
-            this.rootChildren.get(i).insertInModel(m, this, i);
+            this.rootChildren.get(i).insertInModel(m, this, i+1);
         }
     }
     

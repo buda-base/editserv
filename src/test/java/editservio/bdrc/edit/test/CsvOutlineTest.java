@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.List;
 
 import org.apache.jena.graph.Graph;
@@ -18,6 +17,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
@@ -26,12 +27,13 @@ import io.bdrc.edit.EditConfig;
 import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.helpers.SimpleOutline;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class CsvOutlineTest {
     
     final static String TESTDIR = "src/test/resources/";
+    
+    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     
     @BeforeClass
     public static void init() throws Exception {
@@ -65,6 +67,38 @@ public class CsvOutlineTest {
         for (int i = 0 ; i < fromFile.size() ; i++) {
             MatcherAssert.assertThat(fromFile.get(i), is(rows.get(i)));
         }
+    }
+    
+    public static void debug_diff(final Model m1, final Model m2) {
+        System.out.println("in m1 not m2\n");
+        System.out.println(m1.difference(m2).write(System.out, "TTL"));
+        System.out.println("\n\nin m2 not m1\n\n");
+        System.out.println(m2.difference(m1).write(System.out, "TTL"));
+    }
+    
+    @Test
+    public void fromCsvIdentical() throws IOException, CsvException {
+        // read csv and reinsert it in the original model. We expect the initial and final
+        // model to be the same
+        Model outline = ModelFactory.createDefaultModel();
+        Graph g = outline.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"O1GS118327.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(g));
+        final Resource root = outline.createResource(EditConstants.BDR + "MW01CT0060");
+        final Resource w = outline.createResource(EditConstants.BDR + "W01CT0060");
+        final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
+        final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060.csv"));
+        final List<String[]> fromFile = reader.readAll();
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        //System.out.println(ow.writeValueAsString(so));
+        final Model result = ModelFactory.createDefaultModel();
+        result.add(outline);
+        so.insertInModel(result, root, w);
+        //result.write(System.out, "TTL");
+        //debug_diff(outline, result);
+        assert(result.isIsomorphicWith(outline));
     }
     
 }

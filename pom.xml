@@ -159,8 +159,8 @@
         <groupId>org.apache.tomcat.embed</groupId>
         <artifactId>tomcat-embed-jasper</artifactId>
         <scope>provided</scope>        
-    </dependency>    	
-	<!-- Need this to compile JSP, tomcat-embed-jasper version is not working, no idea why -->
+    </dependency>
+	  <!-- Need this to compile JSP, tomcat-embed-jasper version is not working, no idea why -->
     <dependency>
          <groupId>org.eclipse.jdt.core.compiler</groupId>
          <artifactId>ecj</artifactId>

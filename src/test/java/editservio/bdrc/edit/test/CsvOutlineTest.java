@@ -101,4 +101,61 @@ public class CsvOutlineTest {
         assert(result.isIsomorphicWith(outline));
     }
     
+    @Test
+    public void fromCsvFromScratch() throws IOException, CsvException {
+        // read csv and reinsert it in the original model. We expect the initial and final
+        // model to be the same
+        Model outline = ModelFactory.createDefaultModel();
+        Graph g = outline.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"O1GS118327.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(g));
+        final Resource root = outline.createResource(EditConstants.BDR + "MW01CT0060");
+        final Resource w = outline.createResource(EditConstants.BDR + "W01CT0060");
+        final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
+        final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060.csv"));
+        final List<String[]> fromFile = reader.readAll();
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        final Model result = ModelFactory.createDefaultModel();
+        //result.add(outline);
+        so.insertInModel(result, root, w);
+        //result.write(System.out, "TTL");
+        //debug_diff(outline, result);
+        //assert(result.isIsomorphicWith(outline));
+    }
+    
+    @Test
+    public void fromCsvUpdate() throws IOException, CsvException {
+        // read csv and reinsert it in the original model. We expect the initial and final
+        // model to be the same
+        Model outline = ModelFactory.createDefaultModel();
+        Graph g = outline.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"O1GS118327.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(g));
+        final Resource root = outline.createResource(EditConstants.BDR + "MW01CT0060");
+        final Resource w = outline.createResource(EditConstants.BDR + "W01CT0060");
+        final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
+        final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060-update.csv"));
+        final List<String[]> fromFile = reader.readAll();
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        so.testMode = true;
+        final Model result = ModelFactory.createDefaultModel();
+        result.add(outline);
+        so.insertInModel(result, root, w);
+        Model expected = ModelFactory.createDefaultModel();
+        Graph expected_g = outline.getGraph();
+        RDFParser.create()
+            .source(TESTDIR+"O1GS118327-updated.ttl")
+            .lang(RDFLanguages.TTL)
+            .parse(StreamRDFLib.graph(expected_g));
+        //result.write(System.out, "TTL");
+        debug_diff(result, expected);
+        assert(result.isIsomorphicWith(outline));
+    }
+    
+    
+    
 }

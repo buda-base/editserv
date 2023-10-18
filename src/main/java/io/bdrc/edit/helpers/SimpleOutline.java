@@ -55,6 +55,7 @@ public class SimpleOutline {
     public Map<String,Boolean> reservedLnames;
     public List<Resource> allResourcesInModel;
     public List<Resource> allResourcesInCsv;
+    public boolean testMode = false;
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
@@ -458,6 +459,12 @@ public class SimpleOutline {
             
             final List<Integer[]> res = new ArrayList<>();
             
+            // quick optimization:
+            if (l1.size() == 1 && l2.size() == 1) {
+                res.add(new Integer[] {1, 1});
+                return res;
+            }
+            
             final Map<Integer,List<Integer[]>> distance_to_idx_pair = new HashMap<>();
             
             // Compute Levenshtein distances for all pairs
@@ -763,7 +770,12 @@ public class SimpleOutline {
     }
     
     public static final char[] symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-    public static String randomString(final int nb_chars) {
+    public int cur_random = 0;
+    public String randomString(final int nb_chars) {
+        if (this.testMode) {
+            cur_random += 1;
+            return Integer.toString(cur_random);
+        }
         final char[] res = new char[nb_chars];
         for (int idx = 0; idx < nb_chars; ++idx)
             res[idx] = symbols[ThreadLocalRandom.current().nextInt(symbols.length)];
@@ -773,7 +785,7 @@ public class SimpleOutline {
     public static final int MAX_ITER = 200;
     public String newLname(final String prefix, final int nb_chars) {
         for (int i = 0 ; i < MAX_ITER ; i++) {
-            final String candidate = prefix+randomString(nb_chars);
+            final String candidate = prefix+this.randomString(nb_chars);
             if (!this.reservedLnames.containsKey(candidate)) {
                 this.reservedLnames.put(candidate, true);
                 return candidate;
@@ -786,14 +798,14 @@ public class SimpleOutline {
     public Resource newResource(final Model m, final String prefix, final Resource parent) {
         // prefix is "MW" for instance, "TT" for title, "NT" for note, "CL" for content location
         if (prefix.equals("MW")) {
-            final String lname = newLname(this.root.getLocalName()+"_"+this.outline.getLocalName()+"_" , 6);
+            final String lname = this.newLname(this.root.getLocalName()+"_"+this.outline.getLocalName()+"_" , 6);
             return m.createResource(EditConstants.BDR+lname);
         } else if (prefix.equals("TT") || prefix.equals("NT")) {
-            final String lname = prefix+newLname(this.outline.getLocalName().substring(1)+"_O_" , 6);
+            final String lname = prefix+this.newLname(this.outline.getLocalName().substring(1)+"_O_" , 6);
             return m.createResource(EditConstants.BDR+lname);
         } else {
             // CL
-            final String lname = prefix+newLname(this.outline.getLocalName().substring(1)+"_O_"+this.digitalInstance.getLocalName() , 6);
+            final String lname = prefix+this.newLname(this.outline.getLocalName().substring(1)+"_O_"+this.digitalInstance.getLocalName() , 6);
             return m.createResource(EditConstants.BDR+lname);
         }
     }

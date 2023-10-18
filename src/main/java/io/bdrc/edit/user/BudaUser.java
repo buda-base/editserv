@@ -205,12 +205,11 @@ public class BudaUser {
             try {
             	auth0Id = getAuth0IdFromUser(user);
             } catch (EditException e) {
+                toAdd += 1;
             	continue;
             }
             // weird case where a user exists on git but not on Fuseki
-            if (userExistsOnGit(newId))
-                continue;
-            if (auth0Id == null)
+            if (auth0Id == null && !userExistsOnGit(newId))
                 return user;
             toAdd += 1;
         }

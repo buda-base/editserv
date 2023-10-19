@@ -53,7 +53,7 @@ public class SimpleOutline {
     public int nbTreeColumns;
     public List<Warning> warns;
     public Map<String,Boolean> reservedLnames;
-    public List<Resource> allResourcesInModel;
+    public List<Resource> allResources;
     public List<Resource> allResourcesInCsv;
     public boolean testMode = false;
     
@@ -143,8 +143,8 @@ public class SimpleOutline {
         return null;
     }
     
-    public static final List<Resource> getOrderedParts(final Resource r) {
-        final ResIterator rit = r.getModel().listResourcesWithProperty(partOf, r);
+    public static final List<Resource> getOrderedParts(final Resource r, final Model m) {
+        final ResIterator rit = m.listResourcesWithProperty(partOf, r);
         final Map<Resource, Integer> resToPartIndex = new HashMap<>();
         final List<Resource> res = new ArrayList<>();
         while (rit.hasNext()) {
@@ -346,7 +346,7 @@ public class SimpleOutline {
             this.children = new ArrayList<>();
             if (parentDepth+1 > maxDepthPointer.value)
                 maxDepthPointer.value = parentDepth+1;
-            for (Resource child : getOrderedParts(res)) {
+            for (Resource child : getOrderedParts(res, res.getModel())) {
                 this.children.add(new SimpleOutlineNode(child, parentDepth+1, maxDepthPointer, w));
             }
             this.partType = partTypeAsString(res);
@@ -390,17 +390,20 @@ public class SimpleOutline {
         
         public void reuseExistingIDs(Model m, final SimpleOutline outline) {
             // function that fills an empty this.res in the children of a node,
-            // recursively on the 
-            final List<Resource> parts = getOrderedParts(this.res);
-            for (int i = 0 ; i < parts.size() ; i++) {
-                if (outline.allResourcesInCsv.contains(parts.get(i)))
-                    parts.set(i, null);
+            // recursively
+            List<Resource> parts = null;
+            if (this.res != null) {
+                parts = getOrderedParts(this.res, m);
+                for (int i = 0 ; i < parts.size() ; i++) {
+                    if (outline.allResourcesInCsv.contains(parts.get(i)))
+                        parts.set(i, null);
+                }
             }
             // now we have the parts in the model that are not in the csv
             // we assign the resources to their equivalent in the new csv when possible
             for (int i = 0 ; i < this.children.size() ; i++) {
                 final SimpleOutlineNode son = this.children.get(i);
-                if (son.res == null && i < parts.size() && parts.get(i) != null) {
+                if (parts != null && son.res == null && i < parts.size() && parts.get(i) != null) {
                     son.res = parts.get(i);
                     outline.allResourcesInCsv.add(son.res);
                 }
@@ -764,7 +767,7 @@ public class SimpleOutline {
         this.digitalInstance = w;
         this.rootChildren = new ArrayList<>();
         final Depth maxDepthPointer = new Depth();
-        for (Resource child : getOrderedParts(root)) {
+        for (Resource child : getOrderedParts(root, root.getModel())) {
             this.rootChildren.add(new SimpleOutlineNode(child, 0, maxDepthPointer, w));
         }
         this.nbTreeColumns = Math.max(maxDepthPointer.value, MIN_TREE_COLUMNS);
@@ -814,7 +817,7 @@ public class SimpleOutline {
             return m.createResource(EditConstants.BDR+lname);
         } else {
             // CL
-            final String lname = prefix+this.newLname(this.outline.getLocalName().substring(1)+"_O_"+this.digitalInstance.getLocalName() , 6);
+            final String lname = prefix+this.newLname(this.outline.getLocalName().substring(1)+"_O_"+this.digitalInstance.getLocalName()+"_" , 6);
             return m.createResource(EditConstants.BDR+lname);
         }
     }
@@ -828,19 +831,41 @@ public class SimpleOutline {
             this.warns.add(new Warning("invalid id, should be in the form bdr:"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_XXX, leave the column blank to generate one automatically", row_i, 0, true));
     }
     
+    public void reuseExistingIDs(final Model m) {
+        // function that fills an empty this.res in the children of a node,
+        // recursively on the 
+        final List<Resource> parts = getOrderedParts(this.root, this.root.getModel());
+        for (int i = 0 ; i < parts.size() ; i++) {
+            if (this.allResourcesInCsv.contains(parts.get(i)))
+                parts.set(i, null);
+        }
+        // now we have the parts in the model that are not in the csv
+        // we assign the resources to their equivalent in the new csv when possible
+        for (int i = 0 ; i < this.rootChildren.size() ; i++) {
+            final SimpleOutlineNode son = this.rootChildren.get(i);
+            if (son.res == null && i < parts.size() && parts.get(i) != null) {
+                son.res = parts.get(i);
+                this.allResourcesInCsv.add(son.res);
+            }
+            son.reuseExistingIDs(m, this);
+        }
+    }
+    
     public void insertInModel(final Model m, final Resource mw, final Resource w) {
         // handling RIDs
         this.reservedLnames = new HashMap<>();
-        final List<Resource> allResourcesInModel = m.listSubjects().toList();
-        final List<Resource> allResourcesInCsv = this.listAllNodeResources();
-        // we merge the two lists
-        allResourcesInCsv.addAll(allResourcesInModel);
+        this.allResources = m.listSubjects().toList();
+        this.allResourcesInCsv = this.listAllNodeResources();
+        this.allResources.addAll(this.allResourcesInCsv);
         // TODO: for the case where we're not operating at the root, we should probably read
         // the partTreeIndex instead of using ""
-        for (final Resource r : allResourcesInCsv)
+        for (final Resource r : this.allResources)
             this.reservedLnames.put(r.getLocalName(), true);
+        // reusing IDs at the root level
+        this.reuseExistingIDs(m);
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
-            this.rootChildren.get(i).insertInModel(m, this, i+1, "", this.rootChildren.size());
+            final SimpleOutlineNode son = this.rootChildren.get(i);
+            son.insertInModel(m, this, i+1, "", this.rootChildren.size());
         }
     }
     

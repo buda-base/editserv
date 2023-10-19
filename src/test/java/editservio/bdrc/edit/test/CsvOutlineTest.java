@@ -146,14 +146,14 @@ public class CsvOutlineTest {
         result.add(outline);
         so.insertInModel(result, root, w);
         Model expected = ModelFactory.createDefaultModel();
-        Graph expected_g = outline.getGraph();
+        Graph expected_g = expected.getGraph();
         RDFParser.create()
             .source(TESTDIR+"O1GS118327-updated.ttl")
             .lang(RDFLanguages.TTL)
             .parse(StreamRDFLib.graph(expected_g));
-        //result.write(System.out, "TTL");
-        debug_diff(result, expected);
-        assert(result.isIsomorphicWith(outline));
+        result.write(System.out, "TTL");
+        //debug_diff(result, expected);
+        assert(result.isIsomorphicWith(expected));
     }
     
     

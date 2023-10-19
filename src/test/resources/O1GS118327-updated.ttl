@@ -11,92 +11,96 @@
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
-    
-bda:O1GS118327  a       adm:AdminData ;
-    adm:adminAbout      bdr:O1GS118327 ;
-    adm:facetIndex      869 ;
-    adm:gitPath         "25/O1GS118327.trig" ;
-    adm:gitRepo         bda:GR0016 ;
-    adm:graphId         bdg:O1GS118327 ;
-    adm:status          bda:StatusReleased .
-
-bdr:TTF0A94E7F12438D3C
-    a                   :Title ;
-    rdfs:label          "gter chen sangs rgyas gling pas pu ri phug mo che nas spyan drangs pa'i gter chos bla ma dgongs pa 'dus pa pa'i chos skor pod dang po ka_(dkar chag ka)"@bo-x-ewts .
-
 bdr:TT3E2D598818980586
-    a                   :Title ;
-    rdfs:label          "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts .
-
-bdr:CL00ED7E95A7615C46
-    a                   :ContentLocation ;
-    :contentLocationEndPage  8 ;
-    :contentLocationInstance  bdr:W01CT0060 ;
-    :contentLocationPage  3 ;
-    :contentLocationEndVolume 1 ;
-    :contentLocationVolume  1 .
-
-bdr:CL317CEB3CB6738BF4
-    a                   :ContentLocation ;
-    :contentLocationInstance  bdr:W01CT0060 ;
-    :contentLocationEndVolume 1 ;
-    :contentLocationVolume  1 .
+        rdf:type    :Title ;
+        rdfs:label  "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts .
 
 bdr:CL333D5239C9E5EEC2
-    a                   :ContentLocation ;
-    :contentLocationEndPage  12 ;
-    :contentLocationInstance  bdr:W01CT0060 ;
-    :contentLocationPage  9 ;
-    :contentLocationEndVolume 1 ;
-    :contentLocationVolume  1 .
+        rdf:type                   :ContentLocation ;
+        :contentLocationEndPage    12 ;
+        :contentLocationEndVolume  1 ;
+        :contentLocationInstance   bdr:W01CT0060 ;
+        :contentLocationPage       9 ;
+        :contentLocationVolume     1 .
 
-bdr:NT93D338F6A346B51D
-   a             :Note ;
-   :noteText  "This is a note"@en .
+bdr:O1GS118327  rdf:type       :Outline ;
+        :authorshipStatement   "genesmith on the basis of the earlier outline prepared by chris tomlinson; outlined with the gracious support of the trace foundation"@en ;
+        :legacyOutlineNodeRID  "O1GS118327" ;
+        :outlineOf             bdr:MW01CT0060 ;
+        :outlineType           bdr:OutlineTypeGterChos ;
+        :paginationType        bdr:PaginationAbsolute .
 
-bdr:MW01CT0060_9A16FA
-    a                   :Instance ;
-    skos:prefLabel      "1_(ka)"@bo-x-ewts ;
-    :contentLocation    bdr:CL317CEB3CB6738BF4 ;
-    :inRootInstance     bdr:MW01CT0060 ;
-    :legacyOutlineNodeRID  "O1GS1183272KG240154" ;
-    :partIndex          1 ;
-    :partOf             bdr:MW01CT0060 ;
-    :partTreeIndex      "01" ;
-    :partType           bdr:PartTypeVolume .
+bdr:TT1GS118327_O_1  rdf:type  :Title ;
+        rdfs:label  "other title"@bo-x-ewts .
+
+bdr:CL00ED7E95A7615C46
+        rdf:type                   :ContentLocation ;
+        :contentLocationEndPage    8 ;
+        :contentLocationEndVolume  1 ;
+        :contentLocationInstance   bdr:W01CT0060 ;
+        :contentLocationPage       3 ;
+        :contentLocationVolume     1 .
 
 bdr:MW01CT0060_5C2307
-    a                   :Instance ;
-    skos:prefLabel      "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts ;
-    :contentLocation    bdr:CL00ED7E95A7615C46 ;
-    :contentLocationStatement  "3 ff." ;
-    :hasTitle           bdr:TT3E2D598818980586 ;
-    :inRootInstance     bdr:MW01CT0060 ;
-    :instanceOf         bdr:WA0XL5C230701CE94 ;
-    :legacyOutlineNodeRID  "O1GS1183272KG240155" ;
-    :partIndex          1 ;
-    :partOf             bdr:MW01CT0060_9A16FA ;
-    :partTreeIndex      "01.01" ;
-    :partType           bdr:PartTypeText .
+        rdf:type                   :Instance ;
+        :contentLocation           bdr:CL00ED7E95A7615C46 ;
+        :contentLocationStatement  "3 ff." ;
+        :hasTitle                  bdr:TT1GS118327_O_2 , bdr:TT3E2D598818980586 , bdr:TT1GS118327_O_1 ;
+        :inRootInstance            bdr:MW01CT0060 ;
+        :instanceOf                bdr:WA0XL5C230701CE94 ;
+        :legacyOutlineNodeRID      "O1GS1183272KG240155" ;
+        :partIndex                 1 ;
+        :partOf                    bdr:MW01CT0060_9A16FA ;
+        :partTreeIndex             "01.01" ;
+        :partType                  bdr:PartTypeText ;
+        skos:prefLabel             "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts .
+
+bda:O1GS118327  rdf:type  adm:AdminData ;
+        adm:adminAbout  bdr:O1GS118327 ;
+        adm:facetIndex  869 ;
+        adm:gitPath     "25/O1GS118327.trig" ;
+        adm:gitRepo     bda:GR0016 ;
+        adm:graphId     bdg:O1GS118327 ;
+        adm:status      bda:StatusReleased .
+
+bdr:TT1GS118327_O_2  rdf:type  :Title ;
+        rdfs:label  "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts .
+
+bdr:CL317CEB3CB6738BF4
+        rdf:type                   :ContentLocation ;
+        :contentLocationEndVolume  1 ;
+        :contentLocationInstance   bdr:W01CT0060 ;
+        :contentLocationVolume     1 .
+
+bdr:NT93D338F6A346B51D
+        rdf:type   :Note ;
+        :noteText  "This is a note"@en .
+
+bdr:MW01CT0060_9A16FA
+        rdf:type               :Instance ;
+        :contentLocation       bdr:CL317CEB3CB6738BF4 ;
+        :inRootInstance        bdr:MW01CT0060 ;
+        :legacyOutlineNodeRID  "O1GS1183272KG240154" ;
+        :partIndex             1 ;
+        :partOf                bdr:MW01CT0060 ;
+        :partTreeIndex         "01" ;
+        :partType              bdr:PartTypeVolume ;
+        skos:prefLabel         "1_(ka)"@bo-x-ewts .
+
+bdr:TTF0A94E7F12438D3C
+        rdf:type    :Title ;
+        rdfs:label  "gter chen sangs rgyas gling pas pu ri phug mo che nas spyan drangs pa'i gter chos bla ma dgongs pa 'dus pa pa'i chos skor pod dang po ka_(dkar chag ka)"@bo-x-ewts .
 
 bdr:MW01CT0060_C88CFE
-    a                   :Instance ;
-    skos:prefLabel      "gter chen sangs rgyas gling pas pu ri phug mo che nas spyan drangs pa'i gter chos bla ma dgongs pa 'dus pa pa'i chos skor pod dang po ka_(dkar chag ka)"@bo-x-ewts ;
-    :contentLocation    bdr:CL333D5239C9E5EEC2 ;
-    :contentLocationStatement  "2 ff." ;
-    :hasTitle           bdr:TTF0A94E7F12438D3C ;
-    :inRootInstance     bdr:MW01CT0060 ;
-    :legacyOutlineNodeRID  "O1GS1183272KG240156" ;
-    :partIndex          2 ;
-    :partOf             bdr:MW01CT0060_9A16FA ;
-    :partTreeIndex      "01.02" ;
-    :note               bdr:NT93D338F6A346B51D ;
-    :partType           bdr:PartTypeTableOfContent .
-
-bdr:O1GS118327  a       :Outline ;
-    :authorshipStatement  "genesmith on the basis of the earlier outline prepared by chris tomlinson; outlined with the gracious support of the trace foundation"@en ;
-    :legacyOutlineNodeRID  "O1GS118327" ;
-    :outlineOf          bdr:MW01CT0060 ;
-    :outlineType        bdr:OutlineTypeGterChos ;
-    :paginationType     bdr:PaginationAbsolute .
-
+        rdf:type                   :Instance ;
+        :contentLocation           bdr:CL333D5239C9E5EEC2 ;
+        :contentLocationStatement  "2 ff." ;
+        :hasTitle                  bdr:TTF0A94E7F12438D3C ;
+        :inRootInstance            bdr:MW01CT0060 ;
+        :legacyOutlineNodeRID      "O1GS1183272KG240156" ;
+        :note                      bdr:NT93D338F6A346B51D ;
+        :partIndex                 2 ;
+        :partOf                    bdr:MW01CT0060_9A16FA ;
+        :partTreeIndex             "01.02" ;
+        :partType                  bdr:PartTypeTableOfContent ;
+        skos:prefLabel             "gter chen sangs rgyas gling pas pu ri phug mo che nas spyan drangs pa'i gter chos bla ma dgongs pa 'dus pa pa'i chos skor pod dang po ka_(dkar chag ka)"@bo-x-ewts .

@@ -59,6 +59,7 @@ public class SimpleOutline {
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
+    public static final Property partTreeIndex = ResourceFactory.createProperty(EditConstants.BDO + "partTreeIndex");
     public static final Property partTypeP = ResourceFactory.createProperty(EditConstants.BDO + "partType");
     public static final Property instanceOf = ResourceFactory.createProperty(EditConstants.BDO + "instanceOf");
     public static final Property colophonP = ResourceFactory.createProperty(EditConstants.BDO + "colophon");
@@ -461,7 +462,7 @@ public class SimpleOutline {
             
             // quick optimization:
             if (l1.size() == 1 && l2.size() == 1) {
-                res.add(new Integer[] {1, 1});
+                res.add(new Integer[] {0, 0});
                 return res;
             }
             
@@ -538,6 +539,7 @@ public class SimpleOutline {
                     m.add(node, RDF.type, m.createResource(EditConstants.BDO+"Note"));
                     m.add(node, noteText, lit);
                 } else {
+                    node = existing_nodes.get(corr[0]);
                     m.removeAll(node, noteText, (RDFNode) null);
                     m.add(node, noteText, lit);
                 }
@@ -602,6 +604,7 @@ public class SimpleOutline {
                     m.add(node, RDF.type, type != null ? type : m.createResource(EditConstants.BDO+"Title"));
                     m.add(node, RDFS.label, lit);
                 } else {
+                    node = existing_nodes.get(corr[0]);
                     m.removeAll(node, RDFS.label, (RDFNode) null);
                     m.add(node, RDFS.label, lit);
                     if (type != null) {
@@ -612,7 +615,7 @@ public class SimpleOutline {
             }
         }
         
-        public void insertInModel(final Model m, final SimpleOutline outline, final int part_index) {
+        public void insertInModel(final Model m, final SimpleOutline outline, final int part_index, final String parentPartIndex, final int nb_siblings) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
             // create res if not present:
@@ -627,6 +630,12 @@ public class SimpleOutline {
             // part_index
             m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));
             m.add(this.res, partIndex, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));
+            // partTreeIndex
+            String thisPTI = parentPartIndex+(parentPartIndex.isEmpty() ? "" : ".")+String.format("%02d", part_index);
+            if (nb_siblings > 100)
+                thisPTI = parentPartIndex+(parentPartIndex.isEmpty() ? "" : ".")+String.format("%04d", part_index);
+            m.remove(m.listStatements(this.res, partTreeIndex, (RDFNode) null));
+            m.add(this.res, partTreeIndex, m.createLiteral(thisPTI));
             final Resource pt = partTypeAsResource(this.partType, m);
             if (pt == null) {
                 outline.warns.add(new Warning("cannot interpret "+this.partType+" as a part type", this.row_i, outline.nbTreeColumns+1, true));
@@ -656,7 +665,7 @@ public class SimpleOutline {
             // children
             for (int i = 0 ; i < this.children.size() ; i++) {
                 final SimpleOutlineNode son = this.children.get(i);
-                son.insertInModel(m, outline, i+1); // part types start at 1
+                son.insertInModel(m, outline, i+1, thisPTI, this.children.size()); // part types start at 1
             }
         }
         
@@ -826,10 +835,12 @@ public class SimpleOutline {
         final List<Resource> allResourcesInCsv = this.listAllNodeResources();
         // we merge the two lists
         allResourcesInCsv.addAll(allResourcesInModel);
+        // TODO: for the case where we're not operating at the root, we should probably read
+        // the partTreeIndex instead of using ""
         for (final Resource r : allResourcesInCsv)
             this.reservedLnames.put(r.getLocalName(), true);
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
-            this.rootChildren.get(i).insertInModel(m, this, i+1);
+            this.rootChildren.get(i).insertInModel(m, this, i+1, "", this.rootChildren.size());
         }
     }
     

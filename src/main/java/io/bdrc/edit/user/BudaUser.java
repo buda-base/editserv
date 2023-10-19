@@ -205,9 +205,11 @@ public class BudaUser {
             try {
             	auth0Id = getAuth0IdFromUser(user);
             } catch (EditException e) {
+                toAdd += 1;
             	continue;
             }
-            if (auth0Id == null)
+            // weird case where a user exists on git but not on Fuseki
+            if (auth0Id == null && !userExistsOnGit(newId))
                 return user;
             toAdd += 1;
         }
@@ -247,6 +249,12 @@ public class BudaUser {
         res.addNamedModel(EditConstants.BDGUP+userLname, privateModel);
         res.addNamedModel(EditConstants.BDA+userLname, privateModel);
         return res;
+    }
+    
+    public static boolean userExistsOnGit(final String userRLname) {
+        final String pathInRepo = Models.getMd5(userRLname)+"/"+userRLname+".trig";
+        final String guessedPath = CommonsGit.gitLnameToRepoPath.get("GR0100")+"/"+pathInRepo;
+        return (new File(guessedPath)).exists();
     }
     
     public static GitInfo createAndSaveUser(final User usr, final Resource userR) throws IOException, GitAPIException {

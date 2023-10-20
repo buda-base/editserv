@@ -83,6 +83,26 @@ public class SimpleOutline {
     }
 
     
+    public static Literal valueToLiteral(final Model m, final String s) {
+        String str = s;
+        String lang = null;
+        final int at_idx = s.lastIndexOf('@');
+        if (at_idx > 1 && at_idx > s.length()-10) {
+            str = s.substring(0, at_idx);
+            lang = s.substring(at_idx+1);
+        }
+        if (lang == null)
+            lang = LangStrings.guessLangTag(str);
+        if ("bo".equals(lang)) {
+            str = ewtsConverter.toWylie(str);
+            lang = "bo-x-ewts";
+        }
+        str = str.strip();
+        if (lang == null)
+            return m.createLiteral(str);
+        return m.createLiteral(str, lang);
+    }
+    
     public static final String toQname(final Resource res) {
         final String uri = res.getURI();
         if (uri.startsWith(EditConstants.BDR)) {
@@ -409,26 +429,6 @@ public class SimpleOutline {
                 }
                 son.reuseExistingIDs(m, outline);
             }
-        }
-        
-        public static Literal valueToLiteral(final Model m, final String s) {
-            String str = s;
-            String lang = null;
-            final int at_idx = s.lastIndexOf('@');
-            if (at_idx > 1 && at_idx > s.length()-10) {
-                str = s.substring(0, at_idx);
-                lang = s.substring(at_idx+1);
-            }
-            if (lang == null)
-                lang = LangStrings.guessLangTag(str);
-            if ("bo".equals(lang)) {
-                str = ewtsConverter.toWylie(str);
-                lang = "bo-x-ewts";
-            }
-            str = str.strip();
-            if (lang == null)
-                return m.createLiteral(str);
-            return m.createLiteral(str, lang);
         }
         
         public static void reinsertSimple(final Model m, final Resource r, final Property p, final List<String> valueList) {
@@ -897,6 +897,14 @@ public class SimpleOutline {
         final List<String[]> res = new ArrayList<>();
         res.add(getHeaders(MIN_TREE_COLUMNS));
         return res;
+    }
+    
+    public boolean hasBlockingWarns() {
+        for (final Warning warn : this.warns) {
+            if (warn.blocking)
+                return true;
+        }
+        return false;
     }
     
     public List<String[]> asCsv() {

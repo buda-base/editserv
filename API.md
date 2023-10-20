@@ -161,11 +161,11 @@ Returns a csv file with the current state of the outline.
 - the response can optionally contain a `X-Status` HTTP header with the status URI that is currently associated with the outline
 - the `{oqname}` parameter is optional
 
-##### PUT `/outline/csv/{wqname}?oqname={oqname}`
+##### PUT / POST `/outline/csv/{wqname}?oqname={oqname}`
 
-Takes a csv file in the body.
+The request must have `Content-Type` set to `text/csv` and a csv file in the body.
 
-The request can optionally contain an `If-Match` HTTP header with the revision id of the resource (as represented in the `Etag` header of the GET endpoints).
+If the request is a POST, it may optionally contain an `If-Match` HTTP header with the revision id of the resource (as represented in the `Etag` header of the GET endpoints).
 
 The request can optionally contain a `X-Change-Message` HTTP header with a message that will be associated with the revision.
 

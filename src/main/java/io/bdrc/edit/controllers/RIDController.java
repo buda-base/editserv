@@ -151,6 +151,8 @@ public class RIDController {
             return "MW"+prefix.substring(2);
         if (prefix.startsWith("W"))
             return "M"+prefix;
+        if (prefix.startsWith("O"))
+            return "MW"+prefix.substring(1);
         if (prefix.startsWith("IE"))
             return "MW"+prefix.substring(2);
         return prefix;

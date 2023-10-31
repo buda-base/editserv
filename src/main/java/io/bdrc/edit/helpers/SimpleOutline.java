@@ -58,6 +58,7 @@ public class SimpleOutline {
     public boolean testMode = false;
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
+    public static final Property inRootInstance = ResourceFactory.createProperty(EditConstants.BDO + "inRootInstance");
     public static final Property partIndex = ResourceFactory.createProperty(EditConstants.BDO + "partIndex");
     public static final Property partTreeIndex = ResourceFactory.createProperty(EditConstants.BDO + "partTreeIndex");
     public static final Property partTypeP = ResourceFactory.createProperty(EditConstants.BDO + "partType");
@@ -636,6 +637,7 @@ public class SimpleOutline {
             reinsertSimple(m, this.res, colophonP, this.colophon);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             m.add(this.res, partOf, parent);
+            m.add(this.res, inRootInstance, outline.root);
             m.add(this.res, RDF.type, instance);
             // part_index
             m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));

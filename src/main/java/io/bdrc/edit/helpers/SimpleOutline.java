@@ -663,7 +663,7 @@ public class SimpleOutline {
                 } else if (this.work.startsWith("WA")) {
                     m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work));
                 } else {
-                    outline.warns.add(new Warning("work must be empty or start with bdr:WA or WA", this.row_i, outline.nbTreeColumns+4, true));
+                    outline.warns.add(new Warning("work must be empty or start with bdr:WA or WA, got "+this.work, this.row_i, outline.nbTreeColumns+4, true));
                 }
             }
             // content location

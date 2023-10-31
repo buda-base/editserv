@@ -657,6 +657,15 @@ public class SimpleOutline {
             }
             this.reinsertNotes(m, outline);
             this.reinsertTitles(m, outline);
+            if (this.work != null && !this.work.isEmpty()) {
+                if (this.work.startsWith("bdr:WA")) {
+                    m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work.substring(4)));
+                } else if (this.work.startsWith("WA")) {
+                    m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work));
+                } else {
+                    outline.warns.add(new Warning("work must be empty or start with bdr:WA or WA", this.row_i, outline.nbTreeColumns+4, true));
+                }
+            }
             // content location
             Resource cl = removeContentLocations(m, this.res, outline.digitalInstance);
             if (this.pageStart != null || this.pageEnd != null || this.volumeEnd != null || this.volumeStart != null) {

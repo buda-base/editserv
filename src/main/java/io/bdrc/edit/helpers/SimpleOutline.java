@@ -72,6 +72,7 @@ public class SimpleOutline {
     public static final Property note = ResourceFactory.createProperty(EditConstants.BDO + "note");
     public static final Property noteText = ResourceFactory.createProperty(EditConstants.BDO + "noteText");
     public static final Property contentLocationInstance = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationInstance");
+    public static final Resource instance = ResourceFactory.createResource(EditConstants.BDO + "Instance");
     
     public static final EwtsConverter ewtsConverter = new EwtsConverter();
     
@@ -630,6 +631,7 @@ public class SimpleOutline {
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             m.add(this.res, partOf, parent);
+            m.add(this.res, RDF.type, instance);
             // part_index
             m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));
             m.add(this.res, partIndex, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));

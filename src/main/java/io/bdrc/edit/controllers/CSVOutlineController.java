@@ -196,16 +196,17 @@ class CSVOutlineController {
     }
     
     @PutMapping(value = "/outline/csv/{wqname}")
-    public static ResponseEntity<String> putFocusGraph(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
-            HttpServletResponse response, @RequestHeader(value = "If-Match") String ifMatch, @RequestBody String csvString, @RequestHeader("X-Change-Message") String changeMessage, @RequestHeader("X-Outline-Attribution") String attribution, @RequestHeader("X-Status") String status) throws Exception {
-        if (!"StatusReleased".equals(status) && !"StatusWithdrawn".equals(status) && !"StatusEditing".equals("status")) {
+    public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
+            HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestBody String csvString, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
+        if (status.isPresent() && !"StatusReleased".equals(status.get()) && !"StatusWithdrawn".equals(status.get()) && !"StatusEditing".equals(status.get())) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("status must be StatusReleased, StatusWithdrawn or StatusEditing");
         }
-        if (ifMatch != null) {
-            ifMatch = ifMatch.replace("\"", "");
-            if (ifMatch.startsWith("W/"))
-                ifMatch = ifMatch.substring(2);
+        String ifMatchS = null;
+        if (ifMatch.isPresent() && ifMatch != null) {
+            ifMatchS = ifMatch.get().replace("\"", "");
+            if (ifMatchS.startsWith("W/"))
+                ifMatchS = ifMatchS.substring(2);
         }
         Resource ores = null;
         String olname = null;
@@ -214,11 +215,9 @@ class CSVOutlineController {
         Resource mwres = null;
         AccessInfo acc = (AccessInfo) req.getAttribute("access");
         Resource user = null;
-        boolean isAdmin = false;
         try {
             MainEditController.ensureAccess(acc, ores);
             user = BudaUser.getUserFromAccess(acc);
-            isAdmin = acc.isAdmin();
         } catch (EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
@@ -248,8 +247,8 @@ class CSVOutlineController {
                     .body("Content-Type must be text/csv");
         }
         CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(ores, false);
-        if (!gi.revId.equals(ifMatch)) {
-            
+        if (gi.revId != null && !gi.revId.equals(ifMatchS)) {
+            log.error("CSV version don't match: got {} but {} expected", ifMatchS, gi.revId);
         }
         Model m = null;
         if (gi.ds == null || gi.ds.isEmpty()) {
@@ -265,22 +264,26 @@ class CSVOutlineController {
         so.insertInModel(m, mwres, w);
         if (so.hasBlockingWarns())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
-        m.removeAll(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), (RDFNode) null);
-        if (!attribution.isEmpty())
-            m.add(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), SimpleOutline.valueToLiteral(m, attribution));
+        if (attribution.isPresent()) {
+            m.removeAll(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), (RDFNode) null);
+            if (!attribution.get().isEmpty())
+                m.add(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), SimpleOutline.valueToLiteral(m, attribution.get()));
+        }
         final Resource oadm = m.createResource(EditConstants.BDA+ores.getLocalName());
-        m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
-        m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+status));
+        if (status.isPresent() && !status.get().isEmpty()) {
+            m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
+            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+status.get()));
+        }
         final GitInfo gio;
         try {
-            gio = MainEditController.saveResource(m, ores, ifMatch, MainEditController.parseChangeMessage(changeMessage, true), user, isAdmin);
+            gio = MainEditController.putGraph(m, m.createResource(EditConstants.BDG+olname), MainEditController.parseChangeMessage(changeMessage.isPresent()?changeMessage.get():null, true), user);
         } catch(EditException e) {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage());
         }
         response.addHeader("Etag", '"'+gio.revId+'"');
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
-        return ResponseEntity.status((ifMatch == null || ifMatch.isEmpty()) ? HttpStatus.CREATED : HttpStatus.ACCEPTED).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
+        return ResponseEntity.status((ifMatchS == null || ifMatchS.isEmpty()) ? HttpStatus.CREATED : HttpStatus.ACCEPTED).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
     }
 
 }

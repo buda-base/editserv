@@ -834,7 +834,7 @@ public class SimpleOutline {
     public void reuseExistingIDs(final Model m) {
         // function that fills an empty this.res in the children of a node,
         // recursively on the 
-        final List<Resource> parts = getOrderedParts(this.root, this.root.getModel());
+        final List<Resource> parts = getOrderedParts(this.root, m);
         for (int i = 0 ; i < parts.size() ; i++) {
             if (this.allResourcesInCsv.contains(parts.get(i)))
                 parts.set(i, null);

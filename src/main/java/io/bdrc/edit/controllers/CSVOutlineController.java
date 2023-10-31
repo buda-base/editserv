@@ -215,13 +215,6 @@ class CSVOutlineController {
         Resource mwres = null;
         AccessInfo acc = (AccessInfo) req.getAttribute("access");
         Resource user = null;
-        try {
-            MainEditController.ensureAccess(acc, ores);
-            user = BudaUser.getUserFromAccess(acc);
-        } catch (EditException e) {
-            return ResponseEntity.status(e.getHttpStatus())
-                    .body(e.getMessage());
-        }
         if (!oqname.isPresent()) {
             final Resource[] outlineInfo = getLikelyOutline(w);
             ores = outlineInfo[0];
@@ -241,6 +234,13 @@ class CSVOutlineController {
             // TODO: check that oqname is indeed an outline for wqname
             olname = oqname.get().substring(4);
             ores = ResourceFactory.createResource(EditConstants.BDR+oqname);
+        }
+        try {
+            MainEditController.ensureAccess(acc, ores);
+            user = BudaUser.getUserFromAccess(acc);
+        } catch (EditException e) {
+            return ResponseEntity.status(e.getHttpStatus())
+                    .body(e.getMessage());
         }
         if (!req.getHeader("Content-Type").equals("text/csv")) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)

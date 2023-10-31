@@ -580,6 +580,8 @@ public class SimpleOutline {
             final List<String> str_values = new ArrayList<>();
             final List<Resource> new_types = new ArrayList<>();
             this.getSplitTitleValues(str_values, new_types);
+            // we derive prefLabels from titles when the label column is empty
+            final Map<String,Boolean> seenLangTags = new HashMap<>();
             
             final StmtIterator sti = m.listStatements(this.res, hasTitle, (RDFNode) null);
             while (sti.hasNext()) {
@@ -599,6 +601,10 @@ public class SimpleOutline {
                 }
                 Resource node = null;
                 final Literal lit = valueToLiteral(m, str_values.get(corr[1]));
+                if (this.labels.isEmpty() && !seenLangTags.containsKey(lit.getLanguage())) {
+                    m.add(this.res, SKOS.prefLabel, lit);
+                    seenLangTags.put(lit.getLanguage(), true);
+                }
                 final Resource type = new_types.get(corr[1]);
                 if (corr[0] == null) {
                     // new node
@@ -628,7 +634,6 @@ public class SimpleOutline {
                 this.res = m.createResource(this.res.getURI()); // connect to model
             // first, remove and reinsert simple properties:
             reinsertSimple(m, this.res, colophonP, this.colophon);
-            reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             m.add(this.res, partOf, parent);
             m.add(this.res, RDF.type, instance);

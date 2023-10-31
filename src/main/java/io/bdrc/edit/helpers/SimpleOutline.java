@@ -261,7 +261,6 @@ public class SimpleOutline {
             } else {
                 this.res = null;
             }
-            
             this.partType = csvRow[nb_position_columns+1];
             this.labels = getStrings(csvRow[nb_position_columns+2]);
             this.titles = getStrings(csvRow[nb_position_columns+3]);
@@ -618,7 +617,7 @@ public class SimpleOutline {
             }
         }
         
-        public void insertInModel(final Model m, final SimpleOutline outline, final int part_index, final String parentPartIndex, final int nb_siblings) {
+        public void insertInModel(final Model m, final SimpleOutline outline, final Resource parent, final int part_index, final String parentPartIndex, final int nb_siblings) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
             // create res if not present:
@@ -630,6 +629,7 @@ public class SimpleOutline {
             reinsertSimple(m, this.res, colophonP, this.colophon);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
+            m.add(this.res, partOf, parent);
             // part_index
             m.remove(m.listStatements(this.res, partIndex, (RDFNode) null));
             m.add(this.res, partIndex, m.createTypedLiteral(part_index, XSDDatatype.XSDinteger));
@@ -668,7 +668,7 @@ public class SimpleOutline {
             // children
             for (int i = 0 ; i < this.children.size() ; i++) {
                 final SimpleOutlineNode son = this.children.get(i);
-                son.insertInModel(m, outline, i+1, thisPTI, this.children.size()); // part types start at 1
+                son.insertInModel(m, outline, this.res, i+1, thisPTI, this.children.size()); // part types start at 1
             }
         }
         
@@ -865,7 +865,7 @@ public class SimpleOutline {
         this.reuseExistingIDs(m);
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
             final SimpleOutlineNode son = this.rootChildren.get(i);
-            son.insertInModel(m, this, i+1, "", this.rootChildren.size());
+            son.insertInModel(m, this, mw, i+1, "", this.rootChildren.size());
         }
     }
     

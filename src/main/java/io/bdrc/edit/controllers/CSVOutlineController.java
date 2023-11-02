@@ -283,6 +283,9 @@ class CSVOutlineController {
         if (status.isPresent() && !status.get().isEmpty()) {
             m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+status.get()));
+        } else {
+            m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
+            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+"StatusReleased"));
         }
         final GitInfo gio;
         try {

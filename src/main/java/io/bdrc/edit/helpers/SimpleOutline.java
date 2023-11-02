@@ -752,7 +752,7 @@ public class SimpleOutline {
         this.nbTreeColumns = 0;
         final String[] headers = csvData.get(0);
         for (int i = 1 ; i < headers.length ; i ++) {
-            if (headers[i].equalsIgnoreCase("Position"))
+            if (headers[i].toLowerCase().startsWith("position")) // sometimes Excel adds a suffix to columns
                 this.nbTreeColumns += 1;
             else
                 break;

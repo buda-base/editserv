@@ -346,7 +346,13 @@ public class SimpleOutline {
                 final Statement titleValueS = title.getProperty(RDFS.label);
                 if (titleValueS == null)
                     continue;
-                this.titles.add(getTitlePrefix(title)+litToString(titleValueS.getLiteral()));
+                final String litString = litToString(titleValueS.getLiteral());
+                if (this.labels.contains(litString)) {
+                    this.labels.remove(litString);
+                    this.titles.add(0, getTitlePrefix(title)+litString);
+                } else {
+                    this.titles.add(getTitlePrefix(title)+litString);
+                }
             }
         }
         

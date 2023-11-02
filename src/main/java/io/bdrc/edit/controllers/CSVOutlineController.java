@@ -118,7 +118,12 @@ class CSVOutlineController {
         final String wlname = wqname.substring(4);
         Resource w = ResourceFactory.createResource(EditConstants.BDR+wlname);
         if (!oqname.isPresent()) {
-            ores = getLikelyOutline(w)[0];
+            final Resource[] outlineInfo = getLikelyOutline(w);
+            ores = outlineInfo[0];
+            if (outlineInfo[1] == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+                        .body(StreamingHelpers.getStream("No data could be found for " + wlname));
+            }
             if (ores == null) {
                 log.info("no outline found for "+wqname);
                 olname = "O"+wlname.substring(1);
@@ -126,8 +131,9 @@ class CSVOutlineController {
                 response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+wlname+".csv");
                 return ResponseEntity.status(HttpStatus.OK).contentType(TEXT_CSV_TYPE)
                         .body(getCsvStream(SimpleOutline.getTemplate()));
+            } else {
+                olname = ores.getLocalName();
             }
-            olname = ores.getLocalName();
         } else {
             olname = oqname.get().substring(4);
             if (olname.startsWith("O"))
@@ -219,12 +225,16 @@ class CSVOutlineController {
             final Resource[] outlineInfo = getLikelyOutline(w);
             ores = outlineInfo[0];
             mwres = outlineInfo[1];
+            if (mwres == null) {
+                return ResponseEntity.status(500)
+                        .body("No data could be found for "+wlname);
+            }
             if (ores == null) {
                 log.info("no outline found for "+wqname);
                 olname = "O"+wlname.substring(1);
                 if (RIDController.idExists(olname)) {
                     return ResponseEntity.status(500)
-                            .body(olname+" already exists, please specify the ");
+                            .body(olname+" already exists, please specify a new one");
                 }
                 ores = ResourceFactory.createResource(EditConstants.BDR + olname);
             } else {

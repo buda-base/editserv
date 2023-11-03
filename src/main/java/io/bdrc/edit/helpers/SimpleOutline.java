@@ -115,7 +115,7 @@ public class SimpleOutline {
     
     public static final String litToString(final Literal l) {
         final String lang = l.getLanguage();
-        if (lang == null || lang.equals("en") || lang.startsWith("zh-Han"))
+        if (lang == null || lang.startsWith("zh-Han"))
             return l.getLexicalForm();
         if (l.getLanguage().endsWith("-x-ewts"))
             return ewtsConverter.toUnicode(l.getString());

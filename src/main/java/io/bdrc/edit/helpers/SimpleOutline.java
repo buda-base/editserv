@@ -128,7 +128,7 @@ public class SimpleOutline {
             return "";
         switch(pt.getLocalName()) {
         case "PartTypeTableOfContent":
-            return "TOC";
+            return "E";
         case "PartTypeChapter":
             return "C";
         case "PartTypeFascicle":
@@ -148,7 +148,7 @@ public class SimpleOutline {
     public static final Resource partTypeAsResource(final String s, final Model m) {
         switch(s) {
         case "TOC":
-            return m.createResource(EditConstants.BDR+"PartTypeTableOfContent");
+            return m.createResource(EditConstants.BDR+"PartTypeEditorial");
         case "C":
             return m.createResource(EditConstants.BDR+"PartTypeChapter");
         case "Fa":

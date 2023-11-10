@@ -282,7 +282,7 @@ class CSVOutlineController {
         final Resource oadm = m.createResource(EditConstants.BDA+ores.getLocalName());
         if (status.isPresent() && !status.get().isEmpty()) {
             m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
-            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(status.get().substring(1, status.get().length()-2)));
+            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(status.get().substring(1, status.get().length()-1)));
         } else {
             m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+"StatusReleased"));

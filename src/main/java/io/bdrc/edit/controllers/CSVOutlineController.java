@@ -204,7 +204,7 @@ class CSVOutlineController {
     @PutMapping(value = "/outline/csv/{wqname}")
     public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
             HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestBody String csvString, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
-        if (status.isPresent() && !"StatusReleased".equals(status.get()) && !"StatusWithdrawn".equals(status.get()) && !"StatusEditing".equals(status.get())) {
+        if (status.isPresent() && !("<"+EditConstants.BDA+"StatusReleased>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusEditing>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusWithdrawn>").equals(status.get())) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("status must be StatusReleased, StatusWithdrawn or StatusEditing");
         }
@@ -282,7 +282,7 @@ class CSVOutlineController {
         final Resource oadm = m.createResource(EditConstants.BDA+ores.getLocalName());
         if (status.isPresent() && !status.get().isEmpty()) {
             m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
-            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+status.get()));
+            m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(status.get().substring(1, status.get().length()-2)));
         } else {
             m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+"StatusReleased"));

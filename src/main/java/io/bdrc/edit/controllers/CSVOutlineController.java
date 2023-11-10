@@ -102,9 +102,10 @@ class CSVOutlineController {
             mw = r.getResource("mw");
             final Resource o = r.getResource("o");
             final Resource status = r.getResource("st");
-            if (o != null && status.getLocalName().equals("StatusReleased"))
+            if (o != null && status != null && status.getLocalName().equals("StatusReleased"))
                 return new Resource[] {o, mw};
-            nonReleasedCandidate = o;
+            if (o != null)
+                nonReleasedCandidate = o;
         }
         return new Resource[] {nonReleasedCandidate, mw};
     }

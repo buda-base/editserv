@@ -25,9 +25,9 @@ public class HeaderFilter implements Filter {
         ((HttpServletResponse) response).addHeader("Access-Control-Allow-Headers",
                 "Origin, Accept, X-Requested-With, Content-Type, " 
                         + "Access-Control-Request-Method, Access-Control-Request-Headers, "
-                        + "Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-Match, X-Change-Message, If-None-Match, Cache-Control");
+                        + "Authorization, Keep-Alive, User-Agent, If-Modified-Since, If-Match, X-Change-Message, X-Status, X-Outline-Attribution, If-None-Match, Cache-Control");
         ((HttpServletResponse) response).addHeader("Access-Control-Expose-Headers",
-                "ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age, Content-Disposition");
+                "ETag, Last-Modified, Content-Type, Cache-Control, Vary, Access-Control-Max-Age, X-Status, X-Outline-Attribution, Content-Disposition");
         chain.doFilter(req, res);
     }
 

@@ -736,7 +736,7 @@ public class SimpleOutline {
         public Warning(final String msg, final Integer row, final Integer col, final boolean blocking) {
             this.msg = msg;
             this.row = row;
-            this.col = col;
+            this.col = col+1; // we start the columns at 0 in the call but we want to start them at 1 in the warning
             this.blocking = blocking;
         }
     }
@@ -912,8 +912,8 @@ public class SimpleOutline {
         headers[nbPositionColumns+6] = "colophon";
         headers[nbPositionColumns+7] = "img start";
         headers[nbPositionColumns+8] = "img end";
-        headers[nbPositionColumns+9] = "volume start";
-        headers[nbPositionColumns+10] = "volume end";
+        headers[nbPositionColumns+9] = "img grp start";
+        headers[nbPositionColumns+10] = "img grp end";
         return headers;
     }
     

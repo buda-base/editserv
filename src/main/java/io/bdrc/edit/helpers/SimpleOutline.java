@@ -752,7 +752,7 @@ public class SimpleOutline {
         public Warning(final String msg, final Integer row, final Integer col, final boolean blocking) {
             this.msg = msg;
             this.row = row;
-            this.col = col+1; // we start the columns at 0 in the call but we want to start them at 1 in the warning
+            this.col = (col == null) ? null : col+1; // we start the columns at 0 in the call but we want to start them at 1 in the warning
             this.blocking = blocking;
         }
     }

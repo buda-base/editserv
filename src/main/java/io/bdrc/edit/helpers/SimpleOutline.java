@@ -39,7 +39,7 @@ import io.bdrc.libraries.LangStrings;
 public class SimpleOutline {
 
     public final static int MIN_TREE_COLUMNS = 4;
-    public final static int NB_NON_TREE_COLUMNS = 11;
+    public final static int NB_NON_TREE_COLUMNS = 12;
     
     public final static int MAX_LVST_DIST = 10; // a bit arbitrary
     
@@ -215,6 +215,7 @@ public class SimpleOutline {
         public String work = "";
         public List<String> labels;
         public List<String> titles;
+        public List<String> identifiers;
         public List<String> notes;
         public String partType;
         public List<String> colophon;
@@ -271,10 +272,11 @@ public class SimpleOutline {
             this.work = csvRow[nb_position_columns+4];
             this.notes = getStrings(csvRow[nb_position_columns+5]);
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
-            this.pageStart = getWithException(csvRow[nb_position_columns+7], row_i, nb_position_columns+7, warns);
-            this.pageEnd = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+8, warns);
-            this.volumeStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, warns);
-            this.volumeEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, warns);
+            this.identifiers = getStrings(csvRow[nb_position_columns+7]);
+            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+7, warns);
+            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+8, warns);
+            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+9, warns);
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+10, warns);
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -713,6 +715,8 @@ public class SimpleOutline {
         }
         
         public static String listToCsvCell(final List<String> valueList) {
+            if (valueList == null)
+                return "";
             return String.join(" ;; ", valueList);
         }
         
@@ -728,10 +732,11 @@ public class SimpleOutline {
             res[nb_position_columns+4] = this.work;
             res[nb_position_columns+5] = listToCsvCell(this.notes);
             res[nb_position_columns+6] = listToCsvCell(this.colophon);
-            res[nb_position_columns+7] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
-            res[nb_position_columns+8] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
-            res[nb_position_columns+9] = this.volumeStart == null ? "" : Integer.toString(this.volumeStart);
-            res[nb_position_columns+10] = this.volumeEnd == null ? "" : Integer.toString(this.volumeEnd);
+            res[nb_position_columns+7] = listToCsvCell(this.identifiers);
+            res[nb_position_columns+8] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
+            res[nb_position_columns+9] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
+            res[nb_position_columns+10] = this.volumeStart == null ? "" : Integer.toString(this.volumeStart);
+            res[nb_position_columns+11] = this.volumeEnd == null ? "" : Integer.toString(this.volumeEnd);
             return res;
         }
         
@@ -933,10 +938,11 @@ public class SimpleOutline {
         headers[nbPositionColumns+4] = "work";
         headers[nbPositionColumns+5] = "notes";
         headers[nbPositionColumns+6] = "colophon";
-        headers[nbPositionColumns+7] = "img start";
-        headers[nbPositionColumns+8] = "img end";
-        headers[nbPositionColumns+9] = "img grp start";
-        headers[nbPositionColumns+10] = "img grp end";
+        headers[nbPositionColumns+7] = "identifiers";
+        headers[nbPositionColumns+8] = "img start";
+        headers[nbPositionColumns+9] = "img end";
+        headers[nbPositionColumns+10] = "img grp start";
+        headers[nbPositionColumns+11] = "img grp end";
         return headers;
     }
     

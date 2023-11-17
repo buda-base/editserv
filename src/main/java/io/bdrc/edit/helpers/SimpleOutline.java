@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
@@ -394,12 +396,14 @@ public class SimpleOutline {
                 // in that case we don't want to remove back references
                 return;
             }
+            // list of associated resources to remove
+            final Set<Resource> connex_resources = new HashSet<>();
             while (sit.hasNext()) {
                 final Statement st = sit.next();
                 if (st.getObject().isResource()) {
                     final Resource or = st.getResource();
                     if (!outline.allResourcesInCsv.contains(or) && or != r)
-                        removeRecursiveSafe(m, or, outline);
+                        connex_resources.add(or);
                 }
             }
             m.removeAll(r, null, (RDFNode) null);
@@ -407,15 +411,15 @@ public class SimpleOutline {
             while (sit.hasNext()) {
                 final Resource or = sit.next().getSubject();
                 if (!outline.allResourcesInCsv.contains(or) && or != r)
-                    removeRecursiveSafe(m, or, outline);
+                    connex_resources.add(or);
+            }
+            // remove at the end to avoid concurrent modification exception
+            for (final Resource or : connex_resources) {
+                removeRecursiveSafe(m, or, outline);
             }
         }
         
-        public void removefromModel(final Model m, final SimpleOutline outline) {
-            removeRecursiveSafe(m, this.res, outline);
-        }
-        
-        public void reuseExistingIDs(Model m, final SimpleOutline outline) {
+        public void cleanupDescendants(Model m, final SimpleOutline outline) {
             // function that fills an empty this.res in the children of a node,
             // recursively
             List<Resource> parts = null;
@@ -430,11 +434,23 @@ public class SimpleOutline {
             // we assign the resources to their equivalent in the new csv when possible
             for (int i = 0 ; i < this.children.size() ; i++) {
                 final SimpleOutlineNode son = this.children.get(i);
-                if (parts != null && son.res == null && i < parts.size() && parts.get(i) != null) {
-                    son.res = parts.get(i);
-                    outline.allResourcesInCsv.add(son.res);
+                Resource part = null;
+                if (parts != null && i < parts.size())
+                    part = parts.get(i);
+                if (son.res == null && part != null) {
+                    son.res = part;
+                    outline.allResourcesInCsv.add(part);
+                    parts.set(i, null);
                 }
-                son.reuseExistingIDs(m, outline);
+                son.cleanupDescendants(m, outline);
+            }
+            if (parts == null)
+                return;
+            // remove parts that are not in the csv:
+            for (final Resource part : parts) {
+                if (part != null && !outline.allResourcesInCsv.contains(part)) {
+                    removeRecursiveSafe(m, part, outline);
+                }
             }
         }
         
@@ -855,9 +871,9 @@ public class SimpleOutline {
             this.warns.add(new Warning("invalid id, should be in the form bdr:"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_XXX, leave the column blank to generate one automatically", row_i, 0, true));
     }
     
-    public void reuseExistingIDs(final Model m) {
+    public void cleanupDescendants(final Model m) {
         // function that fills an empty this.res in the children of a node,
-        // recursively on the 
+        // recursively
         final List<Resource> parts = getOrderedParts(this.root, m);
         for (int i = 0 ; i < parts.size() ; i++) {
             if (this.allResourcesInCsv.contains(parts.get(i)))
@@ -867,11 +883,18 @@ public class SimpleOutline {
         // we assign the resources to their equivalent in the new csv when possible
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
             final SimpleOutlineNode son = this.rootChildren.get(i);
-            if (son.res == null && i < parts.size() && parts.get(i) != null) {
-                son.res = parts.get(i);
-                this.allResourcesInCsv.add(son.res);
+            final Resource part = (i < parts.size()) ? parts.get(i) : null;
+            if (son.res == null && part != null) {
+                son.res = part;
+                this.allResourcesInCsv.add(part);
+                parts.set(i, null);
             }
-            son.reuseExistingIDs(m, this);
+            son.cleanupDescendants(m, this);
+        }
+        for (final Resource part : parts) {
+            if (part != null && !this.allResourcesInCsv.contains(part)) {
+                SimpleOutlineNode.removeRecursiveSafe(m, part, this);
+            }
         }
     }
     
@@ -886,7 +909,7 @@ public class SimpleOutline {
         for (final Resource r : this.allResources)
             this.reservedLnames.put(r.getLocalName(), true);
         // reusing IDs at the root level
-        this.reuseExistingIDs(m);
+        this.cleanupDescendants(m);
         for (int i = 0 ; i < this.rootChildren.size() ; i++) {
             final SimpleOutlineNode son = this.rootChildren.get(i);
             son.insertInModel(m, this, mw, i+1, "", this.rootChildren.size());

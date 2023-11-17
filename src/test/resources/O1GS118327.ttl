@@ -1,4 +1,5 @@
 @prefix :      <http://purl.bdrc.io/ontology/core/> .
+@prefix bdo:      <http://purl.bdrc.io/ontology/core/> .
 @prefix adm:   <http://purl.bdrc.io/ontology/admin/> .
 @prefix bda:   <http://purl.bdrc.io/admindata/> .
 @prefix bdg:   <http://purl.bdrc.io/graph/> .
@@ -91,7 +92,7 @@ bdr:MW01CT0060_C88CFE
     :partOf             bdr:MW01CT0060_9A16FA ;
     :partTreeIndex      "01.02" ;
     :note               bdr:NT93D338F6A346B51D ;
-    :partType           bdr:PartTypeTableOfContent .
+    :partType           bdr:PartTypeEditorial .
 
 bdr:O1GS118327  a       :Outline ;
     :authorshipStatement  "genesmith on the basis of the earlier outline prepared by chris tomlinson; outlined with the gracious support of the trace foundation"@en ;
@@ -99,4 +100,62 @@ bdr:O1GS118327  a       :Outline ;
     :outlineOf          bdr:MW01CT0060 ;
     :outlineType        bdr:OutlineTypeGterChos ;
     :paginationType     bdr:PaginationAbsolute .
+
+
+
+bdr:CL1GS118327_O_W01CT0060_ZJTZUW
+        a       bdo:ContentLocation ;
+        bdo:contentLocationEndPage
+                4 ;
+        bdo:contentLocationEndVolume
+                1 ;
+        bdo:contentLocationInstance
+                bdr:W01CT0060 ;
+        bdo:contentLocationPage
+                3 ;
+        bdo:contentLocationVolume
+                1 .
+
+bdr:MW01CT0060_9A16FB
+        a       bdo:Instance ;
+        bdo:contentLocation
+                bdr:CL1GS118327_O_W01CT0060_ZJTZUW ;
+        bdo:inRootInstance
+                bdr:MW01CT0060 ;
+        bdo:partIndex
+                1 ;
+        bdo:partOf
+                bdr:MW01CT0060_C88CFE ;
+        bdo:partTreeIndex
+                "01.02.01" ;
+        bdo:partType
+                bdr:PartTypeChapter ;
+        skos:prefLabel
+                "test_remove"@en .
+
+bdr:CL1GS118327_O_W01CT0060_530EXT
+        a       bdo:ContentLocation ;
+        bdo:contentLocationEndVolume
+                2 ;
+        bdo:contentLocationInstance
+                bdr:W01CT0060 ;
+        bdo:contentLocationVolume
+                2 .
+
+bdr:MW01CT0060_9A16FC
+        a       bdo:Instance ;
+        bdo:contentLocation
+                bdr:CL1GS118327_O_W01CT0060_530EXT ;
+        bdo:inRootInstance
+                bdr:MW01CT0060 ;
+        bdo:partIndex
+                2 ;
+        bdo:partOf
+                bdr:MW01CT0060 ;
+        bdo:partTreeIndex
+                "02" ;
+        bdo:partType
+                bdr:PartTypeVolume ;
+        skos:prefLabel
+                "2_(kha)"@bo-x-ewts .
 

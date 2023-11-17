@@ -102,5 +102,5 @@ bdr:MW01CT0060_C88CFE
         :partIndex                 2 ;
         :partOf                    bdr:MW01CT0060_9A16FA ;
         :partTreeIndex             "01.02" ;
-        :partType                  bdr:PartTypeTableOfContent ;
+        :partType                  bdr:PartTypeEditorial ;
         skos:prefLabel             "gter chen sangs rgyas gling pas pu ri phug mo che nas spyan drangs pa'i gter chos bla ma dgongs pa 'dus pa pa'i chos skor pod dang po ka_(dkar chag ka)"@bo-x-ewts .

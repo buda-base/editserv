@@ -151,7 +151,7 @@ public class CsvOutlineTest {
             .source(TESTDIR+"O1GS118327-updated.ttl")
             .lang(RDFLanguages.TTL)
             .parse(StreamRDFLib.graph(expected_g));
-        result.write(System.out, "TTL");
+        //result.write(System.out, "TTL");
         //debug_diff(result, expected);
         assert(result.isIsomorphicWith(expected));
     }

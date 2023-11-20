@@ -2,6 +2,7 @@ package io.bdrc.edit.helpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,6 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.apache.commons.validator.routines.ISBNValidator;
+import org.apache.commons.validator.routines.ISSNValidator;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
@@ -72,10 +75,17 @@ public class SimpleOutline {
     public static final Property contentLocationPage = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationPage");
     public static final Property contentLocationEndPage = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationEndPage");
     public static final Property hasTitle = ResourceFactory.createProperty(EditConstants.BDO + "hasTitle");
+    public static final Property identifiedBy = ResourceFactory.createProperty(EditConstants.BF + "identifiedBy");
+    public static final Property seriesNumber = ResourceFactory.createProperty(EditConstants.BDO + "seriesNumber");
     public static final Property note = ResourceFactory.createProperty(EditConstants.BDO + "note");
     public static final Property noteText = ResourceFactory.createProperty(EditConstants.BDO + "noteText");
     public static final Property contentLocationInstance = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationInstance");
     public static final Resource instance = ResourceFactory.createResource(EditConstants.BDO + "Instance");
+    public static final Resource Isbn = ResourceFactory.createResource(EditConstants.BF + "Isbn");
+    public static final Resource Issn = ResourceFactory.createResource(EditConstants.BF + "Issn");
+    
+    static final ISBNValidator isbn_validator = new ISBNValidator();
+    static final ISSNValidator issn_validator = new ISSNValidator();
     
     public static final EwtsConverter ewtsConverter = new EwtsConverter();
     
@@ -117,7 +127,7 @@ public class SimpleOutline {
     
     public static final String litToString(final Literal l) {
         final String lang = l.getLanguage();
-        if (lang == null || lang.startsWith("zh-Han"))
+        if (lang == null || lang.isEmpty() || lang.startsWith("zh-Han"))
             return l.getLexicalForm();
         if (l.getLanguage().endsWith("-x-ewts"))
             return ewtsConverter.toUnicode(l.getString());
@@ -325,17 +335,58 @@ public class SimpleOutline {
             }
         }
         
+        public static String getIDPrefix(final Resource title) {
+            // common prefixes expected to be found are bdr:NLMId, bdr:RefCPN, bdr:RefNCLK, bf:Isbn, bf:Issn 
+            final Resource titleTypeR = title.getPropertyResourceValue(RDF.type);
+            if (titleTypeR == null)
+                return "";
+            switch(titleTypeR.getLocalName()) {
+            case "NLMId":
+                return "(NLM) ";
+            case "RefCPN":
+                return "(CPN) ";
+            case "Isbn":
+                return "(ISBN) ";
+            case "Issn":
+                return "(ISSN)";
+            case "RefNCLK":
+                return "(NCLK) ";
+            default:
+                return "";
+            }
+        }
+        
+        public static Resource getIDResource(final String prefix) {
+            switch(prefix.toLowerCase().trim()) {
+            case "isbn":
+                return ResourceFactory.createResource(EditConstants.BF+"Isbn");
+            case "issn":
+                return ResourceFactory.createResource(EditConstants.BF+"Issn");
+            case "cpn":
+                return ResourceFactory.createResource(EditConstants.BDR+"RefCPN");
+            case "nclk":
+            case "drepung":
+                return ResourceFactory.createResource(EditConstants.BDR+"RefNCLK");
+            case "nlm":
+                return ResourceFactory.createResource(EditConstants.BDR+"NLMId");
+            case "sn":
+                return seriesNumber;
+            default:
+                return null;
+            }
+        }
+        
         public static Resource getTitleResource(final String prefix) {
-            switch(prefix) {
-            case "TP":
+            switch(prefix.toLowerCase().trim()) {
+            case "tp":
                 return ResourceFactory.createResource(EditConstants.BDO+"TitlePageTitle");
-            case "C":
+            case "c":
                 return ResourceFactory.createResource(EditConstants.BDO+"ColophonTitle");
-            case "I":
+            case "i":
                 return ResourceFactory.createResource(EditConstants.BDO+"IncipitTitle");
             case "*":
                 return ResourceFactory.createResource(EditConstants.BDO+"ReconstructedTitle");
-            case "M":
+            case "m":
                 return ResourceFactory.createResource(EditConstants.BDO+"RunningTitle");
             default:
                 return null;
@@ -357,6 +408,24 @@ public class SimpleOutline {
                 } else {
                     this.titles.add(getTitlePrefix(title)+litString);
                 }
+            }
+        }
+        
+        public void getIDs() {
+            this.identifiers = new ArrayList<>();
+            final StmtIterator ids = this.res.listProperties(identifiedBy);
+            while (ids.hasNext()) {
+                final Resource id = ids.next().getResource();
+                final Statement idValueS = id.getProperty(RDF.value);
+                if (idValueS == null)
+                    continue;
+                final String litString = litToString(idValueS.getLiteral());
+                this.identifiers.add(getIDPrefix(id)+litString);
+            }
+            final StmtIterator sns = this.res.listProperties(seriesNumber);
+            while (sns.hasNext()) {
+                final String litString = litToString(sns.next().getLiteral());
+                this.identifiers.add("(SN) "+litString);                
             }
         }
         
@@ -388,6 +457,7 @@ public class SimpleOutline {
             this.labels = listSimpleProperty(res, SKOS.prefLabel);
             getSimpleLocation(w);
             getTitles();
+            getIDs();
             getNotes();
         }
         
@@ -499,7 +569,14 @@ public class SimpleOutline {
             // Compute Levenshtein distances for all pairs
             for (int i = 0; i < l1.size(); i++) {
                 for (int j = 0; j < l2.size(); j++) {
-                    int dst_i_j = lev.apply(l1.get(i), l2.get(j));
+                    int dst_i_j = 0;
+                    if (l1.get(i) != null || l2.get(j) != null) {
+                        if (l1.get(i) == null || l2.get(j) == null) {
+                            dst_i_j = MAX_LVST_DIST+1;
+                        } else {
+                            dst_i_j = lev.apply(l1.get(i), l2.get(j));
+                        }
+                    }
                     if (dst_i_j == -1)
                         dst_i_j = MAX_LVST_DIST+1;
                     final List<Integer[]> list_pairs = distance_to_idx_pair.getOrDefault(dst_i_j, new ArrayList<>());
@@ -574,10 +651,11 @@ public class SimpleOutline {
             }
         }
         
-        public void getSplitTitleValues(final List<String> str_values, final List<Resource> res_values) {
-            for (final String val : this.titles) {
+        public void getSplitPrefixedValues(final List<String> str_values, final List<Resource> res_values, final boolean title_type) {
+            final List<String> vals = title_type ? this.titles : this.identifiers;
+            for (final String val : vals) {
                 final int close_par_idx = val.indexOf(')');
-                if (val.startsWith("*")) {
+                if (val.startsWith("*")) { // only in titles
                     str_values.add(val);
                     res_values.add(getTitleResource("*"));
                     continue;
@@ -588,13 +666,13 @@ public class SimpleOutline {
                     continue;
                 }
                 final String type_str = val.substring(1, close_par_idx);
-                final Resource type = getTitleResource(type_str);
+                final Resource type = title_type ? getTitleResource(type_str) : getIDResource(type_str);
                 if (type == null) {
                     str_values.add(val);
                     res_values.add(null);
                     continue;
                 }
-                str_values.add(val.substring(close_par_idx+1));
+                str_values.add(val.substring(close_par_idx+1).trim());
                 res_values.add(type);
             }
         }
@@ -604,7 +682,7 @@ public class SimpleOutline {
             final List<String> existing_values = new ArrayList<>();
             final List<String> str_values = new ArrayList<>();
             final List<Resource> new_types = new ArrayList<>();
-            this.getSplitTitleValues(str_values, new_types);
+            this.getSplitPrefixedValues(str_values, new_types, true);
             // we derive prefLabels from titles when the label column is empty
             final Map<String,Boolean> seenLangTags = new HashMap<>();
             
@@ -649,6 +727,81 @@ public class SimpleOutline {
             }
         }
         
+        public static String normalize_isxn(final String isxn) {
+            return isxn.toUpperCase().replaceAll("-", "");
+        }
+        
+        public void reinsertIDs(final Model m, final SimpleOutline outline) {
+            final List<Resource> existing_nodes = new ArrayList<>();
+            final List<String> existing_values = new ArrayList<>();
+            final List<String> str_values = new ArrayList<>();
+            final List<Resource> new_types = new ArrayList<>();
+            this.getSplitPrefixedValues(str_values, new_types, false);
+            
+            // first, handle seriesNumber
+            m.remove(m.listStatements(this.res, seriesNumber, (RDFNode) null));
+            for (int i = 0 ; i < new_types.size() ; i++) {
+                if (new_types.get(i).equals(seriesNumber)) {
+                    m.add(this.res, seriesNumber, m.createLiteral(str_values.get(i)));
+                    str_values.set(i, null);
+                    new_types.set(i, null);
+                }
+            }
+            
+            // then the rest of the IDs
+            final StmtIterator sti = m.listStatements(this.res, identifiedBy, (RDFNode) null);
+            while (sti.hasNext()) {
+                final Resource node = sti.next().getResource();
+                final StmtIterator sti2 = m.listStatements(node, RDF.value, (RDFNode) null);
+                if (sti2.hasNext()) {
+                    final String value = sti2.next().getString();
+                    existing_nodes.add(node);
+                    existing_values.add(value);
+                }
+            }
+            final List<Integer[]> corrs = matchStrings(existing_values, str_values);
+            for (final Integer[] corr : corrs) {
+                if (corr[1] != null && new_types.get(corr[1]) == null && str_values.get(corr[1]) == null) {
+                    continue; // series number
+                }
+                if (corr[1] == null) {
+                    removeRecursiveSafe(m, existing_nodes.get(corr[0]), outline);
+                    continue;
+                }
+                Resource node = null;
+                final Resource type = new_types.get(corr[1]);
+                Literal lit = m.createLiteral(str_values.get(corr[1]));
+                if (type != null && (type.equals(Isbn) || type.equals(Issn))) {
+                    if (type.equals(Isbn) && !isbn_validator.isValid(str_values.get(corr[1])))
+                        outline.warns.add(new Warning("invalid ISBN", this.row_i, outline.nbTreeColumns+7, false));
+                    if (type.equals(Issn) && !issn_validator.isValid(str_values.get(corr[1])))
+                        outline.warns.add(new Warning("invalid ISSN", this.row_i, outline.nbTreeColumns+7, false));
+                    lit = m.createLiteral(normalize_isxn(str_values.get(corr[1])));
+                }
+                if (corr[0] == null) {
+                    // new node
+                    node = outline.newResource(m, "ID", this.res);
+                    m.add(this.res, identifiedBy, node);
+                    if (type == null) {
+                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN)", this.row_i, outline.nbTreeColumns+7, true));
+                    } else {
+                        m.add(node, RDF.type, type);
+                    }
+                    m.add(node, RDF.value, lit);
+                } else {
+                    node = existing_nodes.get(corr[0]);
+                    m.removeAll(node, RDF.value, (RDFNode) null);
+                    m.add(node, RDF.value, lit);
+                    if (type != null) {
+                        m.removeAll(node, RDF.type, (RDFNode) null);
+                        m.add(node, RDF.type, type);
+                    } else {
+                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN)", this.row_i, outline.nbTreeColumns+7, true));
+                    }
+                }
+            }
+        }
+        
         public void insertInModel(final Model m, final SimpleOutline outline, final Resource parent, final int part_index, final String parentPartIndex, final int nb_siblings) {
             // we assume that reuseExistingIDs and removefromModel have been called
             // on the relevant nodes
@@ -681,6 +834,7 @@ public class SimpleOutline {
             }
             this.reinsertNotes(m, outline);
             this.reinsertTitles(m, outline);
+            this.reinsertIDs(m, outline);
             if (this.work != null && !this.work.isEmpty()) {
                 if (this.work.startsWith("bdr:WA")) {
                     m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work.substring(4)));

@@ -11,6 +11,7 @@
 @prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix bf:    <http://id.loc.gov/ontologies/bibframe/> .
 
     
 bda:O1GS118327  a       adm:AdminData ;
@@ -62,8 +63,10 @@ bdr:MW01CT0060_9A16FA
     :inRootInstance     bdr:MW01CT0060 ;
     :legacyOutlineNodeRID  "O1GS1183272KG240154" ;
     :partIndex          1 ;
+    bf:identifiedBy     bdr:ID1GS118327_O_W01CT0060_1372FO ;
     :partOf             bdr:MW01CT0060 ;
     :partTreeIndex      "01" ;
+    :seriesNumber       "2" ;
     :partType           bdr:PartTypeVolume .
 
 bdr:MW01CT0060_5C2307
@@ -159,3 +162,6 @@ bdr:MW01CT0060_9A16FC
         skos:prefLabel
                 "2_(kha)"@bo-x-ewts .
 
+bdr:ID1GS118327_O_W01CT0060_1372FO
+        a       bf:Isbn ;
+        rdf:value "9783161484100" .

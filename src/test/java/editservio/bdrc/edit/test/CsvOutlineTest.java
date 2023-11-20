@@ -120,7 +120,7 @@ public class CsvOutlineTest {
         final Model result = ModelFactory.createDefaultModel();
         //result.add(outline);
         so.insertInModel(result, root, w);
-        //result.write(System.out, "TTL");
+        result.write(System.out, "TTL");
         //debug_diff(outline, result);
         //assert(result.isIsomorphicWith(outline));
     }

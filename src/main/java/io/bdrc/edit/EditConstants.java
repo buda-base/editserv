@@ -14,6 +14,7 @@ public class EditConstants {
     public static final String PTC_EXT = ".ptc";
 
     public static final String BDO = "http://purl.bdrc.io/ontology/core/";
+    public static final String BF = "http://id.loc.gov/ontologies/bibframe/";
     public static final String BDR = "http://purl.bdrc.io/resource/";
     public static final String ADM = "http://purl.bdrc.io/ontology/admin/";
     public static final String SH  = "http://www.w3.org/ns/shacl#";

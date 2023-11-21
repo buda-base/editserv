@@ -579,7 +579,7 @@ public class SimpleOutline {
                     }
                     if (dst_i_j == -1)
                         dst_i_j = MAX_LVST_DIST+1;
-                    final List<Integer[]> list_pairs = distance_to_idx_pair.getOrDefault(dst_i_j, new ArrayList<>());
+                    final List<Integer[]> list_pairs = distance_to_idx_pair.computeIfAbsent(dst_i_j, x -> new ArrayList<>());
                     list_pairs.add(new Integer[] {i,j});
                 }
             }
@@ -747,7 +747,6 @@ public class SimpleOutline {
                     new_types.set(i, null);
                 }
             }
-            
             // then the rest of the IDs
             final StmtIterator sti = m.listStatements(this.res, identifiedBy, (RDFNode) null);
             while (sti.hasNext()) {

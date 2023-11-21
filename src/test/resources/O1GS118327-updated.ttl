@@ -45,7 +45,7 @@ bdr:MW01CT0060_5C2307
         rdf:type                   :Instance ;
         :contentLocation           bdr:CL00ED7E95A7615C46 ;
         :contentLocationStatement  "3 ff." ;
-        :hasTitle                  bdr:TT1GS118327_O_2 , bdr:TT3E2D598818980586 , bdr:TT1GS118327_O_1 ;
+        :hasTitle                  bdr:TT3E2D598818980586 , bdr:TT1GS118327_O_1 ;
         :inRootInstance            bdr:MW01CT0060 ;
         :instanceOf                bdr:WA0XL5C230701CE94 ;
         :legacyOutlineNodeRID      "O1GS1183272KG240155" ;
@@ -62,9 +62,6 @@ bda:O1GS118327  rdf:type  adm:AdminData ;
         adm:gitRepo     bda:GR0016 ;
         adm:graphId     bdg:O1GS118327 ;
         adm:status      bda:StatusReleased .
-
-bdr:TT1GS118327_O_2  rdf:type  :Title ;
-        rdfs:label  "gsung rabs 'di nyid dpar bskrun 'grems spel zhus pa'i phan yon_(bla ma dgongs 'dus phan yon)"@bo-x-ewts .
 
 bdr:CL317CEB3CB6738BF4
         rdf:type                   :ContentLocation ;

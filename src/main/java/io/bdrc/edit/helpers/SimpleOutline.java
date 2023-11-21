@@ -465,6 +465,7 @@ public class SimpleOutline {
             // needs to be called after reuseExistingIDs
             StmtIterator sit = m.listStatements(r, null, (RDFNode) null);
             if (!sit.hasNext()) {
+                //System.out.println("exit early while removing "+r.getLocalName());
                 // in that case we don't want to remove back references
                 return;
             }
@@ -485,6 +486,7 @@ public class SimpleOutline {
                 if (!outline.allResourcesInCsv.contains(or) && or != r)
                     connex_resources.add(or);
             }
+            m.removeAll(null, null, r);
             // remove at the end to avoid concurrent modification exception
             for (final Resource or : connex_resources) {
                 removeRecursiveSafe(m, or, outline);
@@ -624,7 +626,7 @@ public class SimpleOutline {
                 final Resource node = sti.next().getResource();
                 final StmtIterator sti2 = m.listStatements(node, noteText, (RDFNode) null);
                 if (sti2.hasNext()) {
-                    final String value = sti2.next().getString();
+                    final String value = litToString(sti2.next().getLiteral());
                     existing_nodes.add(node);
                     existing_values.add(value);
                 }
@@ -691,7 +693,7 @@ public class SimpleOutline {
                 final Resource node = sti.next().getResource();
                 final StmtIterator sti2 = m.listStatements(node, RDFS.label, (RDFNode) null);
                 if (sti2.hasNext()) {
-                    final String value = sti2.next().getString();
+                    final String value = litToString(sti2.next().getLiteral());
                     existing_nodes.add(node);
                     existing_values.add(value);
                 }
@@ -753,7 +755,7 @@ public class SimpleOutline {
                 final Resource node = sti.next().getResource();
                 final StmtIterator sti2 = m.listStatements(node, RDF.value, (RDFNode) null);
                 if (sti2.hasNext()) {
-                    final String value = sti2.next().getString();
+                    final String value = litToString(sti2.next().getLiteral());
                     existing_nodes.add(node);
                     existing_values.add(value);
                 }

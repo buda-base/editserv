@@ -836,6 +836,7 @@ public class SimpleOutline {
             this.reinsertNotes(m, outline);
             this.reinsertTitles(m, outline);
             this.reinsertIDs(m, outline);
+            m.remove(m.listStatements(this.res, instanceOf, (RDFNode) null));
             if (this.work != null && !this.work.isEmpty()) {
                 if (this.work.startsWith("bdr:WA")) {
                     m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work.substring(4)));

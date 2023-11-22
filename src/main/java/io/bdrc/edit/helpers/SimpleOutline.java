@@ -2,7 +2,6 @@ package io.bdrc.edit.helpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -268,14 +267,16 @@ public class SimpleOutline {
             return res;
         }
         
-        public SimpleOutlineNode(final String[] csvRow, final int nb_position_columns, final List<Warning> warns, final int row_i) {
+        public SimpleOutlineNode(final String[] csvRow, final SimpleOutline outline, final int row_i) {
             this.children = new ArrayList<>();
             this.row_i = row_i;
             if (csvRow[0].length() > 4) {
+                outline.warnIfSubMWInvalid(csvRow[0].substring(4), row_i);
                 this.res = ResourceFactory.createResource(EditConstants.BDR+csvRow[0].substring(4));
             } else {
                 this.res = null;
             }
+            final int nb_position_columns = outline.nbTreeColumns;
             this.partType = csvRow[nb_position_columns+1];
             this.labels = getStrings(csvRow[nb_position_columns+2]);
             this.titles = getStrings(csvRow[nb_position_columns+3]);
@@ -283,10 +284,10 @@ public class SimpleOutline {
             this.notes = getStrings(csvRow[nb_position_columns+5]);
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
             this.identifiers = getStrings(csvRow[nb_position_columns+7]);
-            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+7, warns);
-            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+8, warns);
-            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+9, warns);
-            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+10, warns);
+            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+7, outline.warns);
+            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+8, outline.warns);
+            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+9, outline.warns);
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+10, outline.warns);
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -953,7 +954,7 @@ public class SimpleOutline {
                 warns.add(new Warning("missing position", row_i, null, true));
                 continue;
             }
-            final SimpleOutlineNode son = new SimpleOutlineNode(row, this.nbTreeColumns, this.warns, row_i);
+            final SimpleOutlineNode son = new SimpleOutlineNode(row, this, row_i);
             if (levelToParent[rowLevel] != null) {
                 levelToParent[rowLevel].children.add(son);
             } else {
@@ -1024,7 +1025,7 @@ public class SimpleOutline {
     }
     
     private Pattern submwpattern = null;
-    public void warnIfInvalid(final String submwlname, final int row_i) {
+    public void warnIfSubMWInvalid(final String submwlname, final int row_i) {
         // adds warnings if an mw from the csv (column 0) has a suspicious name
         if (this.submwpattern == null)
             this.submwpattern = Pattern.compile("^("+this.root.getLocalName()+"_[A-Z0-9]|"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_[A-Z0-9])$");

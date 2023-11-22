@@ -1,10 +1,12 @@
 package io.bdrc.edit.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
@@ -54,6 +56,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -202,6 +206,26 @@ class CSVOutlineController {
         return m;
     }
     
+    public static Literal parseAttribution(final Optional<String> attr, final Model m) {
+        if (attr == null || !attr.isPresent() || attr.isEmpty()) {
+            return null;
+        }
+        String attrs = attr.get();
+        try {
+            attrs = java.net.URLDecoder.decode(attrs, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            // not going to happen - value came from JDK's own StandardCharsets
+        }
+        String messageLang = "en";
+        final int atIdx = attrs.lastIndexOf('@');
+        if (atIdx != -1) {
+            messageLang = attrs.substring(atIdx+1, attrs.length());
+            attrs = attrs.substring(0, atIdx);
+        }
+        attrs = StringUtils.strip(attrs, "\" ");
+        return m.createLiteral(attrs, messageLang);
+    }
+    
     @PutMapping(value = "/outline/csv/{wqname}")
     public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
             HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestBody String csvString, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
@@ -276,16 +300,17 @@ class CSVOutlineController {
         if (so.hasBlockingWarns())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
         if (attribution.isPresent()) {
+            final Literal attributionL = parseAttribution(attribution, m);
             m.removeAll(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), (RDFNode) null);
-            if (!attribution.get().isEmpty())
-                m.add(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), SimpleOutline.valueToLiteral(m, attribution.get()));
+            if (attributionL != null) {
+                m.add(ores, m.createProperty(EditConstants.BDO, "authorshipStatement"), attributionL);
+            }
         }
         final Resource oadm = m.createResource(EditConstants.BDA+ores.getLocalName());
+        m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
         if (status.isPresent() && !status.get().isEmpty()) {
-            m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(status.get().substring(1, status.get().length()-1)));
         } else {
-            m.removeAll(oadm, m.createProperty(EditConstants.ADM, "status"), (RDFNode) null);
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+"StatusReleased"));
         }
         final GitInfo gio;

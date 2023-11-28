@@ -143,13 +143,13 @@ public class WithdrawController {
             HttpServletResponse response
             ) throws IOException, EditException, GitAPIException {
         if (!from_qname.startsWith("bdr:") || !to_qname.startsWith("bdr:") || from_qname.equals(to_qname))
-            throw new EditException("can't understand notifysync arguments "+ from_qname + ", " + to_qname);
+            throw new EditException(400, "can't understand notifysync arguments "+ from_qname + ", " + to_qname);
         if (!withdrawalOk(from_qname.substring(4), to_qname.substring(4)))
-            throw new EditException("cannot withdraw "+ from_qname + " in favor of " + to_qname);
+            throw new EditException(400, "cannot withdraw "+ from_qname + " in favor of " + to_qname);
         final Resource from = ResourceFactory.createResource(Models.BDR+from_qname.substring(4));
         final Resource to = ResourceFactory.createResource(Models.BDR+to_qname.substring(4));
         if (!is_released(to))
-            throw new EditException("target resource " + to_qname + " is not released");
+            throw new EditException(400, "target resource " + to_qname + " is not released");
         final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
         Resource user = null;
         if (EditConfig.useAuth) {

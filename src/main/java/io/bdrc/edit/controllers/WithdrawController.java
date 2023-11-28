@@ -5,6 +5,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -124,6 +125,16 @@ public class WithdrawController {
         return res;
     }
     
+    public static final List<String> authorizedPrefixesForWithdrawal = Arrays.asList("WA", "P", "G");
+    public static boolean withdrawalOk(final String fromRID, final String toRID) {
+        final String fromTPrefix = RIDController.getTypePrefix(fromRID);
+        final String toTPrefix = RIDController.getTypePrefix(fromRID);
+        if (fromTPrefix == null || !fromTPrefix.equals(toTPrefix)) {
+            return false;
+        }
+        return authorizedPrefixesForWithdrawal.contains(fromTPrefix);
+    }
+    
     @PostMapping(value = "/withdraw")
     public synchronized ResponseEntity<List<String>> withdraw(
             @RequestParam(value = "from") String from_qname,
@@ -133,6 +144,8 @@ public class WithdrawController {
             ) throws IOException, EditException, GitAPIException {
         if (!from_qname.startsWith("bdr:") || !to_qname.startsWith("bdr:") || from_qname.equals(to_qname))
             throw new EditException("can't understand notifysync arguments "+ from_qname + ", " + to_qname);
+        if (!withdrawalOk(from_qname.substring(4), to_qname.substring(4)))
+            throw new EditException("cannot withdraw "+ from_qname + " in favor of " + to_qname);
         final Resource from = ResourceFactory.createResource(Models.BDR+from_qname.substring(4));
         final Resource to = ResourceFactory.createResource(Models.BDR+to_qname.substring(4));
         if (!is_released(to))

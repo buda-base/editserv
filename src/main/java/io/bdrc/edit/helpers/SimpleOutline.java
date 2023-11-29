@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.commons.validator.routines.ISBNValidator;
 import org.apache.commons.validator.routines.ISSNValidator;
@@ -245,11 +246,11 @@ public class SimpleOutline {
             for (final SimpleOutlineNode son : this.children)
                 son.listAllDescendentResources(list, warns);
         }
-        
+
         public static Integer getWithException(final String cellContent, final int row_i, final int col_i, final List<Warning> warns) {
             try {
                 if (!cellContent.isEmpty())
-                    return Integer.valueOf(cellContent);
+                    return Integer.valueOf(StringUtils.replaceChars(cellContent, "༠༡༢༣༤༥༦༧༨༩", "0123456789"));
             } catch (NumberFormatException e) {
                 warns.add(new Warning("field must be a number", row_i, col_i, true));
             }

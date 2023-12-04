@@ -36,6 +36,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.bdrc.edit.EditConstants;
+import io.bdrc.edit.controllers.RIDController;
 import io.bdrc.ewtsconverter.EwtsConverter;
 import io.bdrc.libraries.LangStrings;
 
@@ -266,6 +267,26 @@ public class SimpleOutline {
                     res.add(normalized);
             }
             return res;
+        }
+        
+        public static final Pattern RIDpattern = Pattern.compile("^[A-Z0-9_\\-]+$");
+        public static Resource resourceFromText(String text, final Model m, final String expectedPrefix, final SimpleOutline outline, final int row_i, final int col_i) {
+            // use for works
+            text = text.trim();
+            if (text.startsWith("bdr:"))
+                text = text.substring(4);
+            final String prefix = RIDController.getTypePrefix(text);
+            if (!expectedPrefix.equals(prefix)) {
+                outline.warns.add(new Warning("invalid RID, got "+prefix+" but expected "+expectedPrefix, row_i, col_i, true));
+                return null;
+            }
+            if (!RIDpattern.matcher(text).find()) {
+                outline.warns.add(new Warning("invalid RID", row_i, col_i, true));
+                return null;
+            }
+            if (m == null)
+                return ResourceFactory.createResource(EditConstants.BDR+text);
+            return m.createResource(EditConstants.BDR+text);
         }
         
         public SimpleOutlineNode(final String[] csvRow, final SimpleOutline outline, final int row_i) {
@@ -840,13 +861,9 @@ public class SimpleOutline {
             this.reinsertIDs(m, outline);
             m.remove(m.listStatements(this.res, instanceOf, (RDFNode) null));
             if (this.work != null && !this.work.isEmpty()) {
-                if (this.work.startsWith("bdr:WA")) {
-                    m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work.substring(4)));
-                } else if (this.work.startsWith("WA")) {
-                    m.add(this.res, instanceOf, m.createResource(EditConstants.BDR + this.work));
-                } else {
-                    outline.warns.add(new Warning("work must be empty or start with bdr:WA or WA, got "+this.work, this.row_i, outline.nbTreeColumns+4, true));
-                }
+                final Resource work = resourceFromText(this.work, m, "WA", outline, this.row_i, outline.nbTreeColumns+4);
+                if (work != null)
+                    m.add(this.res, instanceOf, work);
             }
             // content location
             Resource cl = removeContentLocations(m, this.res, outline.digitalInstance);

@@ -52,7 +52,9 @@ import io.bdrc.edit.user.BudaUser;
 import io.bdrc.libraries.Models;
 import io.bdrc.libraries.StreamingHelpers;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -60,6 +62,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.zip.GZIPInputStream;
 
 
 @Controller
@@ -228,7 +231,7 @@ class CSVOutlineController {
     
     @PutMapping(value = "/outline/csv/{wqname}")
     public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
-            HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestBody String csvString, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
+            HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestHeader(value = "Content-Encoding") Optional<String> contentEncoding, @RequestBody byte[] requestBody, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
         if (status.isPresent() && !("<"+EditConstants.BDA+"StatusReleased>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusEditing>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusWithdrawn>").equals(status.get())) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("status must be StatusReleased, StatusWithdrawn or StatusEditing");
@@ -292,6 +295,17 @@ class CSVOutlineController {
             m = ModelUtils.getMainModel(gi.ds);
             m.setNsPrefixes(EditConfig.prefix.getPrefixMapping());
         }
+        String csvString = null;
+        if (contentEncoding.isPresent() && "gzip".equalsIgnoreCase(contentEncoding.get())) {
+            try {
+                csvString = decompressGzip(requestBody);
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                        .body("Cannot uncompress body");
+            }
+        } else {
+            csvString = new String(requestBody, StandardCharsets.UTF_8);
+        }
         final CSVReader reader = new CSVReader(new StringReader(csvString));
         final List<String[]> csvData = reader.readAll();
         reader.close();
@@ -323,6 +337,22 @@ class CSVOutlineController {
         response.addHeader("Etag", '"'+gio.revId+'"');
         response.addHeader("Content-Type", "text/plain;charset=utf-8");
         return ResponseEntity.status((ifMatchS == null || ifMatchS.isEmpty()) ? HttpStatus.CREATED : HttpStatus.ACCEPTED).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
+    }
+    
+    public final static String decompressGzip(final byte[] compressedData) throws IOException {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(compressedData);
+             final GZIPInputStream gzipInputStream = new GZIPInputStream(byteArrayInputStream);
+             final InputStreamReader reader = new InputStreamReader(gzipInputStream)) {
+
+            final char[] buffer = new char[1024];
+            final StringBuilder stringBuilder = new StringBuilder();
+            int readChars;
+            while ((readChars = reader.read(buffer)) != -1) {
+                stringBuilder.append(buffer, 0, readChars);
+            }
+
+            return stringBuilder.toString();
+        }
     }
 
 }

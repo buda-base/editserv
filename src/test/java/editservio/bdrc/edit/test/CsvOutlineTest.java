@@ -91,7 +91,8 @@ public class CsvOutlineTest {
         final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
         final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060.csv"));
         final List<String[]> fromFile = reader.readAll();
-        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w, 2);
+        assert(so.warns.size() == 0);
         //System.out.println(ow.writeValueAsString(so));
         final Model result = ModelFactory.createDefaultModel();
         result.add(outline);
@@ -116,7 +117,8 @@ public class CsvOutlineTest {
         final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
         final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060.csv"));
         final List<String[]> fromFile = reader.readAll();
-        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w, 2);
+        assert(so.warns.size() == 0);
         final Model result = ModelFactory.createDefaultModel();
         //result.add(outline);
         so.insertInModel(result, root, w);
@@ -140,7 +142,8 @@ public class CsvOutlineTest {
         final Resource o = outline.createResource(EditConstants.BDR + "O1GS118327");
         final CSVReader reader = new CSVReader(new FileReader(TESTDIR+"O1GS118327-W01CT0060-update.csv"));
         final List<String[]> fromFile = reader.readAll();
-        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w);
+        final SimpleOutline so = new SimpleOutline(fromFile, o, root, w, 2);
+        assert(so.warns.size() == 0);
         so.testMode = true;
         final Model result = ModelFactory.createDefaultModel();
         result.add(outline);

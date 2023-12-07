@@ -93,28 +93,41 @@ class CSVOutlineController {
         };
     }
     
-    public static Resource[] getLikelyOutline(final Resource w) {
+    public static final class WInfo {
+        Resource mw = null;
+        Resource o = null;
+        int mvn = 0;
+    }
+    
+    public static WInfo getWInfo(final Resource w) {
         // returns any released outline, if not return any non-released outline, if not return null
         // also returns the MW as the second value, whether an outline is found or not
-        final String query = "SELECT ?o ?mw ?st where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> }}";
+        final WInfo res = new WInfo();
+        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> :instanceHasVolume ?ig . ?ig :volumeNumber ?vn } }}";
         log.error(query);
         final Query q = QueryFactory.create(query);
         log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
         final QueryExecution qe = QueryExecution.service(FusekiWriteHelpers.FusekiSparqlEndpoint).query(q).build();
-        final ResultSet res = qe.execSelect();
+        final ResultSet ress = qe.execSelect();
         Resource nonReleasedCandidate = null;
-        Resource mw = null;
-        while (res.hasNext()) {
-            final QuerySolution r = res.next();
-            mw = r.getResource("mw");
+        while (ress.hasNext()) {
+            final QuerySolution r = ress.next();
+            if (r.contains("mw"))
+                res.mw = r.getResource("mw");
+            if (r.contains("mvn"))
+                res.mvn = r.getLiteral("mvn").getInt();
             final Resource o = r.getResource("o");
             final Resource status = r.getResource("st");
-            if (o != null && status != null && status.getLocalName().equals("StatusReleased"))
-                return new Resource[] {o, mw};
-            if (o != null)
+            if (o != null && status != null && status.getLocalName().equals("StatusReleased")) {
+                res.o = o;
+            } else if (o != null) {
                 nonReleasedCandidate = o;
+            }
         }
-        return new Resource[] {nonReleasedCandidate, mw};
+        if (res.o == null) {
+            res.o = nonReleasedCandidate;
+        }
+        return res;
     }
 
     @GetMapping(value = "/outline/csv/{wqname}")
@@ -126,9 +139,9 @@ class CSVOutlineController {
         final String wlname = wqname.substring(4);
         Resource w = ResourceFactory.createResource(EditConstants.BDR+wlname);
         if (!oqname.isPresent()) {
-            final Resource[] outlineInfo = getLikelyOutline(w);
-            ores = outlineInfo[0];
-            if (outlineInfo[1] == null) {
+            final WInfo winfo = getWInfo(w);
+            ores = winfo.o;
+            if (winfo.mw == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
                         .body(StreamingHelpers.getStream("No data could be found for " + wlname));
             }
@@ -249,10 +262,10 @@ class CSVOutlineController {
         Resource mwres = null;
         AccessInfo acc = (AccessInfo) req.getAttribute("access");
         Resource user = null;
+        final WInfo winfo = getWInfo(w);
         if (!oqname.isPresent()) {
-            final Resource[] outlineInfo = getLikelyOutline(w);
-            ores = outlineInfo[0];
-            mwres = outlineInfo[1];
+            ores = winfo.o;
+            mwres = winfo.mw;
             if (mwres == null) {
                 return ResponseEntity.status(500)
                         .body("No data could be found for "+wlname);
@@ -309,7 +322,7 @@ class CSVOutlineController {
         final CSVReader reader = new CSVReader(new StringReader(csvString));
         final List<String[]> csvData = reader.readAll();
         reader.close();
-        final SimpleOutline so = new SimpleOutline(csvData, ores, mwres, w);
+        final SimpleOutline so = new SimpleOutline(csvData, ores, mwres, w, winfo.mvn);
         so.insertInModel(m, mwres, w);
         if (so.hasBlockingWarns())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));

@@ -377,10 +377,14 @@ public class SimpleOutline {
             switch(titleTypeR.getLocalName()) {
             case "NLMId":
                 return "(NLM) ";
+            case "RefIsIAO":
+                return "(IsIAO) ";
             case "RefCPN":
                 return "(CPN) ";
             case "Isbn":
                 return "(ISBN) ";
+            case "Ean":
+                return "(EAN) ";
             case "Issn":
                 return "(ISSN)";
             case "RefNCLK":
@@ -394,10 +398,14 @@ public class SimpleOutline {
             switch(prefix.toLowerCase().trim()) {
             case "isbn":
                 return ResourceFactory.createResource(EditConstants.BF+"Isbn");
+            case "ean":
+                return ResourceFactory.createResource(EditConstants.BF+"Ean");
             case "issn":
                 return ResourceFactory.createResource(EditConstants.BF+"Issn");
             case "cpn":
                 return ResourceFactory.createResource(EditConstants.BDR+"RefCPN");
+            case "isiao":
+                return ResourceFactory.createResource(EditConstants.BDR+"RefIsIAO");
             case "nclk":
             case "drepung":
                 return ResourceFactory.createResource(EditConstants.BDR+"RefNCLK");

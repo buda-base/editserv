@@ -103,7 +103,7 @@ class CSVOutlineController {
         // returns any released outline, if not return any non-released outline, if not return null
         // also returns the MW as the second value, whether an outline is found or not
         final WInfo res = new WInfo();
-        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> :instanceHasVolume ?ig . ?ig :volumeNumber ?vn } }}";
+        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ig . ?ig <"+EditConstants.BDO+"volumeNumber> ?vn } }}";
         log.error(query);
         final Query q = QueryFactory.create(query);
         log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);

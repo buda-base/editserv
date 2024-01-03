@@ -307,20 +307,20 @@ public class SimpleOutline {
             this.notes = getStrings(csvRow[nb_position_columns+5]);
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
             this.identifiers = getStrings(csvRow[nb_position_columns+7]);
-            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+7, outline.warns);
+            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+8, outline.warns);
             if (this.pageStart != null && (this.pageStart < 1 || this.pageStart > 9999))
-                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+7, true));
-            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+8, outline.warns);
-            if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
                 outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+8, true));
-            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+9, outline.warns);
+            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
+            if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
+                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+9, true));
+            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
             if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
-                outline.warns.add(new Warning("invalid image group number, max image group number is "+outline.maxVolumeNumber, row_i, nb_position_columns+9, true));
-            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+10, outline.warns);
+                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+10, true));
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
             if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
-                outline.warns.add(new Warning("invalid image group number, min is 0, max is "+outline.maxVolumeNumber, row_i, nb_position_columns+10, true));
+                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
             if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
-                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+9, true));
+                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+11, true));
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -826,7 +826,7 @@ public class SimpleOutline {
                     node = outline.newResource(m, "ID", this.res);
                     m.add(this.res, identifiedBy, node);
                     if (type == null) {
-                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN)", this.row_i, outline.nbTreeColumns+7, true));
+                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN) or (SN)", this.row_i, outline.nbTreeColumns+7, true));
                     } else {
                         m.add(node, RDF.type, type);
                     }

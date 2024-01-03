@@ -180,7 +180,7 @@ public class CommonsGit {
             log.info("found git file {} for resource {}", guessedPath, r);
             return guessedGitInfo;
         } else {
-            log.error("didn't find git file {} for resource {}", guessedPath, r);
+            log.info("didn't find git file {} for resource {}", guessedPath, r);
         }
         final int underscore_idx = rLname.indexOf('_');
         if (gitOnly && underscore_idx == -1)

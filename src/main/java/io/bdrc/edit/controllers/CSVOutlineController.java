@@ -297,10 +297,11 @@ class CSVOutlineController {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                     .body("Content-Type must be text/csv");
         }
-        CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(ores, false);
+        CommonsGit.GitInfo gi = CommonsGit.gitInfoForResource(ores, true);
         if (gi.revId != null && !gi.revId.equals(ifMatchS)) {
             log.error("CSV version don't match: got {} but {} expected", ifMatchS, gi.revId);
         }
+        boolean creation = gi.revId == null;
         Model m = null;
         if (gi.ds == null || gi.ds.isEmpty()) {
             m = createOutlineModel(ores, mwres);
@@ -340,12 +341,13 @@ class CSVOutlineController {
         } else {
             m.add(oadm, m.createProperty(EditConstants.ADM, "status"), m.createResource(EditConstants.BDA+"StatusReleased"));
         }
+        final String[] parsedChangeMessage = MainEditController.parseChangeMessage(changeMessage.isPresent() ? changeMessage.get() : null, creation);
+        ModelUtils.addSimpleLogEntry(m, ores, user, parsedChangeMessage, creation);
         final GitInfo gio;
         try {
-            gio = MainEditController.putGraph(m, m.createResource(EditConstants.BDG+olname), MainEditController.parseChangeMessage(changeMessage.isPresent()?changeMessage.get():null, true), user);
+            gio = MainEditController.putGraph(m, m.createResource(EditConstants.BDG+olname), parsedChangeMessage, user);
         } catch(EditException e) {
-            return ResponseEntity.status(e.getHttpStatus())
-                    .body(e.getMessage());
+            return ResponseEntity.status(e.getHttpStatus()).body(e.getMessage());
         }
         response.addHeader("Etag", '"'+gio.revId+'"');
         response.addHeader("Content-Type", "text/plain;charset=utf-8");

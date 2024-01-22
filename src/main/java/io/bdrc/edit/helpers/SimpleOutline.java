@@ -327,9 +327,13 @@ public class SimpleOutline {
             final Statement s = r.getProperty(p);
             if (s == null)
                 return previousValue;
-            final int newValue = s.getInt();
-            if (previousValue == null || (max && newValue > previousValue) || (!max && newValue < previousValue))
-                return newValue;
+            try {
+                final int newValue = s.getInt();
+                if (previousValue == null || (max && newValue > previousValue) || (!max && newValue < previousValue))
+                    return newValue;
+            } catch (NumberFormatException e) {
+                return previousValue;
+            }
             return previousValue;
         }
         

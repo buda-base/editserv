@@ -8,7 +8,9 @@ serverRoot=localhost:8080
 ontologyDataUrl=http://purl.bdrc.io/graph/ontologySchema.ttl
 
 usersGitLocalRoot=/etc/buda/editserv/users/
-usersRemoteGit=https://gitlab.com/bdrc-data/users
+usersRemoteGit=https://gitlab.com/bdrc-data/users-20220922
+gitLocalSuffix=-20220922
+gitRemoteSuffix=-20220922
 
 logRootDir=/etc/buda/editserv/logs/resources/
 clienterror.filename=/etc/buda/editserv/logs/resources/client_errors.log

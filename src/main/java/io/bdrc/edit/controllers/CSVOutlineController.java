@@ -85,6 +85,10 @@ class CSVOutlineController {
             @Override
             public void writeTo(final OutputStream os) {
                 try (CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(os))) {
+                    // add UTF8 BOM
+                    os.write(0xef);
+                    os.write(0xbb);
+                    os.write(0xbf);
                     csvWriter.writeAll(rows);
                 } catch (IOException e) {
                     log.error("error writing csv", e);
@@ -134,6 +138,7 @@ class CSVOutlineController {
     public ResponseEntity<StreamingResponseBody> downloadCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") final String wqname, final HttpServletRequest req, HttpServletResponse response) throws IOException {
         // Set the content type and attachment header.
         response.setContentType("text/csv");
+        response.setCharacterEncoding("UTF-8");
         Resource ores = null;
         String olname = null;
         final String wlname = wqname.substring(4);
@@ -320,6 +325,9 @@ class CSVOutlineController {
         } else {
             csvString = new String(requestBody, StandardCharsets.UTF_8);
         }
+        // remove BOM
+        if (csvString.startsWith("\ufeff"))
+            csvString = csvString.substring(1);
         final CSVReader reader = new CSVReader(new StringReader(csvString));
         final List<String[]> csvData = reader.readAll();
         reader.close();

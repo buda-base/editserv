@@ -122,7 +122,7 @@ public class WithdrawController {
         return res;
     }
     
-    public static final List<String> authorizedPrefixesForWithdrawal = Arrays.asList("WA", "P", "G");
+    public static final List<String> authorizedPrefixesForWithdrawal = Arrays.asList("WA", "P", "G", "WAS");
     public static boolean withdrawalOk(final String fromRID, final String toRID) {
         final String fromTPrefix = RIDController.getTypePrefix(fromRID);
         final String toTPrefix = RIDController.getTypePrefix(fromRID);

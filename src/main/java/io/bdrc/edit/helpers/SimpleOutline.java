@@ -85,6 +85,7 @@ public class SimpleOutline {
     public static final Resource instance = ResourceFactory.createResource(EditConstants.BDO + "Instance");
     public static final Resource Isbn = ResourceFactory.createResource(EditConstants.BF + "Isbn");
     public static final Resource Issn = ResourceFactory.createResource(EditConstants.BF + "Issn");
+    public static final Property authorshipStatementP = ResourceFactory.createProperty(EditConstants.BDO + "authorshipStatement");
     
     static final ISBNValidator isbn_validator = new ISBNValidator();
     static final ISSNValidator issn_validator = new ISSNValidator();
@@ -231,6 +232,7 @@ public class SimpleOutline {
         public List<String> notes;
         public String partType;
         public List<String> colophon;
+        public List<String> authorshipStatement;
         public Integer pageStart = null;
         public Integer pageEnd = null;
         public Integer volumeStart = null;
@@ -306,21 +308,22 @@ public class SimpleOutline {
             this.work = csvRow[nb_position_columns+4];
             this.notes = getStrings(csvRow[nb_position_columns+5]);
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
-            this.identifiers = getStrings(csvRow[nb_position_columns+7]);
-            this.pageStart = getWithException(csvRow[nb_position_columns+8], row_i, nb_position_columns+8, outline.warns);
+            this.authorshipStatement = getStrings(csvRow[nb_position_columns+7]);
+            this.identifiers = getStrings(csvRow[nb_position_columns+8]);
+            this.pageStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
             if (this.pageStart != null && (this.pageStart < 1 || this.pageStart > 9999))
-                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+8, true));
-            this.pageEnd = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
-            if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
                 outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+9, true));
-            this.volumeStart = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
+            this.pageEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
+            if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
+                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+10, true));
+            this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
             if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
-                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+10, true));
-            this.volumeEnd = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
-            if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
                 outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
+            if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
+                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
             if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
-                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+11, true));
+                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+12, true));
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -500,6 +503,7 @@ public class SimpleOutline {
             if (work != null)
                 this.work = toQname(work);
             this.colophon = listSimpleProperty(res, colophonP);
+            this.authorshipStatement = listSimpleProperty(res, authorshipStatementP);
             this.labels = listSimpleProperty(res, SKOS.prefLabel);
             getSimpleLocation(w);
             getTitles();
@@ -859,6 +863,7 @@ public class SimpleOutline {
                 this.res = m.createResource(this.res.getURI()); // connect to model
             // first, remove and reinsert simple properties:
             reinsertSimple(m, this.res, colophonP, this.colophon);
+            reinsertSimple(m, this.res, authorshipStatementP, this.authorshipStatement);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
             m.add(this.res, partOf, parent);
             m.add(this.res, inRootInstance, outline.root);
@@ -930,11 +935,12 @@ public class SimpleOutline {
             res[nb_position_columns+4] = this.work;
             res[nb_position_columns+5] = listToCsvCell(this.notes);
             res[nb_position_columns+6] = listToCsvCell(this.colophon);
-            res[nb_position_columns+7] = listToCsvCell(this.identifiers);
-            res[nb_position_columns+8] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
-            res[nb_position_columns+9] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
-            res[nb_position_columns+10] = this.volumeStart == null ? "" : Integer.toString(this.volumeStart);
-            res[nb_position_columns+11] = this.volumeEnd == null ? "" : Integer.toString(this.volumeEnd);
+            res[nb_position_columns+7] = listToCsvCell(this.authorshipStatement);
+            res[nb_position_columns+8] = listToCsvCell(this.identifiers);
+            res[nb_position_columns+9] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
+            res[nb_position_columns+10] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
+            res[nb_position_columns+11] = this.volumeStart == null ? "" : Integer.toString(this.volumeStart);
+            res[nb_position_columns+12] = this.volumeEnd == null ? "" : Integer.toString(this.volumeEnd);
             return res;
         }
         
@@ -1137,11 +1143,12 @@ public class SimpleOutline {
         headers[nbPositionColumns+4] = "work";
         headers[nbPositionColumns+5] = "notes";
         headers[nbPositionColumns+6] = "colophon";
-        headers[nbPositionColumns+7] = "identifiers";
-        headers[nbPositionColumns+8] = "img start";
-        headers[nbPositionColumns+9] = "img end";
-        headers[nbPositionColumns+10] = "img grp start";
-        headers[nbPositionColumns+11] = "img grp end";
+        headers[nbPositionColumns+7] = "authorshipStatement";
+        headers[nbPositionColumns+8] = "identifiers";
+        headers[nbPositionColumns+9] = "img start";
+        headers[nbPositionColumns+10] = "img end";
+        headers[nbPositionColumns+11] = "img grp start";
+        headers[nbPositionColumns+12] = "img grp end";
         return headers;
     }
     

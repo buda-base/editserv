@@ -43,7 +43,7 @@ import io.bdrc.libraries.LangStrings;
 public class SimpleOutline {
 
     public final static int MIN_TREE_COLUMNS = 4;
-    public final static int NB_NON_TREE_COLUMNS = 12;
+    public final static int NB_NON_TREE_COLUMNS = 13;
     
     public final static int MAX_LVST_DIST = 10; // a bit arbitrary
     

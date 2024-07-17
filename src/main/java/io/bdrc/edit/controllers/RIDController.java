@@ -126,7 +126,7 @@ public class RIDController {
     }
     
     public static boolean idExists(final String id) {
-        final String query = "ASK  { { <http://purl.bdrc.io/resource/"+id+"> ?p ?o } union { ?s ?p <http://purl.bdrc.io/resource/"+id+"> } }";
+        final String query = "ASK  { { <http://purl.bdrc.io/resource/"+id+"> ?p ?o filter(?p != <http://purl.bdrc.io/ontology/tmp/thumbnailIIIFService>) } union { ?s ?p <http://purl.bdrc.io/resource/"+id+"> } }";
         final Query q = QueryFactory.create(query);
         log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
         final QueryExecution qe = QueryExecution.service(FusekiWriteHelpers.FusekiSparqlEndpoint).query(q).build();

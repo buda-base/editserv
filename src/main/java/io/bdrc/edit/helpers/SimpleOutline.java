@@ -865,6 +865,7 @@ public class SimpleOutline {
             reinsertSimple(m, this.res, colophonP, this.colophon);
             reinsertSimple(m, this.res, authorshipStatementP, this.authorshipStatement);
             reinsertSimple(m, this.res, SKOS.prefLabel, this.labels);
+            m.remove(m.listStatements(this.res, partOf, (RDFNode) null));
             m.add(this.res, partOf, parent);
             m.add(this.res, inRootInstance, outline.root);
             m.add(this.res, RDF.type, instance);

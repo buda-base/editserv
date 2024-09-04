@@ -134,7 +134,7 @@ public class RIDController {
         //log.info("id {} exists on fuseki? {}", id, res);
         // if not on Fuseki, we look on Git, just in case
         // we don't have image group git repository though (they are in the image instances)
-        if (!id.startsWith("I") && !id.startsWith("V"))
+        if (!id.startsWith("I") && !id.startsWith("V")) {
         //if (!res && !id.startsWith("I") && !id.startsWith("V"))
             try {
                 return CommonsGit.resourceExists(id);
@@ -142,7 +142,12 @@ public class RIDController {
                 log.error("exception in idExists", e);
                 return true;
             }
-        return true;
+        }
+        final String query = "ASK  { { <http://purl.bdrc.io/resource/"+id+"> ?p ?o filter(?p != <http://purl.bdrc.io/ontology/tmp/thumbnailIIIFService>) } union { ?s ?p <http://purl.bdrc.io/resource/"+id+"> } }";
+        final Query q = QueryFactory.create(query);
+        log.debug("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
+        final QueryExecution qe = QueryExecution.service(FusekiWriteHelpers.FusekiSparqlEndpoint).query(q).build();
+        return qe.execAsk();
     }
     
     public static final String foldToMW(final String prefix) {

@@ -384,6 +384,8 @@ public class SimpleOutline {
             switch(titleTypeR.getLocalName()) {
             case "NLMId":
                 return "(NLM) ";
+            case "LTWAId":
+                return "(LTWA) ";
             case "RefIsIAO":
                 return "(IsIAO) ";
             case "RefCPN":
@@ -405,6 +407,8 @@ public class SimpleOutline {
             switch(prefix.toLowerCase().trim()) {
             case "isbn":
                 return ResourceFactory.createResource(EditConstants.BF+"Isbn");
+            case "ltwa":
+                return ResourceFactory.createResource(EditConstants.BDR+"LTWAId");
             case "ean":
                 return ResourceFactory.createResource(EditConstants.BF+"Ean");
             case "issn":
@@ -793,7 +797,7 @@ public class SimpleOutline {
             // first, handle seriesNumber
             m.remove(m.listStatements(this.res, seriesNumber, (RDFNode) null));
             for (int i = 0 ; i < new_types.size() ; i++) {
-                if (new_types.get(i).equals(seriesNumber)) {
+                if (seriesNumber.equals(new_types.get(i))) {
                     m.add(this.res, seriesNumber, m.createLiteral(str_values.get(i)));
                     str_values.set(i, null);
                     new_types.set(i, null);

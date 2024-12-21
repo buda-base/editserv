@@ -361,7 +361,9 @@ public class MainEditController {
     public static GitInfo saveResource(final Model inModel, final Resource r, final String previousRev, final String[] changeMessage, final Resource user, final boolean isAdmin) throws EditException, IOException, GitAPIException {
         final Resource shape = CommonsRead.getShapeForEntity(r);
         final Model inFocusGraph = ModelUtils.getValidFocusGraph(inModel, r, shape);
+        log.error("save in git");
         final GitInfo gi = CommonsGit.saveInGit(inFocusGraph, r, shape, previousRev, changeMessage, user, isAdmin);
+        log.error("save in Fuseki");
         FusekiWriteHelpers.putDataset(gi);
         return gi;
     }

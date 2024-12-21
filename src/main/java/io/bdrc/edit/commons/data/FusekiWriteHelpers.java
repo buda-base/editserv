@@ -147,17 +147,17 @@ public class FusekiWriteHelpers {
             logger.info("drymode: don't put {} to Fuseki", graphName);
             return;
         }
-        logger.info("put {} to Fuseki", graphName);
+        logger.error("put {} to Fuseki", graphName);
         openConnection(distantDB);
         RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
         try {
-	        if (!conn.isInTransaction()) {
-	            conn.begin(ReadWrite.WRITE);
-	        }
+            conn.begin(ReadWrite.WRITE);
 	        conn.put(graphName, model);
 	        conn.commit();
         } catch (HttpException e) {
         	logger.error("error when putting graph {} in Fuseki: {}", graphName, e.getMessage()	);
+        } finally {
+            conn.end();
         }
     }
     

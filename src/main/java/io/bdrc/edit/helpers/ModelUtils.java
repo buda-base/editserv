@@ -25,6 +25,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.SKOS;
@@ -368,10 +369,25 @@ public class ModelUtils {
         boolean firstSync = true;
         final List<String> logEntryLocalNames = new ArrayList<String>();
         final StmtIterator lgIt = admData.listProperties(logEntry);
-        while (lgIt.hasNext()) {
+        while (lgIt.hasNext() && firstSync) {
             final Resource otherLg = lgIt.next().getResource();
+            // see https://github.com/buda-base/editserv/issues/36
+            final String otherLgLname = otherLg.getLocalName(); 
+            if (otherLgLname.length() == 8 && otherLgLname.startsWith("LGIGS00")) {
+            	firstSync = false;
+            	break;
+            }
             logEntryLocalNames.add(otherLg.getLocalName());
             firstSync = firstSync && !otherLg.hasProperty(RDF.type, Synced);
+        }
+        if (firstSync) {
+        	// https://github.com/buda-base/editserv/issues/36
+	        final Statement previousPgTotalS = ig.getProperty(volumePagesTotal);
+	        if (previousPgTotalS != null) {
+	        	final Integer previousPgTotal = previousPgTotalS.getInt();
+	        	if (previousPgTotal > 2)
+	        		firstSync = false;
+	        }
         }
         // get a random string that is not already present in the log entries
         final String lgLnamePrefix = "LG0"+ig.getLocalName()+"_";

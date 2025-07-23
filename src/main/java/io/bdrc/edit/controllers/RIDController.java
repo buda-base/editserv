@@ -111,7 +111,7 @@ public class RIDController {
         }
         if (rest.isEmpty())
             return true;
-        return rest.matches("[0-9][A-Z][A-Z]");
+        return rest.matches("[0-9][A-Z][A-Z][A-Z]?");
     }
     
     public static String prefixFromId(final String id) {

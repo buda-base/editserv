@@ -35,7 +35,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.auth0.client.auth.AuthAPI;
-import com.auth0.net.AuthRequest;
+import com.auth0.net.TokenRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,7 +65,7 @@ public class UserAPICheck {
     @Autowired
     Environment environment;
 
-    @BeforeClass
+	@BeforeClass
     public static void init() throws Exception {
         EditConfig.init();
         Properties props = EditConfig.getProperties();
@@ -108,34 +108,34 @@ public class UserAPICheck {
     }
 
     private static void set123Token() throws IOException {
-        AuthRequest req = auth.login("publicuser@bdrc.com", AuthProps.getProperty("publicuser@bdrc.com"));
+    	TokenRequest req = auth.login("publicuser@bdrc.com", AuthProps.getProperty("publicuser@bdrc.com").toCharArray());
         req.setScope("openid offline_access");
         req.setAudience("https://bdrc-io.auth0.com/api/v2/");
-        publicToken = req.execute().getIdToken();
+        publicToken = req.execute().getBody().getIdToken();
         log.info("public Token >> {}", publicToken);
     }
 
     private static void set456Token() throws IOException {
-        AuthRequest req = auth.login("tchame@rimay.net", AuthProps.getProperty("tchame@rimay.net"));
+    	TokenRequest req = auth.login("tchame@rimay.net", AuthProps.getProperty("tchame@rimay.net").toCharArray());
         req.setScope("openid offline_access");
         req.setAudience("https://bdrc-io.auth0.com/api/v2/");
-        adminToken = req.execute().getIdToken();
+        adminToken = req.execute().getBody().getIdToken();
         log.info("admin Token >> {}", adminToken);
     }
 
     private static void setPrivateToken() throws IOException {
-        AuthRequest req = auth.login("privateuser@bdrc.com", AuthProps.getProperty("privateuser@bdrc.com"));
+    	TokenRequest req = auth.login("privateuser@bdrc.com", AuthProps.getProperty("privateuser@bdrc.com").toCharArray());
         req.setScope("openid offline_access");
         req.setAudience("https://bdrc-io.auth0.com/api/v2/");
-        privateToken = req.execute().getIdToken();
+        privateToken = req.execute().getBody().getIdToken();
         log.info("private Token >> {}", privateToken);
     }
 
     private static void setStaffToken() throws IOException {
-        AuthRequest req = auth.login("staffuser@bdrc.com", AuthProps.getProperty("staffuser@bdrc.com"));
+		TokenRequest req = auth.login("staffuser@bdrc.com", AuthProps.getProperty("staffuser@bdrc.com").toCharArray());
         req.setScope("openid offline_access");
         req.setAudience("https://bdrc-io.auth0.com/api/v2/");
-        staffToken = req.execute().getIdToken();
+        staffToken = req.execute().getBody().getIdToken();
         log.info("staff Token >> {}", staffToken);
     }
 

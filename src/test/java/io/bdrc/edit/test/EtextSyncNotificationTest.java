@@ -168,7 +168,7 @@ public class EtextSyncNotificationTest {
         EtextSyncRequest request = createMockRequestWithCharacterCounts("VE001");
         
         ModelUtils.addEtextSyncNotification(model, instanceResource, request, userResource, logDateStr);
-        
+
         // Verify character slices are cumulative
         StmtIterator etextStmts = model.listStatements(etextVolume, volumeHasEtext, (RDFNode) null);
         List<Resource> units = new ArrayList<>();
@@ -218,6 +218,7 @@ public class EtextSyncNotificationTest {
     // Helper methods to create mock requests
     private EtextSyncRequest createMockRequest() {
         EtextSyncRequest request = mock(EtextSyncRequest.class);
+        when(request.getOcflVersion()).thenReturn("v1");
         Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
         volumes.put("VE999", new HashMap<>()); // Non-existent volume
         when(request.getVolumes()).thenReturn(volumes);
@@ -226,6 +227,7 @@ public class EtextSyncNotificationTest {
     
     private EtextSyncRequest createMockRequestWithVolume(String volumeName) {
         EtextSyncRequest request = mock(EtextSyncRequest.class);
+        when(request.getOcflVersion()).thenReturn("v1");
         Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
         Map<String, UnitInfo> units = new HashMap<>();
         
@@ -233,6 +235,7 @@ public class EtextSyncNotificationTest {
         when(unit1.getEtextNum()).thenReturn(1);
         when(unit1.getNbCharacters()).thenReturn(1000);
         when(unit1.getNbPages()).thenReturn(10);
+        when(unit1.getSrcPath()).thenReturn("src path");
         units.put("UT001", unit1);
         
         volumes.put(volumeName, units);
@@ -242,6 +245,7 @@ public class EtextSyncNotificationTest {
     
     private EtextSyncRequest createMockRequestWithMultipleUnits(String volumeName) {
         EtextSyncRequest request = mock(EtextSyncRequest.class);
+        when(request.getOcflVersion()).thenReturn("v1");
         Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
         Map<String, UnitInfo> units = new HashMap<>();
         
@@ -250,18 +254,21 @@ public class EtextSyncNotificationTest {
         when(unit3.getEtextNum()).thenReturn(3);
         when(unit3.getNbCharacters()).thenReturn(800);
         when(unit3.getNbPages()).thenReturn(8);
+        when(unit3.getSrcPath()).thenReturn("src path 3");
         units.put("UT003", unit3);
         
         UnitInfo unit1 = mock(UnitInfo.class);
         when(unit1.getEtextNum()).thenReturn(1);
         when(unit1.getNbCharacters()).thenReturn(1000);
         when(unit1.getNbPages()).thenReturn(10);
+        when(unit1.getSrcPath()).thenReturn("src path 1");
         units.put("UT001", unit1);
         
         UnitInfo unit2 = mock(UnitInfo.class);
         when(unit2.getEtextNum()).thenReturn(2);
         when(unit2.getNbCharacters()).thenReturn(1200);
         when(unit2.getNbPages()).thenReturn(12);
+        when(unit2.getSrcPath()).thenReturn("src path 2");
         units.put("UT002", unit2);
         
         volumes.put(volumeName, units);
@@ -271,6 +278,7 @@ public class EtextSyncNotificationTest {
     
     private EtextSyncRequest createMockRequestWithCharacterCounts(String volumeName) {
         EtextSyncRequest request = mock(EtextSyncRequest.class);
+        when(request.getOcflVersion()).thenReturn("v1");
         Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
         Map<String, UnitInfo> units = new HashMap<>();
         
@@ -278,12 +286,14 @@ public class EtextSyncNotificationTest {
         when(unit1.getEtextNum()).thenReturn(1);
         when(unit1.getNbCharacters()).thenReturn(500);
         when(unit1.getNbPages()).thenReturn(5);
+        when(unit1.getSrcPath()).thenReturn("src path 1");
         units.put("UT001", unit1);
         
         UnitInfo unit2 = mock(UnitInfo.class);
         when(unit2.getEtextNum()).thenReturn(2);
         when(unit2.getNbCharacters()).thenReturn(750);
         when(unit2.getNbPages()).thenReturn(7);
+        when(unit2.getSrcPath()).thenReturn("src path 2");
         units.put("UT002", unit2);
         
         volumes.put(volumeName, units);

@@ -323,6 +323,8 @@ public class ModelUtils {
     public static final Property eTextInInstance = ResourceFactory.createProperty(Models.BDO, "eTextInInstance");
     public static final Property sliceEndChar = ResourceFactory.createProperty(Models.BDO, "sliceEndChar");
     public static final Property sliceStartChar = ResourceFactory.createProperty(Models.BDO, "sliceStartChar");
+    public static final Property sourceFilePath = ResourceFactory.createProperty(Models.BDO, "sourceFilePath");
+    public static final Property version = ResourceFactory.createProperty(Models.BDO, "version");
     public static final Property seqNum = ResourceFactory.createProperty(Models.BDO, "seqNum");
     public static void removeVolumeInfo(final Model m, final Resource ve) {
     	final StmtIterator utit = m.listStatements(ve, volumeHasEtext, (RDFNode) null);
@@ -340,6 +342,7 @@ public class ModelUtils {
         if (!wadmIt.hasNext())
             throw new EditException("can't find admin data for "+ ie);
         final Resource wadmData = wadmIt.next();
+        m.add(ie, version, m.createLiteral(request.getOcflVersion()));
         final Resource lg = findLogEntry(m, wadmData);
         for (final Entry<String, Map<String, UnitInfo>> veSyncInfo : request.getVolumes().entrySet()) {
             final String velname = veSyncInfo.getKey();
@@ -359,6 +362,7 @@ public class ModelUtils {
                 final Resource ut = m.createResource(Models.BDR+utlname);
             	m.add(ve, volumeHasEtext, ut);
             	m.add(ut, eTextInInstance, ie);
+            	m.add(ut, sourceFilePath, m.createLiteral(unitInfo.getSrcPath()));
             	m.add(ut, seqNum, m.createTypedLiteral(unitInfo.getEtextNum(), XSDDatatype.XSDinteger));
             	m.add(ut, sliceStartChar, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
             	m.add(ut, sliceEndChar, m.createTypedLiteral(totalCharsVe + unitInfo.getNbCharacters(), XSDDatatype.XSDinteger));
@@ -381,7 +385,6 @@ public class ModelUtils {
             final StmtIterator lgIt = admData.listProperties(logEntry);
             while (lgIt.hasNext() && firstSync) {
                 final Resource otherLg = lgIt.next().getResource();
-                System.out.println("found "+otherLg.getLocalName());
                 logEntryLocalNames.add(otherLg.getLocalName());
                 firstSync = firstSync && !otherLg.hasProperty(RDF.type, EtextSynced)  && !otherLg.hasProperty(RDF.type, EtextUpdated);
             }

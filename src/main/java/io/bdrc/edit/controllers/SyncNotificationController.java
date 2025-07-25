@@ -120,44 +120,67 @@ public class SyncNotificationController {
     
  // Request model classes
     public static class EtextSyncRequest {
-        private boolean removeOthers;
+        private boolean removeOthers = false;
+        @JsonProperty("ocfl_version")
+        private String ocflVersion;
         private Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
         
         public boolean isRemoveOthers() {
             return removeOthers;
         }
         
-        public void setRemoveOthers(boolean removeOthers) {
+        public void setRemoveOthers(final boolean removeOthers) {
             this.removeOthers = removeOthers;
+        }
+        
+        public String getOcflVersion() {
+            return this.ocflVersion;
+        }
+        
+        public void setRemoveOthers(final String ocflVersion) {
+            this.ocflVersion = ocflVersion;
         }
         
         public Map<String, Map<String, UnitInfo>> getVolumes() {
             return volumes;
         }
         
-        public void setVolumes(Map<String, Map<String, UnitInfo>> volumes) {
+        public void setVolumes(final Map<String, Map<String, UnitInfo>> volumes) {
             this.volumes = volumes;
         }
     }
     
     public static class UnitInfo {
+    	@JsonProperty("nb_pages")
         private Integer nbPages; // Optional
+    	@JsonProperty("nb_characters")
         private int nbCharacters;
+    	@JsonProperty("etext_num")
         private int etextNum;
+    	@JsonProperty("src_path")
+        private String srcPath;
         
         public Integer getNbPages() {
             return nbPages;
         }
         
-        public void setNbPages(Integer nbPages) {
+        public void setNbPages(final Integer nbPages) {
             this.nbPages = nbPages;
+        }
+        
+        public String getSrcPath() {
+            return srcPath;
+        }
+        
+        public void setSrcPath(final String srcPath) {
+            this.srcPath = srcPath;
         }
         
         public int getNbCharacters() {
             return nbCharacters;
         }
         
-        public void setNbCharacters(int nbCharacters) {
+        public void setNbCharacters(final int nbCharacters) {
             this.nbCharacters = nbCharacters;
         }
         
@@ -165,7 +188,7 @@ public class SyncNotificationController {
             return etextNum;
         }
         
-        public void setEtextNum(int etextNum) {
+        public void setEtextNum(final  int etextNum) {
             this.etextNum = etextNum;
         }
     }

@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
@@ -114,6 +114,79 @@ public class SyncNotificationController {
                 FusekiWriteHelpers.putDataset(gi);
             log.info("handled sync notification for {}", w);
         }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body("{}"); 
+    }
+    
+ // Request model classes
+    public static class EtextSyncRequest {
+        private boolean removeOthers;
+        private Map<String, Map<String, UnitInfo>> volumes = new HashMap<>();
+        
+        public boolean isRemoveOthers() {
+            return removeOthers;
+        }
+        
+        public void setRemoveOthers(boolean removeOthers) {
+            this.removeOthers = removeOthers;
+        }
+        
+        public Map<String, Map<String, UnitInfo>> getVolumes() {
+            return volumes;
+        }
+        
+        public void setVolumes(Map<String, Map<String, UnitInfo>> volumes) {
+            this.volumes = volumes;
+        }
+    }
+    
+    public static class UnitInfo {
+        private Integer nbPages; // Optional
+        private int nbCharacters;
+        private int etextNum;
+        
+        public Integer getNbPages() {
+            return nbPages;
+        }
+        
+        public void setNbPages(Integer nbPages) {
+            this.nbPages = nbPages;
+        }
+        
+        public int getNbCharacters() {
+            return nbCharacters;
+        }
+        
+        public void setNbCharacters(int nbCharacters) {
+            this.nbCharacters = nbCharacters;
+        }
+        
+        public int getEtextNum() {
+            return etextNum;
+        }
+        
+        public void setEtextNum(int etextNum) {
+            this.etextNum = etextNum;
+        }
+    }
+    
+    @PostMapping(value = "/notifyetextsync/{ieqname}")
+    public synchronized ResponseEntity<String> syncEtext(@RequestBody EtextSyncRequest request, 
+    		@PathVariable("ieqname") String ieqname, HttpServletRequest req, HttpServletResponse response) throws IOException, EditException, GitAPIException {
+        final String now = ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT );
+        final String ie_lname = ieqname.startsWith("bdr:") ? ieqname.substring(4) : ieqname;
+        final Resource ie = ResourceFactory.createResource(Models.BDR + ie_lname);
+        final GitInfo gi = CommonsGit.gitInfoForResource(ie, true);
+        if (gi.ds == null || gi.ds.isEmpty()) {
+            log.error("no graph could be found for {}", ie);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
+                    .body("{\"err\":\"No graph could be found for " + ie + "\"}");
+        }
+        final Model m = ModelUtils.getMainModel(gi.ds);
+        ModelUtils.addEtextSyncNotification(m, ie, request, syncUser, now);
+        CommonsGit.commitAndPush(gi, "etext sync notification");
+        if (!EditConfig.dryrunmodefuseki)
+            FusekiWriteHelpers.putDataset(gi);
         return ResponseEntity.status(HttpStatus.OK)
                 .body("{}"); 
     }

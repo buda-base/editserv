@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
@@ -37,6 +39,8 @@ import io.bdrc.edit.EditConstants;
 import io.bdrc.edit.commons.ops.CommonsRead;
 import io.bdrc.edit.commons.ops.CommonsValidate;
 import io.bdrc.edit.controllers.SyncNotificationController;
+import io.bdrc.edit.controllers.SyncNotificationController.EtextSyncRequest;
+import io.bdrc.edit.controllers.SyncNotificationController.UnitInfo;
 import io.bdrc.edit.txn.exceptions.EditException;
 import io.bdrc.jena.sttl.STriGWriter;
 import io.bdrc.libraries.Models;
@@ -309,6 +313,100 @@ public class ModelUtils {
         }
         return m.createResource(Models.BDA+lgLnamePrefix+rand);
     }
+
+    public static final Property volumeHasEtext = ResourceFactory.createProperty(Models.BDO, "volumeHasEtext");
+    public static final Resource EtextVolume = ResourceFactory.createResource(Models.BDO + "EtextVolume");
+    public static final Resource EtextSynced = ResourceFactory.createResource(Models.ADM + "EtextSynced");
+    public static final Resource EtextUpdated = ResourceFactory.createResource(Models.ADM + "EtextUpdated");
+    public static final Property instanceHasVolume = ResourceFactory.createProperty(Models.BDO, "instanceHasVolume");
+    public static final Property numberOfCharacters = ResourceFactory.createProperty(Models.BDO, "numberOfCharacters");
+    public static final Property eTextInInstance = ResourceFactory.createProperty(Models.BDO, "eTextInInstance");
+    public static final Property sliceEndChar = ResourceFactory.createProperty(Models.BDO, "sliceEndChar");
+    public static final Property sliceStartChar = ResourceFactory.createProperty(Models.BDO, "sliceStartChar");
+    public static final Property seqNum = ResourceFactory.createProperty(Models.BDO, "seqNum");
+    public static void removeVolumeInfo(final Model m, final Resource ve) {
+    	final StmtIterator utit = m.listStatements(ve, volumeHasEtext, (RDFNode) null);
+    	while (utit.hasNext()) {
+    		final Resource ut = utit.next().getResource();
+    		m.removeAll(ut, null, (RDFNode) null);
+    		m.removeAll(null, null, ve);
+    	}
+    	m.removeAll(ve, volumePagesTotal, (RDFNode) null);
+    	m.removeAll(ve, numberOfCharacters, (RDFNode) null);
+    }
+    
+    public static void addEtextSyncNotification(final Model m, final Resource ie, final EtextSyncRequest request, final Resource user, final String logDateStr) throws EditException {
+        final ResIterator wadmIt = m.listSubjectsWithProperty(admAbout, ie);
+        if (!wadmIt.hasNext())
+            throw new EditException("can't find admin data for "+ ie);
+        final Resource wadmData = wadmIt.next();
+        final Resource lg = findLogEntry(m, wadmData);
+        for (final Entry<String, Map<String, UnitInfo>> veSyncInfo : request.getVolumes().entrySet()) {
+            final String velname = veSyncInfo.getKey();
+            final Resource ve = m.createResource(Models.BDR + velname);
+            if (!m.contains(ve, RDF.type, EtextVolume))
+                throw new EditException("Sync error: etext volume not in model: "+ ve);
+            int totalPagesVe = 0;
+            int totalCharsVe = 0;
+            // remove all UTs and metrics
+            removeVolumeInfo(m, ve);
+            // process entries in order
+            for (Entry<String, UnitInfo> entry : veSyncInfo.getValue().entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.comparing(UnitInfo::getEtextNum)))
+                    .collect(Collectors.toList())) {
+                final String utlname = entry.getKey();
+                final UnitInfo unitInfo = entry.getValue();
+                final Resource ut = m.createResource(Models.BDR+utlname);
+            	m.add(ve, volumeHasEtext, ut);
+            	m.add(ut, eTextInInstance, ie);
+            	m.add(ut, seqNum, m.createTypedLiteral(unitInfo.getEtextNum(), XSDDatatype.XSDinteger));
+            	m.add(ut, sliceStartChar, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
+            	m.add(ut, sliceEndChar, m.createTypedLiteral(totalCharsVe + unitInfo.getNbCharacters(), XSDDatatype.XSDinteger));
+            	totalCharsVe += unitInfo.getNbCharacters();
+            	if (unitInfo.getNbPages() != null && unitInfo.getNbPages() > 0)
+            		totalPagesVe += unitInfo.getNbPages();
+            }
+            final ResIterator admIt = m.listSubjectsWithProperty(admAbout, ve);
+            final Resource admData;
+            if (!admIt.hasNext()) {
+                log.info("create admin data for {}", ve);
+                admData = m.createResource(Models.BDA+ve.getLocalName());
+                m.add(admData, RDF.type, AdminData);
+                m.add(admData, admAbout, ve);
+            } else {
+                admData = admIt.next();
+            }
+            boolean firstSync = true;
+            final List<String> logEntryLocalNames = new ArrayList<String>();
+            final StmtIterator lgIt = admData.listProperties(logEntry);
+            while (lgIt.hasNext() && firstSync) {
+                final Resource otherLg = lgIt.next().getResource();
+                System.out.println("found "+otherLg.getLocalName());
+                logEntryLocalNames.add(otherLg.getLocalName());
+                firstSync = firstSync && !otherLg.hasProperty(RDF.type, EtextSynced)  && !otherLg.hasProperty(RDF.type, EtextUpdated);
+            }
+            if (firstSync) {
+    	        final Statement previousPgTotalS = ve.getProperty(numberOfCharacters);
+    	        if (previousPgTotalS != null) {
+    	        	final Integer previousPgTotal = previousPgTotalS.getInt();
+    	        	if (previousPgTotal > 2)
+    	        		firstSync = false;
+    	        }
+            }
+            final Resource lgtype = firstSync ? EtextSynced : EtextUpdated;
+            m.add(admData, logEntry, lg);
+            m.add(lg, RDF.type, lgtype);
+            if (user != null)
+                m.add(lg, logWho, user);
+            m.add(lg, logDate, m.createTypedLiteral(logDateStr, XSDDatatype.XSDdateTime));
+            m.add(lg, logMessage, m.createLiteral("Etext sync", "en"));
+            m.add(lg, logMethod, BatchMethod);
+            if (totalPagesVe != 0)
+	            m.add(ve, volumePagesTotal, m.createTypedLiteral(totalPagesVe, XSDDatatype.XSDinteger));
+            m.add(ve, numberOfCharacters, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
+            m.add(ve, sliceEndChar, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
+        }
+    }
     
     public static void addSyncNotification(final Model m, final Resource w, final Map<String,SyncNotificationController.ImageGroupSyncInfo> iinfos, final Resource user, final String logDateStr) throws EditException {
         final ResIterator wadmIt = m.listSubjectsWithProperty(admAbout, w);
@@ -335,13 +433,30 @@ public class ModelUtils {
                 admData = admIt.next();
             }
             m.add(admData, logEntry, lg);
-            Resource lgtype = Synced;
-            final StmtIterator lgitr = admData.listProperties(logEntry);
-            while (lgitr.hasNext()) {
-                final Resource otherLg = lgitr.next().getResource();
-                if (otherLg.hasProperty(RDF.type, Synced))
-                    lgtype = ImagesUpdated;
+            boolean firstSync = true;
+            final List<String> logEntryLocalNames = new ArrayList<String>();
+            final StmtIterator lgIt = admData.listProperties(logEntry);
+            while (lgIt.hasNext() && firstSync) {
+                final Resource otherLg = lgIt.next().getResource();
+                // see https://github.com/buda-base/editserv/issues/36
+                final String otherLgLname = otherLg.getLocalName(); 
+                if (otherLgLname.length() == 8 && otherLgLname.startsWith("LGIGS00")) {
+                	firstSync = false;
+                	break;
+                }
+                logEntryLocalNames.add(otherLg.getLocalName());
+                firstSync = firstSync && !otherLg.hasProperty(RDF.type, Synced) && !otherLg.hasProperty(RDF.type, ImagesUpdated);
             }
+            if (firstSync) {
+            	// https://github.com/buda-base/editserv/issues/36
+    	        final Statement previousPgTotalS = ig.getProperty(volumePagesTotal);
+    	        if (previousPgTotalS != null) {
+    	        	final Integer previousPgTotal = previousPgTotalS.getInt();
+    	        	if (previousPgTotal > 2)
+    	        		firstSync = false;
+    	        }
+            }
+            final Resource lgtype = firstSync ? Synced : ImagesUpdated; 
             m.add(lg, RDF.type, lgtype);
             if (user != null)
                 m.add(lg, logWho, user);
@@ -352,6 +467,7 @@ public class ModelUtils {
             m.add(ig, volumePagesTotal, m.createTypedLiteral(nbPagesTotal, XSDDatatype.XSDinteger));
         }
     }
+
 
     public static void addSyncNotification(final Model m, final Resource ig, final int nbPagesTotal, final Resource user) throws EditException {
         if (!m.contains(ig, RDF.type, ImageGroup))
@@ -378,7 +494,7 @@ public class ModelUtils {
             	break;
             }
             logEntryLocalNames.add(otherLg.getLocalName());
-            firstSync = firstSync && !otherLg.hasProperty(RDF.type, Synced);
+            firstSync = firstSync && !otherLg.hasProperty(RDF.type, Synced) && !otherLg.hasProperty(RDF.type, ImagesUpdated);
         }
         if (firstSync) {
         	// https://github.com/buda-base/editserv/issues/36

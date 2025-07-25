@@ -32,7 +32,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.auth0.client.auth.AuthAPI;
-import com.auth0.net.AuthRequest;
+import com.auth0.net.TokenRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -146,10 +146,10 @@ public class CheckUserAPI {
     }
 
     private static void set456Token() throws IOException {
-        AuthRequest req = auth.login("tchame@rimay.net", AuthProps.getProperty("tchame@rimay.net"));
+        TokenRequest req = auth.login("tchame@rimay.net", AuthProps.getProperty("tchame@rimay.net").toCharArray());
         req.setScope("openid offline_access");
         req.setAudience("https://bdrc-io.auth0.com/api/v2/");
-        adminToken = req.execute().getIdToken();
+        adminToken = req.execute().getBody().getIdToken();
         log.info("admin Token >> {}", adminToken);
     }
 

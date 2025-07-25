@@ -342,6 +342,7 @@ public class ModelUtils {
         if (!wadmIt.hasNext())
             throw new EditException("can't find admin data for "+ ie);
         final Resource wadmData = wadmIt.next();
+        
         m.add(ie, version, m.createLiteral(request.getOcflVersion()));
         final Resource lg = findLogEntry(m, wadmData);
         for (final Entry<String, Map<String, UnitInfo>> veSyncInfo : request.getVolumes().entrySet()) {
@@ -362,7 +363,8 @@ public class ModelUtils {
                 final Resource ut = m.createResource(Models.BDR+utlname);
             	m.add(ve, volumeHasEtext, ut);
             	m.add(ut, eTextInInstance, ie);
-            	m.add(ut, sourceFilePath, m.createLiteral(unitInfo.getSrcPath()));
+            	if (unitInfo.getSrcPath() != null)
+            		m.add(ut, sourceFilePath, m.createLiteral(unitInfo.getSrcPath()));
             	m.add(ut, seqNum, m.createTypedLiteral(unitInfo.getEtextNum(), XSDDatatype.XSDinteger));
             	m.add(ut, sliceStartChar, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
             	m.add(ut, sliceEndChar, m.createTypedLiteral(totalCharsVe + unitInfo.getNbCharacters(), XSDDatatype.XSDinteger));

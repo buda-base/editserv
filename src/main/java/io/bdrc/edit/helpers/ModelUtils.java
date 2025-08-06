@@ -423,7 +423,7 @@ public class ModelUtils {
             final String igqname = igSyncInfo.getKey();
             if (!igqname.startsWith("bdr:"))
                 continue;
-            final Resource ig = ResourceFactory.createResource(Models.BDR + igqname.substring(4));
+            final Resource ig = m.createResource(Models.BDR + igqname.substring(4));
             if (!m.contains(ig, RDF.type, ImageGroup))
                 throw new EditException("Sync error: image group not in model: "+ ig);
             final int nbPagesTotal = igSyncInfo.getValue().pages_total;

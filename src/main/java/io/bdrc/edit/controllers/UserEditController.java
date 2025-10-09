@@ -89,7 +89,7 @@ public class UserEditController {
                     .header("Etag", '"'+gi.revId+'"')
                     .body(StreamingHelpers.getModelStream(userModel, ext,
                             usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
-        } catch (IOException | GitAPIException e) {
+        } catch (IOException | GitAPIException | NullPointerException e) {
             log.error("/me/focusgraph failed ", e);
             throw e;
         }

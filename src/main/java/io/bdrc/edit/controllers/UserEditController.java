@@ -44,6 +44,7 @@ public class UserEditController {
         if (!EditConfig.useAuth)
             return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON)
                     .body(null);
+        Resource usr = null;
         try {
             log.info("Call meUser()");
             AccessInfoAuthImpl acc = (AccessInfoAuthImpl) request.getAttribute("access");
@@ -58,7 +59,7 @@ public class UserEditController {
             }
             String auth0Id = authId.substring(authId.lastIndexOf("|") + 1);
             log.info("meUser() auth0Id >> {}", auth0Id);
-            Resource usr = BudaUser.getRdfProfile(auth0Id);
+            usr = BudaUser.getRdfProfile(auth0Id);
             // usr is bdu:UXXX
             log.info("meUser() Buda usr >> {}", usr);
             GitInfo gi = null;
@@ -90,7 +91,7 @@ public class UserEditController {
                     .body(StreamingHelpers.getModelStream(userModel, ext,
                             usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
         } catch (IOException | GitAPIException | NullPointerException e) {
-            log.error("/me/focusgraph failed ", e);
+            log.error("/me/focusgraph failed for "+usr.getLocalName(), e);
             throw e;
         }
     }

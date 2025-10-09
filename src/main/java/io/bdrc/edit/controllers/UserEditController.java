@@ -77,6 +77,11 @@ public class UserEditController {
             }
             Model userModel = ModelUtils.getMainModel(gi.ds);
             // dirty patch:
+            if (userModel == null) {
+            	log.error("got empty userModel for "+usr.getLocalName());
+            	return ResponseEntity.status(500).contentType(MediaType.APPLICATION_JSON)
+                        .body(null);
+            }
             userModel.removeAll(null, RDF.type, userModel.createResource(EditConstants.BDO+"Person"));
             userModel.removeAll(null, RDF.type, userModel.createResource(EditConstants.FOAF+"Person"));
             final Resource shape = CommonsRead.getShapeForEntity(usr);
@@ -91,7 +96,7 @@ public class UserEditController {
                     .body(StreamingHelpers.getModelStream(userModel, ext,
                             usr.getURI(), null, EditConfig.prefix.getPrefixMap()));
         } catch (IOException | GitAPIException | NullPointerException e) {
-            log.error("/me/focusgraph failed for "+usr.getLocalName(), e);
+            log.error("/me/focusgraph failed ", e);
             throw e;
         }
     }

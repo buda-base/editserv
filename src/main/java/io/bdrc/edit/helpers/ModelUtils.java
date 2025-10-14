@@ -242,6 +242,7 @@ public class ModelUtils {
     
     public static final Property admAbout = ResourceFactory.createProperty(Models.ADM, "adminAbout");
     public static final Property ImageGroup = ResourceFactory.createProperty(Models.BDO, "ImageGroup");
+    public static final Property Etext = ResourceFactory.createProperty(Models.BDO, "Etext");
     public static final Property admReplaceWith = ResourceFactory.createProperty(Models.ADM, "replaceWith");
     public static final Property admGraphId = ResourceFactory.createProperty(Models.ADM, "graphId");
     public static final Property admGitPath = ResourceFactory.createProperty(Models.ADM, "gitPath");
@@ -331,7 +332,7 @@ public class ModelUtils {
     	while (utit.hasNext()) {
     		final Resource ut = utit.next().getResource();
     		m.removeAll(ut, null, (RDFNode) null);
-    		m.removeAll(null, null, ve);
+    		//m.removeAll(null, null, ve); // do not remove connection between instance and volume, that's from the editor
     	}
     	m.removeAll(ve, volumePagesTotal, (RDFNode) null);
     	m.removeAll(ve, numberOfCharacters, (RDFNode) null);
@@ -363,6 +364,7 @@ public class ModelUtils {
                 final Resource ut = m.createResource(Models.BDR+utlname);
             	m.add(ve, volumeHasEtext, ut);
             	m.add(ut, eTextInInstance, ie);
+            	m.add(ut, RDF.type, Etext);
             	if (unitInfo.getSrcPath() != null)
             		m.add(ut, sourceFilePath, m.createLiteral(unitInfo.getSrcPath()));
             	m.add(ut, seqNum, m.createTypedLiteral(unitInfo.getEtextNum(), XSDDatatype.XSDinteger));

@@ -279,42 +279,6 @@ public class SimpleOutline {
             return res;
         }
         
-        // Parse etext id format: empty string, {number}, or {number}#{string}
-        // Returns array [etextNumber, idInEtext] where either can be null
-        public static Integer[] parseEtextId(final String idStr, final int row_i, final int col_i, final List<Warning> warns) {
-            if (idStr == null || idStr.isEmpty())
-                return new Integer[] {null, null};
-            
-            final String trimmed = idStr.trim();
-            if (trimmed.isEmpty())
-                return new Integer[] {null, null};
-            
-            final int hashIdx = trimmed.indexOf('#');
-            if (hashIdx == -1) {
-                // Just a number
-                try {
-                    final Integer num = Integer.valueOf(trimmed);
-                    return new Integer[] {num, null};
-                } catch (NumberFormatException e) {
-                    warns.add(new Warning("id field must be empty, a number, or {number}#{string}", row_i, col_i, true));
-                    return new Integer[] {null, null};
-                }
-            } else {
-                // Format: {number}#{string}
-                final String numPart = trimmed.substring(0, hashIdx);
-                final String strPart = trimmed.substring(hashIdx + 1);
-                try {
-                    final Integer num = Integer.valueOf(numPart);
-                    // We'll store the string part separately - for now return null as second element
-                    // since we'll handle it differently
-                    return new Integer[] {num, null}; // strPart will be handled separately
-                } catch (NumberFormatException e) {
-                    warns.add(new Warning("id field must be empty, a number, or {number}#{string}", row_i, col_i, true));
-                    return new Integer[] {null, null};
-                }
-            }
-        }
-        
         public static final Pattern RIDpattern = Pattern.compile("^[A-Z0-9_\\-]+$");
         public static Resource resourceFromText(String text, final Model m, final String expectedPrefix, final SimpleOutline outline, final int row_i, final int col_i) {
             // use for works
@@ -416,6 +380,34 @@ public class SimpleOutline {
                 }
             } catch (Exception e) {
                 return previousValue;
+            }
+        }
+        
+        // Helper method to add etext location properties from an id string
+        // Format: empty, {number}, or {number}#{string}
+        public static void addEtextLocationToModel(final Resource cl, final String idStr, final Property etextProp, final Property idInEtextProp, final Model m) {
+            if (idStr == null || idStr.isEmpty())
+                return;
+            
+            final int hashIdx = idStr.indexOf('#');
+            if (hashIdx == -1) {
+                // Just a number
+                try {
+                    final int etextNum = Integer.parseInt(idStr);
+                    cl.addProperty(etextProp, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
+                } catch (NumberFormatException e) {
+                    // Invalid format - should have been caught during CSV validation
+                }
+            } else {
+                // Format: {number}#{string}
+                try {
+                    final int etextNum = Integer.parseInt(idStr.substring(0, hashIdx));
+                    final String idInEtext = idStr.substring(hashIdx + 1);
+                    cl.addProperty(etextProp, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
+                    cl.addProperty(idInEtextProp, m.createLiteral(idInEtext));
+                } catch (NumberFormatException e) {
+                    // Invalid format - should have been caught during CSV validation
+                }
             }
         }
         
@@ -999,53 +991,9 @@ public class SimpleOutline {
                     m.add(this.res, contentLocation, cl);
                     cl.addProperty(contentLocationInstance, outline.digitalInstance);
                     
-                    // Parse and add idStart
-                    if (this.idStart != null && !this.idStart.isEmpty()) {
-                        final int hashIdx = this.idStart.indexOf('#');
-                        if (hashIdx == -1) {
-                            // Just a number
-                            try {
-                                final int etextNum = Integer.parseInt(this.idStart);
-                                cl.addProperty(contentLocationEtext, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
-                            } catch (NumberFormatException e) {
-                                // Already validated during parsing, shouldn't happen
-                            }
-                        } else {
-                            // Format: {number}#{string}
-                            try {
-                                final int etextNum = Integer.parseInt(this.idStart.substring(0, hashIdx));
-                                final String idInEtext = this.idStart.substring(hashIdx + 1);
-                                cl.addProperty(contentLocationEtext, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
-                                cl.addProperty(contentLocationIdInEtext, m.createLiteral(idInEtext));
-                            } catch (NumberFormatException e) {
-                                // Already validated during parsing, shouldn't happen
-                            }
-                        }
-                    }
-                    
-                    // Parse and add idEnd
-                    if (this.idEnd != null && !this.idEnd.isEmpty()) {
-                        final int hashIdx = this.idEnd.indexOf('#');
-                        if (hashIdx == -1) {
-                            // Just a number
-                            try {
-                                final int etextNum = Integer.parseInt(this.idEnd);
-                                cl.addProperty(contentLocationEndEtext, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
-                            } catch (NumberFormatException e) {
-                                // Already validated during parsing, shouldn't happen
-                            }
-                        } else {
-                            // Format: {number}#{string}
-                            try {
-                                final int etextNum = Integer.parseInt(this.idEnd.substring(0, hashIdx));
-                                final String idInEtext = this.idEnd.substring(hashIdx + 1);
-                                cl.addProperty(contentLocationEndEtext, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
-                                cl.addProperty(contentLocationEndIdInEtext, m.createLiteral(idInEtext));
-                            } catch (NumberFormatException e) {
-                                // Already validated during parsing, shouldn't happen
-                            }
-                        }
-                    }
+                    // Use helper method to add etext location properties
+                    addEtextLocationToModel(cl, this.idStart, contentLocationEtext, contentLocationIdInEtext, m);
+                    addEtextLocationToModel(cl, this.idEnd, contentLocationEndEtext, contentLocationEndIdInEtext, m);
                     
                     // Volume properties are the same
                     if (this.volumeStart != null)

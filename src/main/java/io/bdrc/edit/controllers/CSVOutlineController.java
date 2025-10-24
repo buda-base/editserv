@@ -97,29 +97,21 @@ class CSVOutlineController {
         };
     }
     
-    public static final class WInfo {
+    public static final class WOrIEInfo {
         Resource mw = null;
         Resource o = null;
         int mvn = 0;
     }
     
-    public static WInfo getWInfo(final Resource w) {
+    public static WOrIEInfo getWOrIEInfo(final Resource worie) {
         // returns any released outline, if not return any non-released outline, if not return null
         // also returns the MW as the second value, whether an outline is found or not
-        final WInfo res = new WInfo();
-        final boolean isEtext = w.getLocalName().startsWith("IE");
+        final WOrIEInfo res = new WOrIEInfo();
+        final boolean isEtext = worie.getLocalName().startsWith("IE");
         
         // For etexts, we need to look for etext volumes, for images we look for image volumes
-        String volumeQuery;
-        if (isEtext) {
-            // For etexts: query for etext volumes (instanceHasVolume for etexts)
-            volumeQuery = "union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ev . ?ev <"+EditConstants.BDO+"volumeNumber> ?vn } }";
-        } else {
-            // For images: query for image group volumes
-            volumeQuery = "union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ig . ?ig <"+EditConstants.BDO+"volumeNumber> ?vn } }";
-        }
-        
-        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } "+volumeQuery+"}";
+        String volumeQuery = "union { select (max(?vn) as ?mvn) { <"+worie.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ev . ?ev <"+EditConstants.BDO+"volumeNumber> ?vn } }";        
+        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> } "+volumeQuery+"}";
         log.error(query);
         final Query q = QueryFactory.create(query);
         log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
@@ -146,29 +138,28 @@ class CSVOutlineController {
         return res;
     }
 
-    @GetMapping(value = "/outline/csv/{wqname}")
-    public ResponseEntity<StreamingResponseBody> downloadCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") final String wqname, final HttpServletRequest req, HttpServletResponse response) throws IOException {
+    @GetMapping(value = "/outline/csv/{worieqname}")
+    public ResponseEntity<StreamingResponseBody> downloadCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("worieqname") final String worieqname, final HttpServletRequest req, HttpServletResponse response) throws IOException {
         // Set the content type and attachment header.
         response.setContentType("text/csv");
         response.setCharacterEncoding("UTF-8");
         Resource ores = null;
         String olname = null;
-        final String wlname = wqname.substring(4);
-        Resource w = ResourceFactory.createResource(EditConstants.BDR+wlname);
+        final String worielname = worieqname.substring(4);
+        final boolean isEtext = worielname.startsWith("IE");
+        Resource worie = ResourceFactory.createResource(EditConstants.BDR+worielname);
         if (!oqname.isPresent()) {
-            final WInfo winfo = getWInfo(w);
-            ores = winfo.o;
-            if (winfo.mw == null) {
+            final WOrIEInfo worieinfo = getWOrIEInfo(worie);
+            ores = worieinfo.o;
+            if (worieinfo.mw == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.TEXT_PLAIN)
-                        .body(StreamingHelpers.getStream("No data could be found for " + wlname));
+                        .body(StreamingHelpers.getStream("No data could be found for " + worielname));
             }
             if (ores == null) {
-                log.info("no outline found for "+wqname);
-                olname = "O"+wlname.substring(1);
+                log.info("no outline found for "+worieqname);
+                olname = "O"+worielname.substring(1);
                 // TODO: check that outline RID doesn't exist yet
-                response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+wlname+".csv");
-                // Detect if this is an etext instance and use appropriate template
-                final boolean isEtext = wlname.startsWith("IE");
+                response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+worielname+".csv");
                 return ResponseEntity.status(HttpStatus.OK).contentType(TEXT_CSV_TYPE)
                         .body(getCsvStream(SimpleOutline.getTemplate(isEtext)));
             } else {
@@ -181,7 +172,7 @@ class CSVOutlineController {
             ores = ResourceFactory.createResource(EditConstants.BDR+oqname);
         }
         
-        response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+wlname+".csv");
+        response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+worielname+".csv");
         boolean isAdmin = false;
         Model m = null;
         Resource mw = null;
@@ -220,8 +211,8 @@ class CSVOutlineController {
                     .body(StreamingHelpers.getStream("No graph could be found for " + olname));
         }
 
-        w = m.createResource(EditConstants.BDR+wlname);
-        final SimpleOutline so = new SimpleOutline(mw, w);
+        worie = m.createResource(EditConstants.BDR+worielname);
+        final SimpleOutline so = new SimpleOutline(mw, worie);
         final List<String[]> csvRows = so.asCsv();
         
         return ResponseEntity.status(HttpStatus.OK).contentType(TEXT_CSV_TYPE)
@@ -261,8 +252,8 @@ class CSVOutlineController {
         return m.createLiteral(attrs, messageLang);
     }
     
-    @PutMapping(value = "/outline/csv/{wqname}")
-    public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("wqname") String wqname, HttpServletRequest req,
+    @PutMapping(value = "/outline/csv/{worieqname}")
+    public static ResponseEntity<String> putCSV(@RequestParam("oqname") final Optional<String> oqname, @PathVariable("worieqname") String worieqname, HttpServletRequest req,
             HttpServletResponse response, @RequestHeader(value = "If-Match") Optional<String> ifMatch, @RequestHeader(value = "Content-Encoding") Optional<String> contentEncoding, @RequestBody byte[] requestBody, @RequestHeader("X-Change-Message") Optional<String> changeMessage, @RequestHeader("X-Outline-Attribution") Optional<String> attribution, @RequestHeader("X-Status") Optional<String> status) throws Exception {
         if (status.isPresent() && !("<"+EditConstants.BDA+"StatusReleased>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusEditing>").equals(status.get()) && !("<"+EditConstants.BDA+"StatusWithdrawn>").equals(status.get())) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
@@ -276,22 +267,22 @@ class CSVOutlineController {
         }
         Resource ores = null;
         String olname = null;
-        final String wlname = wqname.substring(4);
-        Resource w = ResourceFactory.createResource(EditConstants.BDR+wlname);
+        final String worielname = worieqname.substring(4);
+        Resource worie = ResourceFactory.createResource(EditConstants.BDR+worielname);
         Resource mwres = null;
         AccessInfo acc = (AccessInfo) req.getAttribute("access");
         Resource user = null;
-        final WInfo winfo = getWInfo(w);
+        final WOrIEInfo worieinfo = getWOrIEInfo(worie);
         if (!oqname.isPresent()) {
-            ores = winfo.o;
-            mwres = winfo.mw;
+            ores = worieinfo.o;
+            mwres = worieinfo.mw;
             if (mwres == null) {
                 return ResponseEntity.status(500)
-                        .body("No data could be found for "+wlname);
+                        .body("No data could be found for "+worielname);
             }
             if (ores == null) {
-                log.info("no outline found for "+wqname);
-                olname = "O"+wlname.substring(1);
+                log.info("no outline found for "+worieqname);
+                olname = "O"+worielname.substring(1);
                 if (RIDController.idExists(olname)) {
                     return ResponseEntity.status(500)
                             .body(olname+" already exists, please specify a new one");
@@ -345,8 +336,8 @@ class CSVOutlineController {
         final CSVReader reader = new CSVReader(new StringReader(csvString));
         final List<String[]> csvData = reader.readAll();
         reader.close();
-        final SimpleOutline so = new SimpleOutline(csvData, ores, mwres, w, winfo.mvn);
-        so.insertInModel(m, mwres, w);
+        final SimpleOutline so = new SimpleOutline(csvData, ores, mwres, worie, worieinfo.mvn);
+        so.insertInModel(m, mwres, worie);
         if (so.hasBlockingWarns())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(ow.writeValueAsString(so.warns));
         if (attribution.isPresent()) {

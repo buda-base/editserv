@@ -317,20 +317,11 @@ public class SimpleOutline {
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
             this.authorshipStatement = getStrings(csvRow[nb_position_columns+7]);
             this.identifiers = getStrings(csvRow[nb_position_columns+8]);
-            
             if (outline.isEtextMode) {
                 // For etext mode: id start/end instead of page start/end
                 this.idStart = csvRow[nb_position_columns+9].trim();
                 this.idEnd = csvRow[nb_position_columns+10].trim();
-                // Volume columns are vol start/end for etexts
-                this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
-                if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
-                    outline.warns.add(new Warning("invalid volume number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
-                this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
-                if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
-                    outline.warns.add(new Warning("invalid volume number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
-                if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
-                    outline.warns.add(new Warning("invalid volume number, start volume number should be lower than end volume number", row_i, nb_position_columns+12, true));
+                validateEtextIds(this.idStart, this.idEnd, outline.warns, row_i, nb_position_columns);
             } else {
                 // For image mode: img start/end and img group start/end
                 this.pageStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
@@ -339,15 +330,44 @@ public class SimpleOutline {
                 this.pageEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
                 if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
                     outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+10, true));
-                this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
-                if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
-                    outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
-                this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
-                if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
-                    outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
-                if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
-                    outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+12, true));
             }
+            this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
+            if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
+                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
+            this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
+            if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
+                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
+            if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
+                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+12, true));
+        }
+        
+        public static void validateEtextIds(final String idStart, final String idEnd, final List<Warning> warns, final int row_i, final int nb_position_columns) {
+            // Define the regex pattern for valid IDs
+            final String basePattern = "([1-9][0-9]{0,3})";
+            final String pattern = "^$|" + basePattern + "(#[A-Za-z_\\-0-9]+)?$";
+            // Quick regex validation
+            if (!idStart.matches(pattern))
+            	warns.add(new Warning("invalid etext id, must be empty, integer or integer#string", row_i, nb_position_columns+9, true));
+            if (!idEnd.matches(pattern))
+            	warns.add(new Warning("invalid etext id, must be empty, integer or integer#string", row_i, nb_position_columns+10, true));
+            // Extract etext numbers if present
+            final Integer startNum = extractEtextNumber(idStart);
+            final Integer endNum = extractEtextNumber(idEnd);
+            // Compare etext numbers if both exist
+            if (startNum != null && endNum != null && startNum > endNum)
+            	warns.add(new Warning("invalid etext number, start should be before end", row_i, nb_position_columns+10, true));
+        }
+
+        private static Integer extractEtextNumber(final String id) {
+            if (id == null || id.isEmpty()) return null;
+            final String[] parts = id.split("#", 2);
+            try {
+                int num = Integer.parseInt(parts[0]);
+                if (num > 0 && num < 9999) return num;
+            } catch (NumberFormatException e) {
+                // not a valid number
+            }
+            return null;
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -411,28 +431,24 @@ public class SimpleOutline {
             }
         }
         
-        public void getSimpleLocation(final Resource w, final boolean isEtextMode) {
+        public void getSimpleLocation(final Resource worie, final boolean isEtextMode) {
             final StmtIterator locations = this.res.listProperties(contentLocation);
             while (locations.hasNext()) {
                 final Resource location = locations.next().getResource();
-                if (!location.hasProperty(contentLocationInstance, w))
+                if (!location.hasProperty(contentLocationInstance, worie))
                     continue;
-                
                 if (isEtextMode) {
                     // For etext mode, get etext and idInEtext properties
                     this.idStart = combineEtextIdWith(location, contentLocationEtext, contentLocationIdInEtext, this.idStart, true);
                     this.idEnd = combineEtextIdWith(location, contentLocationEndEtext, contentLocationEndIdInEtext, this.idEnd, false);
-                    // Volume is still volume in etext mode
-                    this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
-                    this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
                 } else {
                     // For image mode, get page and volume properties
-                    this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
-                    this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
                     // TODO: this is actually wrong in the case of multiple locations... but we can live with it (for now)
                     this.pageStart = combineWith(location, contentLocationPage, this.pageStart, true);
                     this.pageEnd = combineWith(location, contentLocationEndPage, this.pageEnd, false);
                 }
+                this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
+                this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
             }
             if (this.volumeEnd == null && this.volumeStart != null)
                 this.volumeEnd = this.volumeStart;

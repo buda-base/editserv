@@ -63,6 +63,7 @@ public class SimpleOutline {
     public List<Resource> allResourcesInCsv;
     public boolean testMode = false;
     public Integer maxVolumeNumber = null;
+    public boolean isEtextMode = false; // true if working with etext instances (IE), false for image instances (W)
     
     public static final Property partOf = ResourceFactory.createProperty(EditConstants.BDO + "partOf");
     public static final Property inRootInstance = ResourceFactory.createProperty(EditConstants.BDO + "inRootInstance");
@@ -82,6 +83,10 @@ public class SimpleOutline {
     public static final Property note = ResourceFactory.createProperty(EditConstants.BDO + "note");
     public static final Property noteText = ResourceFactory.createProperty(EditConstants.BDO + "noteText");
     public static final Property contentLocationInstance = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationInstance");
+    public static final Property contentLocationEtext = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationEtext");
+    public static final Property contentLocationEndEtext = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationEndEtext");
+    public static final Property contentLocationIdInEtext = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationIdInEtext");
+    public static final Property contentLocationEndIdInEtext = ResourceFactory.createProperty(EditConstants.BDO + "contentLocationEndIdInEtext");
     public static final Resource instance = ResourceFactory.createResource(EditConstants.BDO + "Instance");
     public static final Resource Isbn = ResourceFactory.createResource(EditConstants.BF + "Isbn");
     public static final Resource Issn = ResourceFactory.createResource(EditConstants.BF + "Issn");
@@ -237,6 +242,8 @@ public class SimpleOutline {
         public Integer pageEnd = null;
         public Integer volumeStart = null;
         public Integer volumeEnd = null;
+        public String idStart = null; // for etext: empty, {number}, or {number}#{string}
+        public String idEnd = null;   // for etext: empty, {number}, or {number}#{string}
         public Integer row_i = null;
         
         public void listAllDescendentResources(final List<Resource> list, final List<Warning> warns) {
@@ -310,20 +317,37 @@ public class SimpleOutline {
             this.colophon = getStrings(csvRow[nb_position_columns+6]);
             this.authorshipStatement = getStrings(csvRow[nb_position_columns+7]);
             this.identifiers = getStrings(csvRow[nb_position_columns+8]);
-            this.pageStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
-            if (this.pageStart != null && (this.pageStart < 1 || this.pageStart > 9999))
-                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+9, true));
-            this.pageEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
-            if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
-                outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+10, true));
-            this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
-            if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
-                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
-            this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
-            if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
-                outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
-            if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
-                outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+12, true));
+            
+            if (outline.isEtextMode) {
+                // For etext mode: id start/end instead of page start/end
+                this.idStart = csvRow[nb_position_columns+9].trim();
+                this.idEnd = csvRow[nb_position_columns+10].trim();
+                // Volume columns are vol start/end for etexts
+                this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
+                if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
+                    outline.warns.add(new Warning("invalid volume number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
+                this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
+                if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
+                    outline.warns.add(new Warning("invalid volume number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
+                if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
+                    outline.warns.add(new Warning("invalid volume number, start volume number should be lower than end volume number", row_i, nb_position_columns+12, true));
+            } else {
+                // For image mode: img start/end and img group start/end
+                this.pageStart = getWithException(csvRow[nb_position_columns+9], row_i, nb_position_columns+9, outline.warns);
+                if (this.pageStart != null && (this.pageStart < 1 || this.pageStart > 9999))
+                    outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+9, true));
+                this.pageEnd = getWithException(csvRow[nb_position_columns+10], row_i, nb_position_columns+10, outline.warns);
+                if (this.pageEnd != null && (this.pageEnd < 1 || this.pageEnd > 9999))
+                    outline.warns.add(new Warning("invalid image number, minimum is 1, maximum is 9999", row_i, nb_position_columns+10, true));
+                this.volumeStart = getWithException(csvRow[nb_position_columns+11], row_i, nb_position_columns+11, outline.warns);
+                if (this.volumeStart != null && outline.maxVolumeNumber != null && (this.volumeStart > outline.maxVolumeNumber || this.volumeStart < 1))
+                    outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+11, true));
+                this.volumeEnd = getWithException(csvRow[nb_position_columns+12], row_i, nb_position_columns+12, outline.warns);
+                if (this.volumeEnd != null && outline.maxVolumeNumber != null && (this.volumeEnd > outline.maxVolumeNumber || this.volumeEnd < 1))
+                    outline.warns.add(new Warning("invalid image group number, minimum is 1, maximum is "+outline.maxVolumeNumber, row_i, nb_position_columns+12, true));
+                if (this.volumeStart != null && this.volumeEnd != null && this.volumeStart > this.volumeEnd)
+                    outline.warns.add(new Warning("invalid image group number, start image group number should be lower than end image group number", row_i, nb_position_columns+12, true));
+            }
         }
         
         public static Integer combineWith(final Resource r, final Property p, final Integer previousValue, final boolean max) {
@@ -340,17 +364,75 @@ public class SimpleOutline {
             return previousValue;
         }
         
-        public void getSimpleLocation(final Resource w) {
+        public static String combineEtextIdWith(final Resource location, final Property etextProp, final Property idInEtextProp, final String previousValue, final boolean isStart) {
+            final Statement etextS = location.getProperty(etextProp);
+            if (etextS == null)
+                return previousValue;
+            
+            try {
+                final int etextNum = etextS.getInt();
+                final Statement idInEtextS = location.getProperty(idInEtextProp);
+                if (idInEtextS != null) {
+                    final String idInEtext = idInEtextS.getString();
+                    return etextNum + "#" + idInEtext;
+                } else {
+                    return String.valueOf(etextNum);
+                }
+            } catch (Exception e) {
+                return previousValue;
+            }
+        }
+        
+        // Helper method to add etext location properties from an id string
+        // Format: empty, {number}, or {number}#{string}
+        public static void addEtextLocationToModel(final Resource cl, final String idStr, final Property etextProp, final Property idInEtextProp, final Model m) {
+            if (idStr == null || idStr.isEmpty())
+                return;
+            
+            final int hashIdx = idStr.indexOf('#');
+            if (hashIdx == -1) {
+                // Just a number
+                try {
+                    final int etextNum = Integer.parseInt(idStr);
+                    cl.addProperty(etextProp, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
+                } catch (NumberFormatException e) {
+                    // Invalid format - should have been caught during CSV validation
+                }
+            } else {
+                // Format: {number}#{string}
+                try {
+                    final int etextNum = Integer.parseInt(idStr.substring(0, hashIdx));
+                    final String idInEtext = idStr.substring(hashIdx + 1);
+                    cl.addProperty(etextProp, m.createTypedLiteral(etextNum, XSDDatatype.XSDinteger));
+                    cl.addProperty(idInEtextProp, m.createLiteral(idInEtext));
+                } catch (NumberFormatException e) {
+                    // Invalid format - should have been caught during CSV validation
+                }
+            }
+        }
+        
+        public void getSimpleLocation(final Resource w, final boolean isEtextMode) {
             final StmtIterator locations = this.res.listProperties(contentLocation);
             while (locations.hasNext()) {
                 final Resource location = locations.next().getResource();
                 if (!location.hasProperty(contentLocationInstance, w))
                     continue;
-                this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
-                this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
-                // TODO: this is actually wrong in the case of multiple locations... but we can live with it (for now)
-                this.pageStart = combineWith(location, contentLocationPage, this.pageStart, true);
-                this.pageEnd = combineWith(location, contentLocationEndPage, this.pageEnd, false);
+                
+                if (isEtextMode) {
+                    // For etext mode, get etext and idInEtext properties
+                    this.idStart = combineEtextIdWith(location, contentLocationEtext, contentLocationIdInEtext, this.idStart, true);
+                    this.idEnd = combineEtextIdWith(location, contentLocationEndEtext, contentLocationEndIdInEtext, this.idEnd, false);
+                    // Volume is still volume in etext mode
+                    this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
+                    this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
+                } else {
+                    // For image mode, get page and volume properties
+                    this.volumeStart = combineWith(location, contentLocationVolume, this.volumeStart, false);
+                    this.volumeEnd = combineWith(location, contentLocationEndVolume, this.volumeEnd, true);
+                    // TODO: this is actually wrong in the case of multiple locations... but we can live with it (for now)
+                    this.pageStart = combineWith(location, contentLocationPage, this.pageStart, true);
+                    this.pageEnd = combineWith(location, contentLocationEndPage, this.pageEnd, false);
+                }
             }
             if (this.volumeEnd == null && this.volumeStart != null)
                 this.volumeEnd = this.volumeStart;
@@ -494,13 +576,13 @@ public class SimpleOutline {
             }
         }
         
-        public SimpleOutlineNode(final Resource res, final int parentDepth, final Depth maxDepthPointer, final Resource w) {
+        public SimpleOutlineNode(final Resource res, final int parentDepth, final Depth maxDepthPointer, final Resource w, final boolean isEtextMode) {
             this.res = res;
             this.children = new ArrayList<>();
             if (parentDepth+1 > maxDepthPointer.value)
                 maxDepthPointer.value = parentDepth+1;
             for (Resource child : getOrderedParts(res, res.getModel())) {
-                this.children.add(new SimpleOutlineNode(child, parentDepth+1, maxDepthPointer, w));
+                this.children.add(new SimpleOutlineNode(child, parentDepth+1, maxDepthPointer, w, isEtextMode));
             }
             this.partType = partTypeAsString(res);
             final Resource work = res.getPropertyResourceValue(instanceOf);
@@ -509,7 +591,7 @@ public class SimpleOutline {
             this.colophon = listSimpleProperty(res, colophonP);
             this.authorshipStatement = listSimpleProperty(res, authorshipStatementP);
             this.labels = listSimpleProperty(res, SKOS.prefLabel);
-            getSimpleLocation(w);
+            getSimpleLocation(w, isEtextMode);
             getTitles();
             getIDs();
             getNotes();
@@ -900,20 +982,42 @@ public class SimpleOutline {
             }
             // content location
             Resource cl = removeContentLocations(m, this.res, outline.digitalInstance);
-            if (this.pageStart != null || this.pageEnd != null || this.volumeEnd != null || this.volumeStart != null) {
-                if (cl == null)
-                    cl = outline.newResource(m, "CL", this.res);
-                cl.addProperty(RDF.type, m.createResource(EditConstants.BDO+"ContentLocation"));
-                m.add(this.res, contentLocation, cl);
-                cl.addProperty(contentLocationInstance, outline.digitalInstance);
-                if (this.pageStart != null)
-                    cl.addProperty(contentLocationPage, m.createTypedLiteral(this.pageStart, XSDDatatype.XSDinteger));
-                if (this.pageEnd != null)
-                    cl.addProperty(contentLocationEndPage, m.createTypedLiteral(this.pageEnd, XSDDatatype.XSDinteger));
-                if (this.volumeStart != null)
-                    cl.addProperty(contentLocationVolume, m.createTypedLiteral(this.volumeStart, XSDDatatype.XSDinteger));
-                if (this.volumeEnd != null)
-                    cl.addProperty(contentLocationEndVolume, m.createTypedLiteral(this.volumeEnd, XSDDatatype.XSDinteger));
+            if (outline.isEtextMode) {
+                // For etext mode: use idStart/idEnd
+                if (this.idStart != null || this.idEnd != null || this.volumeEnd != null || this.volumeStart != null) {
+                    if (cl == null)
+                        cl = outline.newResource(m, "CL", this.res);
+                    cl.addProperty(RDF.type, m.createResource(EditConstants.BDO+"ContentLocation"));
+                    m.add(this.res, contentLocation, cl);
+                    cl.addProperty(contentLocationInstance, outline.digitalInstance);
+                    
+                    // Use helper method to add etext location properties
+                    addEtextLocationToModel(cl, this.idStart, contentLocationEtext, contentLocationIdInEtext, m);
+                    addEtextLocationToModel(cl, this.idEnd, contentLocationEndEtext, contentLocationEndIdInEtext, m);
+                    
+                    // Volume properties are the same
+                    if (this.volumeStart != null)
+                        cl.addProperty(contentLocationVolume, m.createTypedLiteral(this.volumeStart, XSDDatatype.XSDinteger));
+                    if (this.volumeEnd != null)
+                        cl.addProperty(contentLocationEndVolume, m.createTypedLiteral(this.volumeEnd, XSDDatatype.XSDinteger));
+                }
+            } else {
+                // For image mode: use pageStart/pageEnd
+                if (this.pageStart != null || this.pageEnd != null || this.volumeEnd != null || this.volumeStart != null) {
+                    if (cl == null)
+                        cl = outline.newResource(m, "CL", this.res);
+                    cl.addProperty(RDF.type, m.createResource(EditConstants.BDO+"ContentLocation"));
+                    m.add(this.res, contentLocation, cl);
+                    cl.addProperty(contentLocationInstance, outline.digitalInstance);
+                    if (this.pageStart != null)
+                        cl.addProperty(contentLocationPage, m.createTypedLiteral(this.pageStart, XSDDatatype.XSDinteger));
+                    if (this.pageEnd != null)
+                        cl.addProperty(contentLocationEndPage, m.createTypedLiteral(this.pageEnd, XSDDatatype.XSDinteger));
+                    if (this.volumeStart != null)
+                        cl.addProperty(contentLocationVolume, m.createTypedLiteral(this.volumeStart, XSDDatatype.XSDinteger));
+                    if (this.volumeEnd != null)
+                        cl.addProperty(contentLocationEndVolume, m.createTypedLiteral(this.volumeEnd, XSDDatatype.XSDinteger));
+                }
             }
             // children
             for (int i = 0 ; i < this.children.size() ; i++) {
@@ -928,7 +1032,7 @@ public class SimpleOutline {
             return String.join(" ;; ", valueList);
         }
         
-        public String[] getRow(final int nb_position_columns, final int depth) {
+        public String[] getRow(final int nb_position_columns, final int depth, final boolean isEtextMode) {
             final String[] res = new String[nb_position_columns+NB_NON_TREE_COLUMNS];
             res[0] = toQname(this.res);
             for (int dci = 1 ; dci <= nb_position_columns ; dci++) {
@@ -942,17 +1046,27 @@ public class SimpleOutline {
             res[nb_position_columns+6] = listToCsvCell(this.colophon);
             res[nb_position_columns+7] = listToCsvCell(this.authorshipStatement);
             res[nb_position_columns+8] = listToCsvCell(this.identifiers);
-            res[nb_position_columns+9] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
-            res[nb_position_columns+10] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
+            
+            if (isEtextMode) {
+                // For etext mode: id start/end instead of page start/end
+                res[nb_position_columns+9] = this.idStart == null ? "" : this.idStart;
+                res[nb_position_columns+10] = this.idEnd == null ? "" : this.idEnd;
+            } else {
+                // For image mode: img start/end
+                res[nb_position_columns+9] = this.pageStart == null ? "" : Integer.toString(this.pageStart);
+                res[nb_position_columns+10] = this.pageEnd == null ? "" : Integer.toString(this.pageEnd);
+            }
+            
+            // Volume columns are the same for both modes
             res[nb_position_columns+11] = this.volumeStart == null ? "" : Integer.toString(this.volumeStart);
             res[nb_position_columns+12] = this.volumeEnd == null ? "" : Integer.toString(this.volumeEnd);
             return res;
         }
         
-        public void addToCsv(final List<String[]> rows, final int nb_position_columns, final int depth) {
-            rows.add(this.getRow(nb_position_columns, depth));
+        public void addToCsv(final List<String[]> rows, final int nb_position_columns, final int depth, final boolean isEtextMode) {
+            rows.add(this.getRow(nb_position_columns, depth, isEtextMode));
             for (final SimpleOutlineNode son : this.children) {
-                son.addToCsv(rows, nb_position_columns, depth+1);
+                son.addToCsv(rows, nb_position_columns, depth+1, isEtextMode);
             }
         }
     }
@@ -978,6 +1092,8 @@ public class SimpleOutline {
         this.rootChildren = new ArrayList<>();
         this.warns = new ArrayList<>();
         this.maxVolumeNumber = maxVolumeNumber;
+        // Detect etext mode based on digitalInstance identifier
+        this.isEtextMode = w != null && w.getLocalName().startsWith("IE");
         if (csvData.size() < 2)
             return;
         this.nbTreeColumns = 0;
@@ -1021,9 +1137,11 @@ public class SimpleOutline {
         this.root = root;
         this.digitalInstance = w;
         this.rootChildren = new ArrayList<>();
+        // Detect etext mode based on digitalInstance identifier
+        this.isEtextMode = w != null && w.getLocalName().startsWith("IE");
         final Depth maxDepthPointer = new Depth();
         for (Resource child : getOrderedParts(root, root.getModel())) {
-            this.rootChildren.add(new SimpleOutlineNode(child, 0, maxDepthPointer, w));
+            this.rootChildren.add(new SimpleOutlineNode(child, 0, maxDepthPointer, w, this.isEtextMode));
         }
         this.nbTreeColumns = Math.max(maxDepthPointer.value, MIN_TREE_COLUMNS);
     }
@@ -1136,7 +1254,7 @@ public class SimpleOutline {
         return res;
     }
     
-    public static String[] getHeaders(final int nbPositionColumns) {
+    public static String[] getHeaders(final int nbPositionColumns, final boolean isEtextMode) {
         final String[] headers = new String[nbPositionColumns+NB_NON_TREE_COLUMNS];
         headers[0] = "RID";
         for (int i=1 ; i <= nbPositionColumns ; i++) {
@@ -1150,17 +1268,35 @@ public class SimpleOutline {
         headers[nbPositionColumns+6] = "colophon";
         headers[nbPositionColumns+7] = "authorshipStatement";
         headers[nbPositionColumns+8] = "identifiers";
-        headers[nbPositionColumns+9] = "img start";
-        headers[nbPositionColumns+10] = "img end";
-        headers[nbPositionColumns+11] = "img grp start";
-        headers[nbPositionColumns+12] = "img grp end";
+        
+        if (isEtextMode) {
+            headers[nbPositionColumns+9] = "id start";
+            headers[nbPositionColumns+10] = "id end";
+            headers[nbPositionColumns+11] = "vol start";
+            headers[nbPositionColumns+12] = "vol end";
+        } else {
+            headers[nbPositionColumns+9] = "img start";
+            headers[nbPositionColumns+10] = "img end";
+            headers[nbPositionColumns+11] = "img grp start";
+            headers[nbPositionColumns+12] = "img grp end";
+        }
         return headers;
     }
     
-    public static List<String[]> getTemplate() {
+    public static String[] getHeaders(final int nbPositionColumns) {
+        // Default to image mode for backward compatibility
+        return getHeaders(nbPositionColumns, false);
+    }
+    
+    public static List<String[]> getTemplate(final boolean isEtextMode) {
         final List<String[]> res = new ArrayList<>();
-        res.add(getHeaders(MIN_TREE_COLUMNS));
+        res.add(getHeaders(MIN_TREE_COLUMNS, isEtextMode));
         return res;
+    }
+    
+    public static List<String[]> getTemplate() {
+        // Default to image mode for backward compatibility
+        return getTemplate(false);
     }
     
     public boolean hasBlockingWarns() {
@@ -1173,9 +1309,9 @@ public class SimpleOutline {
     
     public List<String[]> asCsv() {
         final List<String[]> res = new ArrayList<>();
-        res.add(getHeaders(this.nbTreeColumns));
+        res.add(getHeaders(this.nbTreeColumns, this.isEtextMode));
         for (final SimpleOutlineNode son : this.rootChildren) {
-            son.addToCsv(res, this.nbTreeColumns, 1);
+            son.addToCsv(res, this.nbTreeColumns, 1, this.isEtextMode);
         }
         return res;
     }

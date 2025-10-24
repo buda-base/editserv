@@ -107,7 +107,19 @@ class CSVOutlineController {
         // returns any released outline, if not return any non-released outline, if not return null
         // also returns the MW as the second value, whether an outline is found or not
         final WInfo res = new WInfo();
-        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ig . ?ig <"+EditConstants.BDO+"volumeNumber> ?vn } }}";
+        final boolean isEtext = w.getLocalName().startsWith("IE");
+        
+        // For etexts, we need to look for etext volumes, for images we look for image volumes
+        String volumeQuery;
+        if (isEtext) {
+            // For etexts: query for etext volumes (instanceHasVolume for etexts)
+            volumeQuery = "union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ev . ?ev <"+EditConstants.BDO+"volumeNumber> ?vn } }";
+        } else {
+            // For images: query for image group volumes
+            volumeQuery = "union { select (max(?vn) as ?mvn) { <"+w.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ig . ?ig <"+EditConstants.BDO+"volumeNumber> ?vn } }";
+        }
+        
+        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+w.getURI()+"> } "+volumeQuery+"}";
         log.error(query);
         final Query q = QueryFactory.create(query);
         log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
@@ -155,8 +167,10 @@ class CSVOutlineController {
                 olname = "O"+wlname.substring(1);
                 // TODO: check that outline RID doesn't exist yet
                 response.setHeader("Content-Disposition", "attachment; filename="+olname+"-"+wlname+".csv");
+                // Detect if this is an etext instance and use appropriate template
+                final boolean isEtext = wlname.startsWith("IE");
                 return ResponseEntity.status(HttpStatus.OK).contentType(TEXT_CSV_TYPE)
-                        .body(getCsvStream(SimpleOutline.getTemplate()));
+                        .body(getCsvStream(SimpleOutline.getTemplate(isEtext)));
             } else {
                 olname = ores.getLocalName();
             }

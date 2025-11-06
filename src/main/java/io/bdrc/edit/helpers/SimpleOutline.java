@@ -1286,16 +1286,14 @@ public class SimpleOutline {
         headers[nbPositionColumns+8] = "identifiers";
         
         if (isEtextMode) {
-            headers[nbPositionColumns+9] = "id start";
-            headers[nbPositionColumns+10] = "id end";
-            headers[nbPositionColumns+11] = "vol start";
-            headers[nbPositionColumns+12] = "vol end";
+            headers[nbPositionColumns+9] = "etext start";
+            headers[nbPositionColumns+10] = "etext end";
         } else {
             headers[nbPositionColumns+9] = "img start";
             headers[nbPositionColumns+10] = "img end";
-            headers[nbPositionColumns+11] = "img grp start";
-            headers[nbPositionColumns+12] = "img grp end";
         }
+        headers[nbPositionColumns+11] = "vol start";
+        headers[nbPositionColumns+12] = "vol end";
         return headers;
     }
     

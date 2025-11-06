@@ -282,7 +282,10 @@ class CSVOutlineController {
             }
             if (ores == null) {
                 log.info("no outline found for "+worieqname);
-                olname = "O"+worielname.substring(1);
+                if (worielname.startsWith("W"))
+                	olname = "O"+worielname.substring(1);
+                else 
+                	olname = "O"+worielname.substring(2); // IE
                 if (RIDController.idExists(olname)) {
                     return ResponseEntity.status(500)
                             .body(olname+" already exists, please specify a new one");

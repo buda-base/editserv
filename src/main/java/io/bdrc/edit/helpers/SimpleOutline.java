@@ -344,7 +344,7 @@ public class SimpleOutline {
         public static void validateEtextIds(final String idStart, final String idEnd, final List<Warning> warns, final int row_i, final int nb_position_columns) {
             // Define the regex pattern for valid IDs
             final String basePattern = "([1-9][0-9]{0,3})";
-            final String pattern = "^$|" + basePattern + "(#[A-Za-z_\\-0-9]+)?$";
+            final String pattern = "^$|" + basePattern + "(#[A-Za-z_:\\-0-9]+)?$";
             // Quick regex validation
             if (!idStart.matches(pattern))
             	warns.add(new Warning("invalid etext id, must be empty, integer or integer#string", row_i, nb_position_columns+9, true));

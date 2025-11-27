@@ -408,8 +408,7 @@ public class ModelUtils {
             m.add(lg, logDate, m.createTypedLiteral(logDateStr, XSDDatatype.XSDdateTime));
             m.add(lg, logMessage, m.createLiteral("Etext sync", "en"));
             m.add(lg, logMethod, BatchMethod);
-            if (totalPagesVe != 0)
-	            m.add(ve, volumePagesTotal, m.createTypedLiteral(totalPagesVe, XSDDatatype.XSDinteger));
+	        m.add(ve, volumePagesTotal, m.createTypedLiteral(totalPagesVe, XSDDatatype.XSDinteger));
             m.add(ve, numberOfCharacters, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
             m.add(ve, sliceEndChar, m.createTypedLiteral(totalCharsVe, XSDDatatype.XSDinteger));
         }

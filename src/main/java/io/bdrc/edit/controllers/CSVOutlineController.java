@@ -107,28 +107,41 @@ class CSVOutlineController {
         // returns any released outline, if not return any non-released outline, if not return null
         // also returns the MW as the second value, whether an outline is found or not
         final WOrIEInfo res = new WOrIEInfo();
-        final boolean isEtext = worie.getLocalName().startsWith("IE");
         
-        // For etexts, we need to look for etext volumes, for images we look for image volumes
-        String volumeQuery = "union { select (max(?vn) as ?mvn) { <"+worie.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ev . ?ev <"+EditConstants.BDO+"volumeNumber> ?vn } }";        
-        final String query = "SELECT ?o ?mw ?st ?mvn where { { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> . ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> } "+volumeQuery+"}";
-        log.error(query);
+        // Query for volume information (works for both etext and image volumes)
+        String volumeQuery = "union { select (max(?vn) as ?mvn) { <"+worie.getURI()+"> <"+EditConstants.BDO+"instanceHasVolume> ?ev . ?ev <"+EditConstants.BDO+"volumeNumber> ?vn } }";
+        // Filter to ensure ?mw is the abstract instance (MW), not a reproduction (W/IE)
+        // An MW is not itself a reproduction of anything, so we use NOT EXISTS to filter
+        String mwFilter = "FILTER NOT EXISTS { ?mw <"+EditConstants.BDO+"instanceReproductionOf> ?mw2 }";
+        // Modified query: added mwFilter to ensure we get the actual MW, not W
+        // Also added a separate pattern to find outlines via the MW without requiring admin status
+        final String query = "SELECT ?o ?mw ?st ?mvn where { " +
+            "{ ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> . " + mwFilter + " ?o <"+EditConstants.BDO+"outlineOf> ?mw . ?oadm <"+EditConstants.ADM+"adminAbout> ?o ; <"+EditConstants.ADM+"status> ?st . } " +
+            "union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> . " + mwFilter + " ?o <"+EditConstants.BDO+"outlineOf> ?mw . } " +
+            "union { ?mw <"+EditConstants.BDO+"instanceHasReproduction> <"+worie.getURI()+"> . " + mwFilter + " } " +
+            volumeQuery + "}";
+        log.debug("getWOrIEInfo query: {}", query);
         final Query q = QueryFactory.create(query);
-        log.error("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
+        log.debug("Fuseki: "+FusekiWriteHelpers.FusekiSparqlEndpoint);
         final QueryExecution qe = QueryExecution.service(FusekiWriteHelpers.FusekiSparqlEndpoint).query(q).build();
         final ResultSet ress = qe.execSelect();
         Resource nonReleasedCandidate = null;
         while (ress.hasNext()) {
             final QuerySolution r = ress.next();
-            if (r.contains("mw"))
-                res.mw = r.getResource("mw");
+            if (r.contains("mw")) {
+                final Resource mwCandidate = r.getResource("mw");
+                // Additional safety check: ensure local name starts with "MW"
+                if (mwCandidate != null && mwCandidate.getLocalName().startsWith("MW")) {
+                    res.mw = mwCandidate;
+                }
+            }
             if (r.contains("mvn"))
                 res.mvn = r.getLiteral("mvn").getInt();
             final Resource o = r.getResource("o");
             final Resource status = r.getResource("st");
             if (o != null && status != null && status.getLocalName().equals("StatusReleased")) {
                 res.o = o;
-            } else if (o != null) {
+            } else if (o != null && nonReleasedCandidate == null) {
                 nonReleasedCandidate = o;
             }
         }

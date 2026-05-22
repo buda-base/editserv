@@ -94,6 +94,16 @@ public class SimpleOutline {
     
     static final ISBNValidator isbn_validator = new ISBNValidator();
     static final ISSNValidator issn_validator = new ISSNValidator();
+
+    private static final String KATEN_SIGLA_PREFIX = "KaTenSigla";
+    private static final Map<String, String> KATEN_SIGLA_RESOURCES = new HashMap<>();
+    static {
+        for (final String sigla : new String[] { "A", "Bon", "C", "Cx", "D", "Do", "Eg", "F", "G", "H", "He", "J", "N", "Q", "S", "U", "V", "Z" }) {
+            KATEN_SIGLA_RESOURCES.put(sigla.toLowerCase(), KATEN_SIGLA_PREFIX + sigla);
+        }
+    }
+    private static final String INVALID_ID_PREFIX_MSG =
+            "invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN), (SN), (LTWA), (EAN), (IsIAO) or a KaTen sigla such as Q2003, D123, Bon5, …";
     
     public static final EwtsConverter ewtsConverter = new EwtsConverter();
     
@@ -497,8 +507,53 @@ public class SimpleOutline {
             case "RefNCLK":
                 return "(NCLK) ";
             default:
+                if (titleTypeR.getLocalName().startsWith(KATEN_SIGLA_PREFIX)
+                        && titleTypeR.getLocalName().length() > KATEN_SIGLA_PREFIX.length()) {
+                    return titleTypeR.getLocalName().substring(KATEN_SIGLA_PREFIX.length());
+                }
                 return "";
             }
+        }
+
+        /** rKTs-style compact ID: sigla letters immediately followed by the value (e.g. Q2003 → KaTenSiglaQ / 2003). */
+        private static Resource parseKaTenCompactIdentifier(final String val, final String[] valueOut) {
+            int i = 0;
+            while (i < val.length() && Character.isLetter(val.charAt(i))) {
+                i++;
+            }
+            if (i == 0 || i >= val.length()) {
+                return null;
+            }
+            final String letters = val.substring(0, i);
+            String matchedKey = null;
+            for (final String key : KATEN_SIGLA_RESOURCES.keySet()) {
+                if (letters.equalsIgnoreCase(key)
+                        && (matchedKey == null || key.length() > matchedKey.length())) {
+                    matchedKey = key;
+                }
+            }
+            if (matchedKey == null) {
+                return null;
+            }
+            valueOut[0] = val.substring(i);
+            return ResourceFactory.createResource(EditConstants.BDR + KATEN_SIGLA_RESOURCES.get(matchedKey));
+        }
+
+        private static Resource kaTenSiglaResource(final String prefix) {
+            final String pLower = prefix.toLowerCase().trim();
+            String localName = KATEN_SIGLA_RESOURCES.get(pLower);
+            if (localName == null) {
+                for (final Map.Entry<String, String> e : KATEN_SIGLA_RESOURCES.entrySet()) {
+                    if (("katensigla" + e.getKey()).equals(pLower)) {
+                        localName = e.getValue();
+                        break;
+                    }
+                }
+            }
+            if (localName == null) {
+                return null;
+            }
+            return ResourceFactory.createResource(EditConstants.BDR + localName);
         }
         
         public static Resource getIDResource(final String prefix) {
@@ -523,7 +578,7 @@ public class SimpleOutline {
             case "sn":
                 return seriesNumber;
             default:
-                return null;
+                return kaTenSiglaResource(prefix);
             }
         }
         
@@ -814,7 +869,16 @@ public class SimpleOutline {
                     res_values.add(getTitleResource("*"));
                     continue;
                 }
-                if (!val.startsWith("(") || close_par_idx == -1 || close_par_idx > 5) {
+                if (!title_type) {
+                    final String[] compactValue = new String[1];
+                    final Resource kt = parseKaTenCompactIdentifier(val, compactValue);
+                    if (kt != null) {
+                        str_values.add(compactValue[0]);
+                        res_values.add(kt);
+                        continue;
+                    }
+                }
+                if (!val.startsWith("(") || close_par_idx == -1 || (title_type && close_par_idx > 5)) {
                     str_values.add(val);
                     res_values.add(null);
                     continue;
@@ -936,7 +1000,7 @@ public class SimpleOutline {
                     node = outline.newResource(m, "ID", this.res);
                     m.add(this.res, identifiedBy, node);
                     if (type == null) {
-                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN) or (SN)", this.row_i, outline.nbTreeColumns+7, true));
+                        outline.warns.add(new Warning(INVALID_ID_PREFIX_MSG, this.row_i, outline.nbTreeColumns+7, true));
                     } else {
                         m.add(node, RDF.type, type);
                     }
@@ -949,7 +1013,7 @@ public class SimpleOutline {
                         m.removeAll(node, RDF.type, (RDFNode) null);
                         m.add(node, RDF.type, type);
                     } else {
-                        outline.warns.add(new Warning("invalid prefix, should be (ISBN), (ISSN), (NLM), (NCLK), (CPN)", this.row_i, outline.nbTreeColumns+7, true));
+                        outline.warns.add(new Warning(INVALID_ID_PREFIX_MSG, this.row_i, outline.nbTreeColumns+7, true));
                     }
                 }
             }

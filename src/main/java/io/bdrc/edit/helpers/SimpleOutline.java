@@ -507,15 +507,11 @@ public class SimpleOutline {
             case "RefNCLK":
                 return "(NCLK) ";
             default:
-                if (titleTypeR.getLocalName().startsWith(KATEN_SIGLA_PREFIX)
-                        && titleTypeR.getLocalName().length() > KATEN_SIGLA_PREFIX.length()) {
-                    return titleTypeR.getLocalName().substring(KATEN_SIGLA_PREFIX.length());
-                }
                 return "";
             }
         }
 
-        /** rKTs-style compact ID: sigla letters immediately followed by the value (e.g. Q2003 → KaTenSiglaQ / 2003). */
+        /** rKTs-style compact ID: sigla + number in one string (e.g. Q2003 → type KaTenSiglaQ, value "Q2003"). */
         private static Resource parseKaTenCompactIdentifier(final String val, final String[] valueOut) {
             int i = 0;
             while (i < val.length() && Character.isLetter(val.charAt(i))) {
@@ -535,8 +531,30 @@ public class SimpleOutline {
             if (matchedKey == null) {
                 return null;
             }
-            valueOut[0] = val.substring(i);
+            valueOut[0] = val.trim();
             return ResourceFactory.createResource(EditConstants.BDR + KATEN_SIGLA_RESOURCES.get(matchedKey));
+        }
+
+        private static boolean isKaTenSiglaType(final Resource type) {
+            if (type == null) {
+                return false;
+            }
+            final String ln = type.getLocalName();
+            return ln.startsWith(KATEN_SIGLA_PREFIX) && ln.length() > KATEN_SIGLA_PREFIX.length();
+        }
+
+        /** CSV cell for an identifiedBy node (handles full compact value or legacy value-only storage). */
+        private static String formatIdentifierForCsv(final Resource idNode, final String litString) {
+            final Resource type = idNode.getPropertyResourceValue(RDF.type);
+            if (isKaTenSiglaType(type)) {
+                final String sigla = type.getLocalName().substring(KATEN_SIGLA_PREFIX.length());
+                if (litString.length() >= sigla.length()
+                        && litString.regionMatches(true, 0, sigla, 0, sigla.length())) {
+                    return litString;
+                }
+                return sigla + litString;
+            }
+            return getIDPrefix(idNode) + litString;
         }
 
         private static Resource kaTenSiglaResource(final String prefix) {
@@ -626,7 +644,7 @@ public class SimpleOutline {
                 if (idValueS == null)
                     continue;
                 final String litString = litToString(idValueS.getLiteral());
-                this.identifiers.add(getIDPrefix(id)+litString);
+                this.identifiers.add(formatIdentifierForCsv(id, litString));
             }
             final StmtIterator sns = this.res.listProperties(seriesNumber);
             while (sns.hasNext()) {

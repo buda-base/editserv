@@ -1296,8 +1296,11 @@ public class SimpleOutline {
     private Pattern submwpattern = null;
     public void warnIfSubMWInvalid(final String submwlname, final int row_i) {
         // adds warnings if an mw from the csv (column 0) has a suspicious name
-        if (this.submwpattern == null)
-            this.submwpattern = Pattern.compile("^("+this.root.getLocalName()+"_[A-Z0-9]+|"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_[A-Z0-9]+)$");
+        if (this.submwpattern == null) {
+            final String root = this.root.getLocalName();
+            final String suffix = "[A-Z0-9]+(?:_[A-Z0-9]+)*";
+            this.submwpattern = Pattern.compile("^(" + root + "_" + suffix + "|" + root + "_" + this.outline.getLocalName() + "_" + suffix + ")$");
+        }
         if (!this.submwpattern.matcher(submwlname).find())
             this.warns.add(new Warning("invalid id, should be in the form bdr:"+this.root.getLocalName()+"_"+this.outline.getLocalName()+"_XXX or bdr:"+this.root.getLocalName()+"_XXX, leave the column blank to generate one automatically", row_i, 0, true));
     }

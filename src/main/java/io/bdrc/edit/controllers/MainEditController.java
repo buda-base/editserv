@@ -385,8 +385,28 @@ public class MainEditController {
     @RequestMapping(value = "/callbacks/model/bdrc-auth", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> readAuthModel() {
         log.info("updating Auth data model() >>");
+        // RdfAuthModel.resetModel() does not clear lazy caches; if getGroups()/etc.
+        // ran while authMod was null they stay empty forever. Clear them first.
+        clearRdfAuthModelCaches();
         RdfAuthModel.readAuthModel();
         return ResponseEntity.ok("Updated auth Model was read into editserv");
+    }
+
+    static void clearRdfAuthModelCaches() {
+        final String[] fields = {
+            "authMod", "users", "groups", "roles", "personalAccess", "anyStatusGroups",
+            "permissions", "endpoints", "access", "applications", "paths",
+            "adminGroupId", "editorsGroupId", "contributorsGroupId"
+        };
+        for (String name : fields) {
+            try {
+                final java.lang.reflect.Field f = RdfAuthModel.class.getDeclaredField(name);
+                f.setAccessible(true);
+                f.set(null, null);
+            } catch (ReflectiveOperationException e) {
+                log.warn("could not clear RdfAuthModel.{}", name, e);
+            }
+        }
     }
 
     @PostMapping(value = "/callbacks/github/shapes")

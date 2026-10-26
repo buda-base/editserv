@@ -19,8 +19,11 @@ public class EditApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) throws Exception {
     	EditConfig.log.info("starting editserv (main)");
-        SpringApplication.run(EditApplication.class, args);
+        // Must run before Tomcat accepts traffic: RdfAuthModel caches empty maps if
+        // requests hit getGroups()/getRoles() while authMod is still null, and
+        // later readAuthModel()/resetModel() will not rebuild those caches.
         EditConfig.init();
+        SpringApplication.run(EditApplication.class, args);
     }
 
     @Override

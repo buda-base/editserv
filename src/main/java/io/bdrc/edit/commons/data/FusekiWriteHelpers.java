@@ -43,7 +43,9 @@ public class FusekiWriteHelpers {
     
     public static String FusekiSparqlEndpoint = null;
     public static String FusekiAuthSparqlEndpoint = null;
+    /** @deprecated unused for I/O; kept for compatibility. Prefer {@link #createConnection(int)}. */
     public static RDFConnection fuConn = null;
+    /** @deprecated unused for I/O; kept for compatibility. Prefer {@link #createConnection(int)}. */
     public static RDFConnection fuAuthConn = null;
     public static Dataset testDataset = null;
     private static RDFConnectionRemoteBuilder fuConnBuilder = null;
@@ -52,6 +54,15 @@ public class FusekiWriteHelpers {
     public static String baseAuthUrl = null;
     public static int initialLoadBulkSize = 50000; // the number of triples above which a dataset load is triggered
     public static boolean addGitRevision = true;
+
+    /**
+     * Serializes all Fuseki I/O and in-memory sync-model updates.
+     * Must be the only lock used around connection begin/fetch/put/end so we cannot
+     * deadlock against Jena's per-connection TransactionalLock (which previously
+     * happened when a shared RDFConnection was used from unsynchronized getModel
+     * while synchronized putModel held the class monitor).
+     */
+    private static final Object FUSEKI_LOCK = new Object();
     
     public static final int CORE = 0;
     public static final int AUTH = 1;
@@ -79,10 +90,29 @@ public class FusekiWriteHelpers {
         FusekiSparqlEndpoint = baseUrl+"/query";
         FusekiAuthSparqlEndpoint = baseAuthUrl+"/query";
         initConnectionBuilder();
-        openConnection(CORE);
-        openConnection(AUTH);
+    }
+
+    /**
+     * Fresh connection for one operation. Callers must close it (try-with-resources).
+     * Avoids sharing Jena TransactionalLock state across Tomcat worker threads.
+     */
+    static RDFConnection createConnection(final int distantDB) {
+        if (testDataset != null) {
+            return RDFConnection.connect(testDataset);
+        }
+        if (distantDB == CORE) {
+            if (fuConnBuilder == null) {
+                throw new IllegalStateException("FusekiWriteHelpers not initialized (core)");
+            }
+            return fuConnBuilder.build();
+        }
+        if (fuAuthConnBuilder == null) {
+            throw new IllegalStateException("FusekiWriteHelpers not initialized (auth)");
+        }
+        return fuAuthConnBuilder.build();
     }
     
+    /** @deprecated long-lived shared connections are unsafe; use {@link #createConnection(int)}. */
     public static RDFConnection openConnection(final int distantDB) {
         if (distantDB == CORE) {
             if (fuConn != null) {
@@ -113,34 +143,46 @@ public class FusekiWriteHelpers {
         }
     }
     
-    public static synchronized final Model getSyncModel(final int distantDB) {
-        if (distantDB == CORE) {
-            if (syncModelInitialized)
+    public static final Model getSyncModel(final int distantDB) {
+        synchronized (FUSEKI_LOCK) {
+            if (distantDB == CORE) {
+                if (syncModelInitialized)
+                    return syncModel;
+                initSyncModelLocked(distantDB);
                 return syncModel;
-            initSyncModel(distantDB);
-            return syncModel;
-        }
-        if (authSyncModelInitialized)
+            }
+            if (authSyncModelInitialized)
+                return authSyncModel;
+            initSyncModelLocked(distantDB);
             return authSyncModel;
-        initSyncModel(distantDB);
-        return syncModel;
+        }
     }
     
     static Model getModel(String graphName, final int distantDB) {
+        synchronized (FUSEKI_LOCK) {
+            return getModelLocked(graphName, distantDB);
+        }
+    }
+
+    private static Model getModelLocked(String graphName, final int distantDB) {
         logger.info("getModel {}", graphName);
-        openConnection(distantDB);
-        RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
-        try {
+        try (RDFConnection conn = createConnection(distantDB)) {
             Model model = conn.fetch(graphName);
             logger.info("getModel:" + graphName + "  got model: " + model.size());
-            return model; 
+            return model;
         } catch (Exception ex) {
-            logger.info("getModel:" + graphName + "  FAILED ");
+            logger.info("getModel:" + graphName + "  FAILED ", ex);
             return null;
         }
     }
     
-    static synchronized void putModel(String graphName, Model model, final int distantDB) {
+    static void putModel(String graphName, Model model, final int distantDB) {
+        synchronized (FUSEKI_LOCK) {
+            putModelLocked(graphName, model, distantDB);
+        }
+    }
+
+    private static void putModelLocked(String graphName, Model model, final int distantDB) {
         if (logger.isDebugEnabled())
             logger.debug(ModelUtils.modelToTtl(model));
         if (EditConfig.dryrunmodefuseki && (EditConfig.dryrunmodeusers || distantDB == CORE)) {
@@ -148,16 +190,25 @@ public class FusekiWriteHelpers {
             return;
         }
         logger.error("put {} to Fuseki", graphName);
-        openConnection(distantDB);
-        RDFConnection conn = distantDB == CORE ? fuConn : fuAuthConn;
-        try {
-            conn.begin(ReadWrite.WRITE);
-	        conn.put(graphName, model);
-	        conn.commit();
-        } catch (HttpException e) {
-        	logger.error("error when putting graph {} in Fuseki: {}", graphName, e.getMessage()	);
-        } finally {
-            conn.end();
+        try (RDFConnection conn = createConnection(distantDB)) {
+            try {
+                conn.begin(ReadWrite.WRITE);
+                conn.put(graphName, model);
+                conn.commit();
+            } catch (HttpException e) {
+                logger.error("error when putting graph {} in Fuseki: {}", graphName, e.getMessage());
+                try {
+                    conn.abort();
+                } catch (Exception abortEx) {
+                    logger.debug("abort after put failure", abortEx);
+                }
+            } finally {
+                try {
+                    conn.end();
+                } catch (Exception endEx) {
+                    logger.error("error ending Fuseki transaction for {}", graphName, endEx);
+                }
+            }
         }
     }
     
@@ -238,11 +289,17 @@ public class FusekiWriteHelpers {
         updateSyncModel(gi.repoLname, gi.revId, AUTH);
     }
     
-    public static synchronized final void initSyncModel(final int distantDB) {
+    public static final void initSyncModel(final int distantDB) {
+        synchronized (FUSEKI_LOCK) {
+            initSyncModelLocked(distantDB);
+        }
+    }
+
+    private static void initSyncModelLocked(final int distantDB) {
         if (distantDB == CORE) {
             syncModelInitialized = true;
             logger.info("initSyncModel: " + SYSTEM_GRAPH);
-            Model distantSyncModel = getModel(SYSTEM_GRAPH, distantDB);
+            Model distantSyncModel = getModelLocked(SYSTEM_GRAPH, distantDB);
             if (distantSyncModel != null) {
                 syncModel.add(distantSyncModel);
             } else {
@@ -251,7 +308,7 @@ public class FusekiWriteHelpers {
         } else {
             authSyncModelInitialized = true;
             logger.info("initSyncModel: {}", SYSTEM_GRAPH);
-            Model distantSyncModel = getModel(SYSTEM_GRAPH, distantDB);
+            Model distantSyncModel = getModelLocked(SYSTEM_GRAPH, distantDB);
             if (distantSyncModel != null) {
                 authSyncModel.add(distantSyncModel);
             } else {
@@ -287,19 +344,22 @@ public class FusekiWriteHelpers {
         return CORE;
     }
     
-    public static synchronized void updateSyncModel(final String repoLname, final String revId, final int dbType) {
+    public static void updateSyncModel(final String repoLname, final String revId, final int dbType) {
         if (EditConfig.dryrunmodefuseki || EditConfig.dryrunmodefusekisyncmodels) return;
-        logger.info("update sync model");
-        final Model model = getSyncModel(dbType);
-        Resource res = repoLnameToSyncModelResource.get(repoLname);
-        Literal lit = model.createLiteral(revId);
-        Statement stmt = model.getProperty(res, hasLastRevision);
-        if (stmt == null) {
-            model.add(res, hasLastRevision, lit);
-        } else {
-            stmt.changeObject(lit);
+        synchronized (FUSEKI_LOCK) {
+            logger.info("update sync model");
+            // getSyncModel / putModel reenter FUSEKI_LOCK on this thread
+            final Model model = getSyncModel(dbType);
+            Resource res = repoLnameToSyncModelResource.get(repoLname);
+            Literal lit = model.createLiteral(revId);
+            Statement stmt = model.getProperty(res, hasLastRevision);
+            if (stmt == null) {
+                model.add(res, hasLastRevision, lit);
+            } else {
+                stmt.changeObject(lit);
+            }
+            // we put the sync model separately so that things are more consistent
+            putModelLocked(SYSTEM_GRAPH, model, dbType);
         }
-        // we put the sync model separately so that things are more consistent
-        putModel(SYSTEM_GRAPH, model, dbType);
     }
 }

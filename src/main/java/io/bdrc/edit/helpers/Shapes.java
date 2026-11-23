@@ -149,7 +149,7 @@ public class Shapes implements Runnable {
         shapeUriToDocumentUri.put(EditConstants.BDS+"SerialWorkShape", baseShapeDocUri+"SerialWorkShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"InstanceShape", baseShapeDocUri+"InstanceShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"ImageInstanceShape", baseShapeDocUri+"ImageInstanceShapes/");
-        shapeUriToDocumentUri.put(EditConstants.BDS+"RoleShape", baseShapeDocUri+"RoleUIShapes/");
+        shapeUriToDocumentUri.put(EditConstants.BDS+"RoleShape", baseShapeDocUri+"RoleShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"CollectionShape", baseShapeDocUri+"CollectionShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"ImagegroupShape", baseShapeDocUri+"ImagegroupShapes/");
         shapeUriToDocumentUri.put(EditConstants.BDS+"EtextVolumeShape", baseShapeDocUri+"EtextVolumeShapes/");
